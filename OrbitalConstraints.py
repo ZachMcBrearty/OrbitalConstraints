@@ -49,7 +49,7 @@ Ir_emission = np.ones_like(Temp) * 0  # IR emission function (Energy sink)
 Source = np.zeros_like(Temp)  # Diurnally averaged insolation function (Energy Source)
 Albedo = np.zeros_like(Temp)  # Albedo
 
-Diffusion = np.ones_like(Temp) * 0.3  # diffusion coefficient (Lat)
+Diffusion = np.ones_like(Temp) * 0.2  # diffusion coefficient (Lat)
 # Diffusion[:, :] = np.array([np.linspace(0.1, 0.4, spacedim)]*(timedim+1)).T
 
 for n in range(timedim):
@@ -88,7 +88,7 @@ for n in range(timedim):
             diff_elem = (Temp[-2, n] - Temp[-1, n]) / dx * (2 * Diffusion[-1, n])
         else:
             # x_m = dx*m - 1 i.e. m steps along from -1
-            diff_elem = (Temp[m + 2, n] - 2 * Temp[m, n] + Temp[m - 2, n]) * Diffusion[
+            diff_elem = (Temp[m + 1, n] - 2 * Temp[m, n] + Temp[m - 1, n]) * Diffusion[
                 m, n
             ] * (1 - (dx * m - 1) ** 2) / (4 * dx**2) + (
                 Temp[m + 1, n] - Temp[m - 1, n]
@@ -106,8 +106,8 @@ for n in range(timedim):
 
 import matplotlib.pyplot as plt
 
-for n in range(5):
-    plt.plot(np.linspace(-1, 1, spacedim), Temp[:, 12 * n], label=f"t={12*n}")
+for n in range(10):
+    plt.plot(np.linspace(-1, 1, spacedim), Temp[:, 50 * n], label=f"t={50*n}")
 
 # plt.axvline(dx*20-1)
 plt.ylabel("Temperature")
