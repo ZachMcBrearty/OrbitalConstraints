@@ -32,7 +32,7 @@ def backwarddifference(x, i, dx):
 def forward2ndorder(x,i,dx):
     return (x[i+2] - 2*x[i+1] + x[i  ]) / dx / dx
 def central2ndorder(x,i,dx):
-    return (x[i+1] - 2*x[i  ] + x[i-1]) / dx / dx
+    return (x[i+2] - 2*x[i  ] + x[i-2]) / (2*dx) / (2*dx)
 def backward2ndorder(x,i,dx):
     return (x[i  ] - 2*x[i-1] + x[i-2]) / dx / dx
 
@@ -88,7 +88,7 @@ for n in range(timedim):
 
 import matplotlib.pyplot as plt
 
-for n in range(0, 51, 10):
+for n in range(0, 21, 5):
     plt.plot(lat, Temp[:, n], label=f"t={n}")
 
 # plt.axvline(dx*20-1)
