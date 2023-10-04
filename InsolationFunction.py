@@ -68,17 +68,17 @@ def S(a: float, theta: float, t: float | floatarr, delta_0: float) -> float | fl
         * (H_ * sintheta * sindelta + costheta * cosdelta * np.sin(H_))
     )
 
+if __name__ == "__main__":
+    import matplotlib.pyplot as plt
 
-import matplotlib.pyplot as plt
+    time = np.linspace(0, 2, 100)
 
-time = np.linspace(0, 2, 100)
+    for lat in range(0, 91, 15):
+        eq = S(1, np.deg2rad(lat), time, np.deg2rad(90))
+        a = plt.plot(time, eq, label=f"{lat} deg")
+        plt.axhline(np.average(eq), color=a[0].get_c(), label=f"{lat} deg avg")  # type: ignore
 
-for lat in range(0, 91, 15):
-    eq = S(1, np.deg2rad(lat), time, np.deg2rad(90))
-    a = plt.plot(time, eq, label=f"{lat} deg")
-    plt.axhline(np.average(eq), color=a[0].get_c(), label=f"{lat} deg avg")  # type: ignore
-
-plt.xlabel("time, yrs")
-plt.ylabel("Insolation, W m$^{-2}$")
-plt.legend()
-plt.show()
+    plt.xlabel("time, yrs")
+    plt.ylabel("Insolation, W m$^{-2}$")
+    plt.legend()
+    plt.show()

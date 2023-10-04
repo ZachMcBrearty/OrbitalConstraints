@@ -25,6 +25,8 @@
 
 import numpy as np
 
+from InsolationFunction import S
+
 spacedim = 200  # number of points in space
 dx = 2 / (spacedim - 1)  # spacial separation from 2 units from -1 to 1
 
