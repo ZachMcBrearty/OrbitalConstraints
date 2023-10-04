@@ -37,9 +37,9 @@ def backward2ndorder(x,i,dx):
     return (x[i  ] - 2*x[i-1] + x[i-2]) / dx / dx
 
 ##  ##
-spacedim = 100  # number of points in space
+spacedim = 200  # number of points in space
 dlam = np.pi / (spacedim - 1)  # spacial separation from 2 units from -pi/2 to pi/2
-lat = np.linspace(-np.pi/2+0.1, np.pi/2-0.1, spacedim)
+lat = np.linspace(-np.pi/2, np.pi/2, spacedim)
 
 # timedim may need to be split in to chunks which are then recorded
 # e.g. do a year of evolution then write to file and overwrite the array
@@ -65,14 +65,20 @@ Diffusion = np.ones_like(Temp) * 0.2  # diffusion coefficient (Lat)
 
 for n in range(timedim):
     for m in range(spacedim):
-        if m == 0 or m == 1:
+        if m == 0:
+            secondT = forward2ndorder(Temp[:, n], m, dlam)
+            firstT = 0
+        elif m == 1:
             # forward difference for zero edge
             secondT = forward2ndorder(Temp[:, n], m, dlam)
             firstT = forwarddifference(Temp[:, n], m, dlam)
-        elif m == spacedim - 2 or m == spacedim - 1:
+        elif m == spacedim - 2:
             # backwards difference for end edge
             secondT = backward2ndorder(Temp[:, n], m, dlam)
             firstT = backwarddifference(Temp[:, n], m, dlam)
+        elif m == spacedim - 1:
+            secondT = backward2ndorder(Temp[:, n], m, dlam)
+            firstT = 0
         else:
             # central difference for most cases
             secondT = central2ndorder(Temp[:, n], m, dlam)
@@ -88,11 +94,11 @@ for n in range(timedim):
 
 import matplotlib.pyplot as plt
 
-for n in range(0, 21, 5):
+for n in range(0, 101, 20):
     plt.plot(lat, Temp[:, n], label=f"t={n}")
 
 # plt.axvline(dx*20-1)
 plt.ylabel("Temperature")
-plt.xlabel(r"$x = $sin$(\lambda)$")
+plt.xlabel(r"$\lambda$")
 plt.legend()
 plt.show()
