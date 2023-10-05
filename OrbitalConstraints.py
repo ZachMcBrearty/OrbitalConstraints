@@ -18,28 +18,39 @@ import numpy as np
 
 from InsolationFunction import S
 
+
 ## derivatives ##
 def forwarddifference(x, i, dx):
-    return (x[i+1] - x[i  ]) / dx
+    return (x[i + 1] - x[i]) / dx
+
+
 def centraldifference(x, i, dx):
     # (x[i+1/2] - x[i-1/2]) / dx
     # let x[i+(-)1/2] = (x[i+(-)1] + x[i]) / 2
     # => (x[i+1] - x[i-1]) / (2*dx)
-    return (x[i+1] - x[i-1]) / (2*dx)
-def backwarddifference(x, i, dx):
-    return (x[i  ] - x[i-1]) / dx
+    return (x[i + 1] - x[i - 1]) / (2 * dx)
 
-def forward2ndorder(x,i,dx):
-    return (x[i+2] - 2*x[i+1] + x[i  ]) / dx / dx
-def central2ndorder(x,i,dx):
-    return (x[i+2] - 2*x[i  ] + x[i-2]) / (2*dx) / (2*dx)
-def backward2ndorder(x,i,dx):
-    return (x[i  ] - 2*x[i-1] + x[i-2]) / dx / dx
+
+def backwarddifference(x, i, dx):
+    return (x[i] - x[i - 1]) / dx
+
+
+def forward2ndorder(x, i, dx):
+    return (x[i + 2] - 2 * x[i + 1] + x[i]) / dx / dx
+
+
+def central2ndorder(x, i, dx):
+    return (x[i + 2] - 2 * x[i] + x[i - 2]) / (2 * dx) / (2 * dx)
+
+
+def backward2ndorder(x, i, dx):
+    return (x[i] - 2 * x[i - 1] + x[i - 2]) / dx / dx
+
 
 ##  ##
 spacedim = 200  # number of points in space
 dlam = np.pi / (spacedim - 1)  # spacial separation from 2 units from -pi/2 to pi/2
-lat = np.linspace(-np.pi/2, np.pi/2, spacedim)
+lat = np.linspace(-np.pi / 2, np.pi / 2, spacedim)
 
 # timedim may need to be split in to chunks which are then recorded
 # e.g. do a year of evolution then write to file and overwrite the array
@@ -94,7 +105,7 @@ for n in range(timedim):
 
 import matplotlib.pyplot as plt
 
-for n in range(0, 101, 20):
+for n in range(0, 8, 1):
     plt.plot(lat, Temp[:, n], label=f"t={n}")
 
 # plt.axvline(dx*20-1)
