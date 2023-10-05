@@ -23,6 +23,7 @@ import numpy as np
 import numpy.typing as npt
 
 from InsolationFunction import S
+from HeatCapacity import C
 
 floatarr = npt.NDArray[np.float64]
 
