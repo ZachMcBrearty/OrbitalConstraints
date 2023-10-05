@@ -20,26 +20,40 @@
 # * (diff - I + S(1-A) )
 
 import numpy as np
+import numpy.typing as npt
 
 from InsolationFunction import S
 
+floatarr = npt.NDArray[np.float64]
+
+
 ## derivatives ##
-def forwarddifference(x, i, dx):
-    return (x[i+1] - x[i  ]) / dx
-def centraldifference(x, i, dx):
+def forwarddifference(x: list[float] | floatarr, i: int, dx: float) -> float:
+    return (x[i + 1] - x[i]) / dx
+
+
+def centraldifference(x: list[float] | floatarr, i: int, dx: float) -> float:
     # (x[i+1/2] - x[i-1/2]) / dx
     # let x[i+(-)1/2] = (x[i+(-)1] + x[i]) / 2
     # => (x[i+1] - x[i-1]) / (2*dx)
-    return (x[i+1] - x[i-1]) / (2*dx)
-def backwarddifference(x, i, dx):
-    return (x[i  ] - x[i-1]) / dx
+    return (x[i + 1] - x[i - 1]) / (2 * dx)
 
-def forward2ndorder(x,i,dx):
-    return (x[i+2] - 2*x[i+1] + x[i  ]) / dx / dx
-def central2ndorder(x,i,dx):
-    return (x[i+2] - 2*x[i  ] + x[i-2]) / (2*dx) / (2*dx)
-def backward2ndorder(x,i,dx):
-    return (x[i  ] - 2*x[i-1] + x[i-2]) / dx / dx
+
+def backwarddifference(x: list[float] | floatarr, i: int, dx: float) -> float:
+    return (x[i] - x[i - 1]) / dx
+
+
+def forward2ndorder(x: list[float] | floatarr, i: int, dx: float) -> float:
+    return (x[i + 2] - 2 * x[i + 1] + x[i]) / dx / dx
+
+
+def central2ndorder(x: list[float] | floatarr, i: int, dx: float) -> float:
+    return (x[i + 2] - 2 * x[i] + x[i - 2]) / (2 * dx) / (2 * dx)
+
+
+def backward2ndorder(x: list[float] | floatarr, i: int, dx: float) -> float:
+    return (x[i] - 2 * x[i - 1] + x[i - 2]) / dx / dx
+
 
 ##  ##
 spacedim = 200  # number of points in space
@@ -65,7 +79,7 @@ Ir_emission = np.ones_like(Temp) * 0  # IR emission function (Energy sink)
 Source = np.zeros_like(Temp)  # Diurnally averaged insolation function (Energy Source)
 Albedo = np.zeros_like(Temp)  # Albedo
 
-Diffusion = np.ones_like(Temp) * 0.2  # diffusion coefficient (Lat)
+Diffusion = np.ones_like(Temp) * 0.3  # diffusion coefficient (Lat)
 # Diffusion[:, :] = np.array([np.linspace(0.1, 0.4, spacedim)]*(timedim+1)).T
 
 for n in range(timedim):
@@ -86,20 +100,23 @@ for n in range(timedim):
             firstT = centraldifference(Temp[:, n], m, dx)
             firstD = centraldifference(Diffusion[:, n], m, dx)
         # diff = (dD/dx (1-x^2) + D*-2x)*dT/dx + D(1-x^2)* d^2(T)/ dx^2
-        diff_elem = (firstD * (1-xs[m]**2) - 2*Diffusion[m, n]*xs[m]) * firstT + Diffusion[m, n] * (1-xs[m]**2) * secondT
+        diff_elem = (
+            firstD * (1 - xs[m] ** 2) - 2 * Diffusion[m, n] * xs[m]
+        ) * firstT + Diffusion[m, n] * (1 - xs[m] ** 2) * secondT
         # T(x_m, t_n+1) = T(x_m, t_n) + Δt / C(x_m, t_n)
         # * (diff - I + S(1-A) )
         Temp[m, n + 1] = Temp[m, n] + dt / Capacity[m, n] * (
             diff_elem - Ir_emission[m, n] + Source[m, n] * (1 - Albedo[m, n])
         )
 
-import matplotlib.pyplot as plt
+if __name__ == "__main__":
+    import matplotlib.pyplot as plt
 
-for n in range(0, 501, 50):
-    plt.plot(xs, Temp[:, n], label=f"t={n}")
+    for n in range(0, 501, 50):
+        plt.plot(xs, Temp[:, n], label=f"t={n}")
 
-# plt.axvline(dx*20-1)
-plt.ylabel("Temperature")
-plt.xlabel(r"$x = $sin$(\lambda)$")
-plt.legend()
-plt.show()
+    # plt.axvline(dx*20-1)
+    plt.ylabel("Temperature")
+    plt.xlabel(r"$x = $sin$(\lambda)$")
+    plt.legend()
+    plt.show()

@@ -68,6 +68,7 @@ def S(a: float, theta: float, t: float | floatarr, delta_0: float) -> float | fl
         * (H_ * sintheta * sindelta + costheta * cosdelta * np.sin(H_))
     )
 
+
 if __name__ == "__main__":
     import matplotlib.pyplot as plt
 
