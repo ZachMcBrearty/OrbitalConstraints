@@ -10,9 +10,7 @@ def ThermalTimeScale(C, T, I):
     return C * T / I
 
 
-def C(
-    f_o: float | floatarr, f_i: float | floatarr, T: Optional[float | floatarr] = None
-) -> float | floatarr:
+def C(f_o: float | floatarr, f_i: float | floatarr) -> float | floatarr:
     """Calculate heat capacity from ocean and ice fractions
     f_o: fraction of planet which is ocean
     f_i: fraction of ocean which is ice
@@ -69,8 +67,16 @@ def f_o(lat):
     return f_earth_10deg[np.int64(np.floor(17 * (lat / np.pi + 1 / 2)))]
 
 
-def f_i(Temp):
-    return 1 - np.exp((Temp - 273) / 10)
+def f_i(Temp: float | floatarr) -> float | floatarr:
+    q = 1 - np.exp((Temp - 273) / 10)  # type: float|floatarr
+    if isinstance(Temp, np.ndarray):
+        q[q < 0] = 0.0
+        return q
+    else:
+        if q < 0:
+            return 0.0
+        else:
+            return q
 
 
 if __name__ == "__main__":
@@ -80,7 +86,23 @@ if __name__ == "__main__":
     temp: floatarr = np.exp(-5 * (x) ** 2) * 30 + 255
     F_o = f_o(x)
     F_i = f_i(temp)
+    fig, (ax1, ax2, ax3) = plt.subplots(3, 1)
+    ax1.plot(x, C(F_o, F_i))
+    ax1.set_ylabel(r"Heat capacity, J m$^{-2}$ K$^{-1}$")
+    ax2.plot(x, temp)
+    ax2.axhline(273, ls="--", label=r"0$^{\circ}$C")
+    ax2.set_ylabel(r"Temperature, K")
+    ax3.plot(x, F_o, label=r"Ocean fraction, $f_o$")
+    ax3.plot(x, F_o * F_i, label=r"Ice fraction, $f_o f_i$")
+    ax3.set_ylabel(r"Fraction, unitless")
+    ax3.set_xlabel(r"Latitude, radians")
 
-    plt.plot(x, C(F_o, F_i, temp))
+    ax2.legend()
+    ax3.legend()
+    fig.text(
+        0.15,
+        0.95,
+        r"Heat capacity of Earth from a Gaussian temperature and Ocean fraction",
+    )
 
     plt.show()

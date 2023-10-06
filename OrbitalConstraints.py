@@ -21,6 +21,7 @@
 
 import numpy as np
 import numpy.typing as npt
+import matplotlib.pyplot as plt
 
 from InsolationFunction import S
 from HeatCapacity import C, f_o, f_i
@@ -58,84 +59,81 @@ def backward2ndorder(x: list[float] | floatarr, i: int, dx: float) -> float:
 
 
 ##  ##
-spacedim = 200  # number of points in space
-dx = 2 / (spacedim - 1)  # spacial separation from 2 units from -1 to 1
-xs = np.linspace(-1, 1, spacedim)
-lats = np.arcsin(xs)
+def climate_model(spacedim=200, time=1):
+    dx = 2 / (spacedim - 1)  # spacial separation from 2 units from -1 to 1
+    xs = np.linspace(-1, 1, spacedim)
+    lats = np.arcsin(xs)
 
-# timedim may need to be split in to chunks which are then recorded
-# e.g. do a year of evolution then write to file and overwrite the array
-# numchunks = 50
-# timedim_chunk = timedim / numchunks
-# timedim = 1000  # number of iterations
-time = 50  # length of time in years the iterations should be over
-dt = 1 / 365  # 1 day timestep
-timedim = int(np.ceil(time / dt))
+    # timedim may need to be split in to chunks which are then recorded
+    # e.g. do a year of evolution then write to file and overwrite the array
+    dt = 1 / 365  # 1 day timestep
+    timedim = int(np.ceil(time / dt))
 
-Temp = np.ones((spacedim, timedim + 1))  # timedim_chunk))
-Temp[:, 0] = Temp[:, 0] * 300
-# Temp[:, 0] = np.linspace(-1, 1, spacedim) * 100 + 250
-# Temp[:, 0] = np.abs(np.sin(np.linspace(0, 1, spacedim)*np.pi))*50+300
-# Temp[:, 0] = np.exp(-5 * np.linspace(-1, 1, spacedim) ** 2) * 50 + 300
+    Temp = np.ones((spacedim, timedim + 1))
+    Temp[:, 0] = Temp[:, 0] * 300
+    # Temp[:, 0] = np.linspace(-1, 1, spacedim) * 100 + 250
+    # Temp[:, 0] = np.abs(np.sin(np.linspace(0, 1, spacedim)*np.pi))*50+300
+    # Temp[:, 0] = np.exp(-5 * np.linspace(-1, 1, spacedim) ** 2) * 50 + 300
 
-Capacity = np.zeros_like(Temp)  # effective heat capacity
-Ir_emission = np.zeros_like(Temp)  # IR emission function (Energy sink)
-Source = np.zeros_like(Temp)  # Diurnally averaged insolation function (Energy Source)
-Albedo = np.zeros_like(Temp)  # Albedo
+    Capacity = np.zeros_like(Temp)  # effective heat capacity
+    Ir_emission = np.zeros_like(Temp)  # IR emission function (Energy sink)
+    Source = np.zeros_like(
+        Temp
+    )  # Diurnally averaged insolation function (Energy Source)
+    Albedo = np.zeros_like(Temp)  # Albedo
 
-D_0 = 0.58  # J s^-1 m^-2 K^-1
-omega_0 = 7.27 * 10**-5  # rad s^-1
-omega = omega_0
-D = D_0 * (omega_0 / omega) ** 2
+    D_0 = 0.58  # J s^-1 m^-2 K^-1
+    omega_0 = 7.27 * 10**-5  # rad s^-1
+    omega = omega_0
+    D = D_0 * (omega_0 / omega) ** 2
 
-Diffusion = np.ones_like(Temp) * D  # diffusion coefficient (Lat)
-# Diffusion[:, :] = np.array([np.linspace(0.1, 0.4, spacedim)]*(timedim+1)).T
+    Diffusion = np.ones_like(Temp) * D  # diffusion coefficient (Lat)
 
-secondT = np.zeros(spacedim)
-firstT = np.zeros(spacedim)
-firstD = np.zeros(spacedim)
+    secondT = np.zeros(spacedim)
+    firstT = np.zeros(spacedim)
+    firstD = np.zeros(spacedim)
 
-yeartosecond = 365.25 * 24 * 3600  # s / yr
+    yeartosecond = 365.25 * 24 * 3600  # s / yr
 
-for n in range(timedim):
-    for m in range(spacedim):
-        if m == 0 or m == 1:
-            # forward difference for zero edge
-            secondT[m] = forward2ndorder(Temp[:, n], m, dx)
-            firstT[m] = forwarddifference(Temp[:, n], m, dx)
-            firstD[m] = forwarddifference(Diffusion[:, n], m, dx)
-        elif m == spacedim - 2 or m == spacedim - 1:
-            # backwards difference for end edge
-            secondT[m] = backward2ndorder(Temp[:, n], m, dx)
-            firstT[m] = backwarddifference(Temp[:, n], m, dx)
-            firstD[m] = backwarddifference(Diffusion[:, n], m, dx)
-        else:
-            # central difference for most cases
-            secondT[m] = central2ndorder(Temp[:, n], m, dx)
-            firstT[m] = centraldifference(Temp[:, n], m, dx)
-            firstD[m] = centraldifference(Diffusion[:, n], m, dx)
-    # diff = (dD/dx (1-x^2) + D*-2x)*dT/dx + D(1-x^2)* d^2(T)/ dx^2
-    diff_elem = (
-        firstD * (1 - xs[:] ** 2) - 2 * Diffusion[:, n] * xs[:]
-    ) * firstT + Diffusion[:, n] * (1 - xs[:] ** 2) * secondT
-    # T(x_m, t_n+1) = T(x_m, t_n) + Δt / C(x_m, t_n)
-    # * (diff - I + S(1-A) )
-    Capacity[:, n] = C(f_o(lats), f_i(Temp[:, n]), Temp[:, n])
-    Ir_emission[:, n] = I_1(Temp[:, n], 1)
-    Source[:, n] = S(1, lats, dt * n, np.deg2rad(23.5))
-    Albedo[:, n] = A_1(Temp[:, n])
-    Temp[:, n + 1] = Temp[:, n] + yeartosecond * dt / Capacity[:, n] * (
-        diff_elem - Ir_emission[:, n] + Source[:, n] * (1 - Albedo[:, n])
-    )
+    for n in range(timedim):
+        for m in range(spacedim):
+            if m == 0 or m == 1:
+                # forward difference for zero edge
+                secondT[m] = forward2ndorder(Temp[:, n], m, dx)
+                firstT[m] = forwarddifference(Temp[:, n], m, dx)
+                firstD[m] = forwarddifference(Diffusion[:, n], m, dx)
+            elif m == spacedim - 2 or m == spacedim - 1:
+                # backwards difference for end edge
+                secondT[m] = backward2ndorder(Temp[:, n], m, dx)
+                firstT[m] = backwarddifference(Temp[:, n], m, dx)
+                firstD[m] = backwarddifference(Diffusion[:, n], m, dx)
+            else:
+                # central difference for most cases
+                secondT[m] = central2ndorder(Temp[:, n], m, dx)
+                firstT[m] = centraldifference(Temp[:, n], m, dx)
+                firstD[m] = centraldifference(Diffusion[:, n], m, dx)
+        # diff = (dD/dx (1-x^2) + D*-2x)*dT/dx + D(1-x^2)* d^2(T)/ dx^2
+        diff_elem = (
+            firstD * (1 - xs[:] ** 2) - 2 * Diffusion[:, n] * xs[:]
+        ) * firstT + Diffusion[:, n] * (1 - xs[:] ** 2) * secondT
+        # T(x_m, t_n+1) = T(x_m, t_n) + Δt / C(x_m, t_n)
+        # * (diff - I + S(1-A) )
+        Capacity[:, n] = C(f_o(lats), f_i(Temp[:, n]))
+        Ir_emission[:, n] = I_1(Temp[:, n])
+        Source[:, n] = S(1, lats, dt * n, np.deg2rad(23.5))
+        Albedo[:, n] = A_1(Temp[:, n])
+        Temp[:, n + 1] = Temp[:, n] + yeartosecond * dt / Capacity[:, n] * (
+            diff_elem - Ir_emission[:, n] + Source[:, n] * (1 - Albedo[:, n])
+        )
 
-if __name__ == "__main__":
-    import matplotlib.pyplot as plt
+    for n in range(0, 10):
+        plt.plot(xs, Temp[:, n], label=f"t={dt * n :.3f}")
 
-    for n in range(0, timedim, int(timedim / 10)):
-        plt.plot(xs, Temp[:, n], label=f"t={dt * n}")
-
-    # plt.axvline(dx*20-1)
     plt.ylabel("Temperature")
     plt.xlabel(r"$x = $sin$(\lambda)$")
     plt.legend()
     plt.show()
+
+
+if __name__ == "__main__":
+    climate_model(200, 5)

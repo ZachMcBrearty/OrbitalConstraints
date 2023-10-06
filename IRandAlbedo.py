@@ -58,9 +58,29 @@ if __name__ == "__main__":
     x = np.linspace(-1, 1, 30) * np.pi / 2
     temp: floatarr = np.exp(-5 * (x) ** 2) * 30 + 255
 
-    plt.plot(x, I_1(temp), label="I_1")
-    plt.plot(x, I_2(temp), label="I_2")
-    # plt.plot(x, I_3(temp), label="I_3")
+    fig, (ax1, ax2, ax3) = plt.subplots(3, 1)
 
-    plt.legend()
+    ax1.plot(x, I_1(temp), label="I_1")
+    ax1.plot(x, I_2(temp), label="I_2")
+    ax1.set_ylabel(r"IR Emission, J m$^{-2}$ s$^{-1}$")
+    ax1.legend()
+
+    ax2.plot(x, A_1(temp), label="A_1")
+    ax2.plot(x, A_2(temp), label="A_2")
+    ax2.plot(x, A_3(temp), label="A_3")
+    ax2.set_ylabel(r"Albedo, unitless")
+    ax2.legend()
+
+    ax3.plot(x, temp)
+    ax3.axhline(273, ls="--", label=r"0$^{\circ}$C")
+    ax3.set_ylabel(r"Temperature, K")
+    ax3.set_xlabel(r"Latitude, radians")
+    ax3.legend()
+
+    fig.text(
+        0.15,
+        0.95,
+        r"IR emission and Albedo for a gaussian temperature distribution",
+    )
+
     plt.show()
