@@ -28,7 +28,7 @@ def delta(a: float, t: float | floatarr, delta_0: float) -> float | floatarr:
     return np.arcsin(-np.sin(delta_0) * np.cos(L_s + np.pi / 2))
 
 
-def H(theta: float, delta_: float | floatarr) -> float | floatarr:
+def H(theta: float | floatarr, delta_: float | floatarr) -> float | floatarr:
     """implementing eqn A5 to find H
     theta: planetary latitude, radians
     delta_: solar declination, radians
@@ -46,14 +46,16 @@ def H(theta: float, delta_: float | floatarr) -> float | floatarr:
     return np.arccos(q)
 
 
-def S(a: float, theta: float, t: float | floatarr, delta_0: float) -> float | floatarr:
+def S(
+    a: float, theta: float | floatarr, t: float | floatarr, delta_0: float
+) -> float | floatarr:
     """implements equation A8 from appendix A of WK97
     a: float: semi-major axis, AU
     theta: float: planetary latitude, radians
     t: float: time, years
     delta_0: float: obliquity, radians
 
-    returns: float: S, solar insolation, W m^-2"""
+    returns: float: S, solar insolation, J s^-1 m^-2"""
     q_0 = 1360  # Wm^-2
     delta_ = delta(a, t, delta_0)
     cosdelta = np.cos(delta_)  #
