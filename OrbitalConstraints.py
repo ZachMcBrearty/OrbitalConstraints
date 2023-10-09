@@ -47,15 +47,15 @@ def backwarddifference(x: list[float] | floatarr, i: int, dx: float) -> float:
 
 
 def forward2ndorder(x: list[float] | floatarr, i: int, dx: float) -> float:
-    return (x[i + 2] - 2 * x[i + 1] + x[i]) / dx / dx
+    return (x[i + 2] - 2 * x[i + 1] + x[i]) / dx**2
 
 
 def central2ndorder(x: list[float] | floatarr, i: int, dx: float) -> float:
-    return (x[i + 2] - 2 * x[i] + x[i - 2]) / (2 * dx) / (2 * dx)
+    return (x[i + 2] - 2 * x[i] + x[i - 2]) / (2 * dx) ** 2
 
 
 def backward2ndorder(x: list[float] | floatarr, i: int, dx: float) -> float:
-    return (x[i] - 2 * x[i - 1] + x[i - 2]) / dx / dx
+    return (x[i] - 2 * x[i - 1] + x[i - 2]) / dx**2
 
 
 ##  ##
@@ -69,7 +69,7 @@ def climate_model_in_lat(spacedim=200, time=1):
     timedim = int(np.ceil(time / dt))
 
     Temp = np.ones((spacedim, timedim + 1))
-    Temp[:, 0] = Temp[:, 0] * 300
+    Temp[:, 0] = Temp[:, 0] * 350
     # Temp[:, 0] = np.linspace(-1, 1, spacedim) * 100 + 250
     # Temp[:, 0] = np.abs(np.sin(np.linspace(0, 1, spacedim)*np.pi))*50+300
     # Temp[:, 0] = np.exp(-5 * np.linspace(-1, 1, spacedim) ** 2) * 50 + 300
@@ -154,7 +154,7 @@ def climate_model_in_x(spacedim=200, time=1):
     timedim = int(np.ceil(time / dt))
 
     Temp = np.ones((spacedim, timedim + 1))
-    Temp[:, 0] = Temp[:, 0] * 300
+    Temp[:, 0] = Temp[:, 0] * 350
     # Temp[:, 0] = np.linspace(-1, 1, spacedim) * 100 + 250
     # Temp[:, 0] = np.abs(np.sin(np.linspace(0, 1, spacedim)*np.pi))*50+300
     # Temp[:, 0] = np.exp(-5 * np.linspace(-1, 1, spacedim) ** 2) * 50 + 300
@@ -178,7 +178,6 @@ def climate_model_in_x(spacedim=200, time=1):
     firstD = np.zeros(spacedim)
 
     yeartosecond = 365.25 * 24 * 3600  # s / yr
-
     for n in range(timedim):
         for m in range(spacedim):
             if m == 0 or m == 1:
@@ -198,26 +197,47 @@ def climate_model_in_x(spacedim=200, time=1):
                 firstD[m] = centraldifference(Diffusion[:, n], m, dx)
         # diff = (dD/dx (1-x^2) + D*-2x)*dT/dx + D(1-x^2)* d^2(T)/ dx^2
         diff_elem = (
-            firstD * (1 - xs[:] ** 2) - 2 * Diffusion[:, n] * xs[:]
-        ) * firstT + Diffusion[:, n] * (1 - xs[:] ** 2) * secondT
+            firstD * (1 - xs**2) - 2 * Diffusion[:, n] * xs
+        ) * firstT + Diffusion[:, n] * (1 - xs**2) * secondT
         # T(x_m, t_n+1) = T(x_m, t_n) + Δt / C(x_m, t_n)
         # * (diff - I + S(1-A) )
         Capacity[:, n] = C(f_o(lats), f_i(Temp[:, n]))
         Ir_emission[:, n] = I_1(Temp[:, n])
-        Source[:, n] = S(1, lats, dt * n, np.deg2rad(23.5))
+        Source[:, n] = S(1, lats, dt * n, np.deg2rad(0))
         Albedo[:, n] = A_1(Temp[:, n])
+
         Temp[:, n + 1] = Temp[:, n] + yeartosecond * dt / Capacity[:, n] * (
             diff_elem - Ir_emission[:, n] + Source[:, n] * (1 - Albedo[:, n])
         )
-
-    for n in range(0, 10):
-        plt.plot(xs, Temp[:, n], label=f"t={dt * n :.3f}")
-
+    # fig, (ax1, ax2, ax3, ax4, ax5) = plt.subplots(5, 1)
+    # for n in range(0, 5, 1):
+    #     ax1.plot(
+    #         xs[:10],
+    #         Temp[:10, n],
+    #         label=f"t={dt * n :.3f}",
+    #     )
+    #     ax2.plot(xs[:10], -Ir_emission[:10, n] + Source[:10, n] * (1 - Albedo[:10, n]))
+    #     ax3.plot(
+    #         xs[:10],
+    #         (Temp[:10, n + 1] - Temp[:10, n]) * Capacity[:10, n] / (yeartosecond * dt)
+    #         - (-Ir_emission[:10, n] + Source[:10, n] * (1 - Albedo[:10, n])),
+    #     )
+    #     ax4.plot(xs[:10], -Ir_emission[:10, n])
+    #     ax5.plot(xs[:10], Source[:10, n] * (1 - Albedo[:10, n]))
+    # ax1.set_ylabel("Temp")
+    # ax2.set_ylabel("-I + S(1-A)")
+    # ax3.set_ylabel("Diff_elem")
+    # ax4.set_ylabel("-I")
+    # ax5.set_ylabel("S(1-A)")
+    for n in range(0, 5, 1):
+        plt.plot(xs, Temp[:, n], label=f"t={dt*n}")
     plt.ylabel("Temperature")
     plt.xlabel(r"$x = $sin$(\lambda)$")
     plt.legend()
+
     plt.show()
 
 
 if __name__ == "__main__":
-    climate_model_in_lat(200, 5)
+    # climate_model_in_lat(200, 5)
+    climate_model_in_x(200, 5)

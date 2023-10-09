@@ -71,10 +71,13 @@ def f_i(Temp: float | floatarr) -> float | floatarr:
     q = 1 - np.exp((Temp - 273) / 10)  # type: float|floatarr
     if isinstance(Temp, np.ndarray):
         q[q < 0] = 0.0
+        q[q > 1] = 1.0
         return q
     else:
         if q < 0:
             return 0.0
+        elif q > 1:
+            return 1.0
         else:
             return q
 
@@ -82,18 +85,20 @@ def f_i(Temp: float | floatarr) -> float | floatarr:
 if __name__ == "__main__":
     import matplotlib.pyplot as plt
 
-    x = np.linspace(-1, 1, 30) * np.pi / 2
-    temp: floatarr = np.exp(-5 * (x) ** 2) * 30 + 255
-    F_o = f_o(x)
+    # x = np.linspace(-1, 1, 30) * np.pi / 2
+    x = np.linspace(-1, 1, 200)
+    lats = np.arcsin(x)
+    temp: floatarr = np.ones_like(lats) * 350  # np.exp(-5 * (x) ** 2) * 30 + 255
+    F_o = f_o(lats)
     F_i = f_i(temp)
     fig, (ax1, ax2, ax3) = plt.subplots(3, 1)
-    ax1.plot(x, C(F_o, F_i))
+    ax1.plot(lats, C(F_o, F_i))
     ax1.set_ylabel(r"Heat capacity, J m$^{-2}$ K$^{-1}$")
-    ax2.plot(x, temp)
+    ax2.plot(lats, temp)
     ax2.axhline(273, ls="--", label=r"0$^{\circ}$C")
     ax2.set_ylabel(r"Temperature, K")
-    ax3.plot(x, F_o, label=r"Ocean fraction, $f_o$")
-    ax3.plot(x, F_o * F_i, label=r"Ice fraction, $f_o f_i$")
+    ax3.plot(lats, F_o, label=r"Ocean fraction, $f_o$")
+    ax3.plot(lats, F_o * F_i, label=r"Ice fraction, $f_o f_i$")
     ax3.set_ylabel(r"Fraction, unitless")
     ax3.set_xlabel(r"Latitude, radians")
 
