@@ -29,6 +29,8 @@ from IRandAlbedo import A_1, A_2, A_2, I_1, I_2, I_3
 
 floatarr = npt.NDArray[np.float64]
 
+yeartosecond = 365.25 * 24 * 3600  # s / yr
+
 
 ## derivatives ##
 def forwarddifference(x: list[float] | floatarr, i: int, dx: float) -> float:
@@ -115,8 +117,6 @@ def climate_model_in_lat(spacedim=200, time=1):
     firstT = np.zeros(spacedim)
     firstD = np.zeros(spacedim)
 
-    yeartosecond = 365.25 * 24 * 3600  # s / yr
-
     for n in range(timedim):
         for m in range(spacedim):
             if m == 0:
@@ -156,42 +156,50 @@ def climate_model_in_lat(spacedim=200, time=1):
         Temp[:, n + 1] = Temp[:, n] + yeartosecond * dt / Capacity[:, n] * (
             diff_elem - Ir_emission[:, n] + Source[:, n] * (1 - Albedo[:, n])
         )
+    plotdata(degs, Temp, dt, 0, None, 10)
 
-    # fig, ((ax1, ax2, ax3), (ax4, ax5, ax6)) = plt.subplots(2, 3)
 
-    # q1 = 0
-    # q2 = len(degs)
-    # for n in range(0, 100, 10):
-    #     ax1.plot(
-    #         degs[q1:q2],
-    #         Temp[q1:q2, n],
-    #         label=f"t={dt * n :.3f}",
-    #     )
-    #     ax2.plot(
-    #         degs[q1:q2],
-    #         -Ir_emission[q1:q2, n] + Source[q1:q2, n] * (1 - Albedo[q1:q2, n]),
-    #     )
-    #     ax3.plot(
-    #         degs[q1:q2],
-    #         (Temp[q1:q2, n + 1] - Temp[q1:q2, n])
-    #         * Capacity[q1:q2, n]
-    #         / (yeartosecond * dt)
-    #         - (-Ir_emission[q1:q2, n] + Source[q1:q2, n] * (1 - Albedo[q1:q2, n])),
-    #     )
-    #     ax4.plot(degs[q1:q2], -Ir_emission[q1:q2, n])
-    #     ax5.plot(degs[q1:q2], Source[q1:q2, n] * (1 - Albedo[q1:q2, n]))
-    #     ax6.plot(degs[q1:q2], 1 / Capacity[q1:q2, n])
-    # ax1.set_ylabel("Temp")
-    # ax2.set_ylabel("-I + S(1-A)")
-    # ax3.set_ylabel("Diff_elem")
-    # ax4.set_ylabel("-I")
-    # ax5.set_ylabel("S(1-A)")
-    # ax6.set_ylabel("1/Capacity")
+def complexPlotData(degs, Temp, dt, Ir_emission, Source, Albedo, Capacity):
+    fig, ((ax1, ax2, ax3), (ax4, ax5, ax6)) = plt.subplots(2, 3)
 
-    for n in range(0, timedim + 1, timedim // 10):
-        plt.plot(degs, Temp[:, n], label=f"t={dt * n :.3f}")
+    q1 = 0
+    q2 = 15  # len(degs)
+    for n in range(5290, 5300, 2):
+        ax1.plot(
+            degs[q1:q2],
+            Temp[q1:q2, n],
+            label=f"t={dt * n :.3f}",
+        )
+        ax2.plot(
+            degs[q1:q2],
+            -Ir_emission[q1:q2, n] + Source[q1:q2, n] * (1 - Albedo[q1:q2, n]),
+        )
+        ax3.plot(
+            degs[q1:q2],
+            (Temp[q1:q2, n + 1] - Temp[q1:q2, n])
+            * Capacity[q1:q2, n]
+            / (yeartosecond * dt)
+            - (-Ir_emission[q1:q2, n] + Source[q1:q2, n] * (1 - Albedo[q1:q2, n])),
+        )
+        ax4.plot(degs[q1:q2], -Ir_emission[q1:q2, n])
+        ax5.plot(degs[q1:q2], Source[q1:q2, n] * (1 - Albedo[q1:q2, n]))
+        ax6.plot(degs[q1:q2], 1 / Capacity[q1:q2, n])
+    ax1.set_ylabel("Temp, K")
+    ax2.set_ylabel("-I + S(1-A)")
+    ax3.set_ylabel("Diff_elem")
+    ax4.set_ylabel("-I")
+    ax5.set_ylabel("S(1-A)")
+    ax6.set_ylabel("1/Capacity")
+    plt.show()
+
+
+def plotdata(degs, temp, dt, start=0, end=None, numplot=10):
+    if end is None:
+        end = len(temp[0, :])
+    for n in range(start, end, (end - start) // numplot):
+        plt.plot(degs, temp[:, n], label=f"t={dt * n :.3f} yrs")
     plt.axhline(273, ls="--", label=r"0$^\circ$C")
-    plt.ylabel("Temperature")
+    plt.ylabel("Temperature, K")
     plt.xlabel(r"$\lambda$")
     plt.legend()
     plt.show()
@@ -274,36 +282,9 @@ def climate_model_in_x(spacedim=200, time=1):
         Temp[:, n + 1] = Temp[:, n] + yeartosecond * dt / Capacity[:, n] * (
             diff_elem - Ir_emission[:, n] + Source[:, n] * (1 - Albedo[:, n])
         )
-    # fig, (ax1, ax2, ax3, ax4, ax5) = plt.subplots(5, 1)
-    # for n in range(0, 5, 1):
-    #     ax1.plot(
-    #         xs[:10],
-    #         Temp[:10, n],
-    #         label=f"t={dt * n :.3f}",
-    #     )
-    #     ax2.plot(xs[:10], -Ir_emission[:10, n] + Source[:10, n] * (1 - Albedo[:10, n]))
-    #     ax3.plot(
-    #         xs[:10],
-    #         (Temp[:10, n + 1] - Temp[:10, n]) * Capacity[:10, n] / (yeartosecond * dt)
-    #         - (-Ir_emission[:10, n] + Source[:10, n] * (1 - Albedo[:10, n])),
-    #     )
-    #     ax4.plot(xs[:10], -Ir_emission[:10, n])
-    #     ax5.plot(xs[:10], Source[:10, n] * (1 - Albedo[:10, n]))
-    # ax1.set_ylabel("Temp")
-    # ax2.set_ylabel("-I + S(1-A)")
-    # ax3.set_ylabel("Diff_elem")
-    # ax4.set_ylabel("-I")
-    # ax5.set_ylabel("S(1-A)")
-    for n in range(0, 365 * 50 + 1, 365 * 5):
-        plt.plot(degs, Temp[:, n], label=f"t={dt*n}")
-    plt.ylabel("Temperature")
-    # plt.xlabel(r"$x = $sin$(\lambda)$")
-    plt.xlabel(r"latitude, $\lambda$")
-    plt.legend()
-
-    plt.show()
+    plotdata(degs, Temp, timedim, dt, 10)
 
 
 if __name__ == "__main__":
-    climate_model_in_lat(120, 20)
+    climate_model_in_lat(60, 200)
     # climate_model_in_x(120, 100)

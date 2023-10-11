@@ -27,7 +27,7 @@ def C(f_o: floatarr, f_i: floatarr, temp: floatarr) -> floatarr:
     # 263 K < T < 273 K
     C_i = np.ones_like(temp) * 9.2 * C_ref
     # T < 263 K
-    # C_i[temp < 263] = 2.0 * C_ref # causes divergences!
+    # C_i[temp < 263] = 2.0 * C_ref  # causes divergences!
     # Δl = 50m -> 40 * C_l # Divergences
     # Δl = 75m -> 60 * C_l
     C_o = np.ones_like(temp) * 60 * C_ref
