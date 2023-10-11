@@ -275,16 +275,16 @@ def climate_model_in_x(spacedim=200, time=1):
         # T(x_m, t_n+1) = T(x_m, t_n) + Δt / C(x_m, t_n)
         # * (diff - I + S(1-A) )
         Capacity[:, n] = C(f_o(lats), f_i(Temp[:, n]), Temp[:, n])
-        Ir_emission[:, n] = I_1(Temp[:, n])
+        Ir_emission[:, n] = I_2(Temp[:, n])
         Source[:, n] = S(1, lats, dt * n, np.deg2rad(0))
-        Albedo[:, n] = A_1(Temp[:, n])
+        Albedo[:, n] = A_2(Temp[:, n])
 
         Temp[:, n + 1] = Temp[:, n] + yeartosecond * dt / Capacity[:, n] * (
             diff_elem - Ir_emission[:, n] + Source[:, n] * (1 - Albedo[:, n])
         )
-    plotdata(degs, Temp, timedim, dt, 10)
+    plotdata(degs, Temp, dt, numplot=20)
 
 
 if __name__ == "__main__":
-    climate_model_in_lat(60, 200)
-    # climate_model_in_x(120, 100)
+    climate_model_in_lat(60, 20)
+    # climate_model_in_x(60, 20)
