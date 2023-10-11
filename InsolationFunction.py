@@ -76,10 +76,10 @@ if __name__ == "__main__":
 
     time = np.linspace(0, 2, 100)
 
-    for lat in range(0, 91, 15):
-        eq = S(1, np.deg2rad(lat), time, np.deg2rad(90))
+    for lat in range(-90, 1, 15):
+        eq = S(1, np.deg2rad(lat), time, np.deg2rad(23.5))
         a = plt.plot(time, eq, label=f"{lat} deg")
-        plt.axhline(np.average(eq), color=a[0].get_c(), label=f"{lat} deg avg")  # type: ignore
+        # plt.axhline(np.average(eq), color=a[0].get_c(), label=f"{lat} deg avg")  # type: ignore
 
     plt.xlabel("time, yrs")
     plt.ylabel("Insolation, W m$^{-2}$")
