@@ -150,9 +150,9 @@ def climate_model_in_lat(spacedim=200, time=1):
         # T(x_m, t_n+1) = T(x_m, t_n) + Δt / C(x_m, t_n)
         # * (diff - I + S(1-A) )
         Capacity[:, n] = C(f_o(lats), f_i(Temp[:, n]), Temp[:, n])
-        Ir_emission[:, n] = I_1(Temp[:, n])
+        Ir_emission[:, n] = I_2(Temp[:, n])
         Source[:, n] = S(1, lats, dt * n, np.deg2rad(23.5))
-        Albedo[:, n] = A_1(Temp[:, n])
+        Albedo[:, n] = A_2(Temp[:, n])
         Temp[:, n + 1] = Temp[:, n] + yeartosecond * dt / Capacity[:, n] * (
             diff_elem - Ir_emission[:, n] + Source[:, n] * (1 - Albedo[:, n])
         )
