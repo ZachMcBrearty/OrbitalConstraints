@@ -143,19 +143,20 @@ def climate_model_in_lat(spacedim=200, time=1):
                 firstT[m] = centraldifference(Temp[:, n], m, dlam)
                 firstD[m] = centraldifference(Diffusion[:, n], m, dlam)
 
-        # diff = (dD/dx (1-x^2) + D*-2x)*dT/dx + D(1-x^2)* d^2(T)/ dx^2
         diff_elem = (
             firstD - Diffusion[:, n] * np.tan(lats[:])
         ) * firstT + secondT * Diffusion[:, n]
         # T(x_m, t_n+1) = T(x_m, t_n) + Δt / C(x_m, t_n)
         # * (diff - I + S(1-A) )
-        Capacity[:, n] = C(f_o(lats), f_i(Temp[:, n]), Temp[:, n])
+        f_o_point7 = np.ones_like(lats) * 0.7
+        Capacity[:, n] = C(f_o_point7, f_i(Temp[:, n]), Temp[:, n])
         Ir_emission[:, n] = I_2(Temp[:, n])
-        Source[:, n] = S(1, lats, dt * n, np.deg2rad(23.5))
+        Source[:, n] = S(1, lats, dt * n, np.deg2rad(0))
         Albedo[:, n] = A_2(Temp[:, n])
         Temp[:, n + 1] = Temp[:, n] + yeartosecond * dt / Capacity[:, n] * (
             diff_elem - Ir_emission[:, n] + Source[:, n] * (1 - Albedo[:, n])
         )
+    complexPlotData(degs, Temp, dt, Ir_emission, Source, Albedo, Capacity)
     plotdata(degs, Temp, dt, 0, None, 10)
 
 
@@ -163,8 +164,8 @@ def complexPlotData(degs, Temp, dt, Ir_emission, Source, Albedo, Capacity):
     fig, ((ax1, ax2, ax3), (ax4, ax5, ax6)) = plt.subplots(2, 3)
 
     q1 = 0
-    q2 = 15  # len(degs)
-    for n in range(5290, 5300, 2):
+    q2 = len(degs)
+    for n in range(0, len(Temp[0]) - 1, len(Temp[0]) // 20):
         ax1.plot(
             degs[q1:q2],
             Temp[q1:q2, n],

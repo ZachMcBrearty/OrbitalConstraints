@@ -76,8 +76,8 @@ if __name__ == "__main__":
 
     time = np.linspace(0, 2, 100)
 
-    for lat in range(-90, 1, 15):
-        eq = S(1, np.deg2rad(lat), time, np.deg2rad(23.5))
+    for lat in range(-90, 91, 15):
+        eq = S(1, np.deg2rad(lat), time, np.deg2rad(0))
         a = plt.plot(time, eq, label=f"{lat} deg")
         # plt.axhline(np.average(eq), color=a[0].get_c(), label=f"{lat} deg avg")  # type: ignore
 
