@@ -16,7 +16,7 @@ def write_to_file(
     np.savez(filename, times=times, degs=degs, temps=temps)
 
 
-def read_files(filenames: list[str]):
+def read_files(filenames: list[str]) -> tuple:
     times = []
     degs = []
     temps = []

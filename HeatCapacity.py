@@ -6,8 +6,10 @@ import numpy.typing as npt
 floatarr = npt.NDArray[np.float64]
 
 
-def ThermalTimeScale(C, T, I):
-    return C * T / I
+def ThermalTimeScale(
+    Capacity: float | floatarr, Temp: float | floatarr, Ir_emission: float | floatarr
+) -> float | floatarr:
+    return Capacity * Temp / Ir_emission
 
 
 def C(f_o: floatarr, f_i: floatarr, temp: floatarr) -> floatarr:

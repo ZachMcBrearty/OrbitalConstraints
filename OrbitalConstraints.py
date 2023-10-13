@@ -49,24 +49,24 @@ def backwarddifference(x: list[float] | floatarr, i: int, dx: float) -> float:
     return (x[i] - x[i - 1]) / dx
 
 
-def forwardbackward_pole(x, dx):
+def forwardbackward_pole(x: floatarr, dx: float) -> float:
     """Used for pole at the start of the array, i.e. i = 0
     Assumes dx/dt = 0 at the pole"""
     return (x[1] - x[0]) / dx**2
 
 
-def backwardforward_pole(x, dx):
+def backwardforward_pole(x: floatarr, dx: float) -> float:
     """Used for pole at the end of the array, i.e. i = len(x)-1
     Assumes dx/dt = 0 at the pole"""
     return (x[-2] - x[-1]) / dx**2
 
 
-def centralbackward_edge(x, dx):
+def centralbackward_edge(x: floatarr, dx: float) -> float:
     """Used for one along from the start of the array, i.e. i = 1"""
     return (x[2] - x[1]) / (2 * dx**2)
 
 
-def centralforward_edge(x, dx):
+def centralforward_edge(x: floatarr, dx: float) -> float:
     """Used for one along from the end of the array, i.e. i = len(x)-2"""
     return (x[-3] - x[-2]) / (2 * dx**2)
 
@@ -84,7 +84,7 @@ def backward2ndorder(x: list[float] | floatarr, i: int, dx: float) -> float:
 
 
 ##  ##
-def climate_model_in_lat(spacedim=200, time=1):
+def climate_model_in_lat(spacedim: int = 200, time: float = 1) -> None:
     dlam = np.pi / (spacedim - 1)  # spacial separation in -pi/2 to pi/2
     lats = np.linspace(-1, 1, spacedim) * (np.pi / 2)
     degs = np.rad2deg(lats)
@@ -161,7 +161,7 @@ def climate_model_in_lat(spacedim=200, time=1):
     plotdata(degs, Temp, dt, 190 * 365, 191 * 365 + 1, 12)
 
 
-def climate_model_in_x(spacedim=200, time=1):
+def climate_model_in_x(spacedim: int = 200, time: float = 1) -> None:
     dx = 2 / (spacedim - 1)  # spacial separation from 2 units from -1 to 1
     xs = np.linspace(-1, 1, spacedim)
     lats = np.arcsin(xs)

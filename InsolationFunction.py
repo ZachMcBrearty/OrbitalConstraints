@@ -15,7 +15,7 @@ import numpy.typing as npt
 floatarr = npt.NDArray[np.float64]
 
 
-def delta(a: float, t: float | floatarr, delta_0: float) -> float | floatarr:
+def delta(a: float | floatarr, t: float | floatarr, delta_0: float) -> float | floatarr:
     """Combining equations A2, A3, and partially A4 to get δ
     a: semi-major axis, AU
     t: time, years
@@ -47,7 +47,7 @@ def H(theta: float | floatarr, delta_: float | floatarr) -> float | floatarr:
 
 
 def S(
-    a: float, theta: float | floatarr, t: float | floatarr, delta_0: float
+    a: float | floatarr, theta: float | floatarr, t: float | floatarr, delta_0: float
 ) -> float | floatarr:
     """implements equation A8 from appendix A of WK97
     a: semi-major axis, AU
@@ -131,39 +131,19 @@ if __name__ == "__main__":
 
     time = np.linspace(2, 4, 300)
 
-    fig, (ax1, ax2, ax3) = plt.subplots(3, 1)
-
-    e = 0.9
-    r = dist(1, e, time)
-    r_prime_0 = dist_adv(1, e, time, 0)
-    r_prime_1 = dist_adv(1, e, time, 1)
-    r_prime_2 = dist_adv(1, e, time, 2)
-    r_prime_3 = dist_adv(1, e, time, 3)
-
-    r_prime_100 = dist_adv(1, e, time, 100)
+    e = 0.1
+    delta_0 = 23.5
+    off = 0.2
+    r = dist(1, e, time, offset=off)
 
     for lat in range(0, 91, 15):
-        eq = S(r, np.deg2rad(lat), time, np.deg2rad(0))
-        a = ax1.plot(time, eq, label=f"{lat} deg")
+        eq = S(r, np.deg2rad(lat), time, np.deg2rad(delta_0))
+        a = plt.plot(time, eq, label=f"{lat} deg")
 
-    ax2.plot(time, r, label=f"basic")
-    ax2.plot(time, r_prime_0, label=f"adv, 0")
-    ax2.plot(time, r_prime_1, label=f"adv, 1")
-    ax2.plot(time, r_prime_2, label=f"adv, 2")
-    ax2.plot(time, r_prime_3, label=f"adv, 3")
-    ax2.plot(time, r_prime_100, label=f"adv, 100")
-
-    # ax3.plot(time, np.abs(r_prime_100 - r), label="adv_100 - basic")
-    # ax3.plot(time, np.abs(r_prime_100 - r_prime_0), label="adv_100 - adv_0")
-    # ax3.plot(time, np.abs(r_prime_100 - r_prime_1), label="adv_100 - adv_1")
-    # ax3.plot(time, np.abs(r_prime_100 - r_prime_2), label="adv_100 - adv_2")
-    ax3.plot(time, np.abs(r_prime_100 - r_prime_3), label="adv_100 - adv_3")
     # plt.axhline(np.average(eq), color=a[0].get_c(), label=f"{lat} deg avg")  # type: ignore
+    plt.title(rf"offset = {off}yr, eccentricity = {e}, $\delta$ = {delta_0}")
+    plt.xlabel("time, yrs")
+    plt.ylabel("Insolation, W m$^{-2}$")
 
-    ax2.set_xlabel("time, yrs")
-    ax1.set_ylabel("Insolation, W m$^{-2}$")
-
-    ax2.set_ylabel("distance from sun, r, AU")
-    ax2.legend()
-    ax3.legend()
+    plt.legend()
     plt.show()
