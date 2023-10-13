@@ -148,10 +148,10 @@ def climate_model_in_lat(spacedim=200, time=1):
         ) * firstT + secondT * Diffusion[:, n]
         # T(x_m, t_n+1) = T(x_m, t_n) + Δt / C(x_m, t_n)
         # * (diff - I + S(1-A) )
-        f_o_point7 = np.ones_like(lats) * 0.7
-        Capacity[:, n] = C(f_o_point7, f_i(Temp[:, n]), Temp[:, n])
+        # f_o_point7 = np.ones_like(lats) * 0.7
+        Capacity[:, n] = C(f_o(lats), f_i(Temp[:, n]), Temp[:, n])
         Ir_emission[:, n] = I_2(Temp[:, n])
-        Source[:, n] = S(1, lats, dt * n, np.deg2rad(0))
+        Source[:, n] = S(1, lats, dt * n, np.deg2rad(23.5))
         Albedo[:, n] = A_2(Temp[:, n])
         Temp[:, n + 1] = Temp[:, n] + yeartosecond * dt / Capacity[:, n] * (
             diff_elem - Ir_emission[:, n] + Source[:, n] * (1 - Albedo[:, n])
@@ -287,5 +287,5 @@ def climate_model_in_x(spacedim=200, time=1):
 
 
 if __name__ == "__main__":
-    climate_model_in_lat(60, 20)
+    climate_model_in_lat(60, 200)
     # climate_model_in_x(60, 20)

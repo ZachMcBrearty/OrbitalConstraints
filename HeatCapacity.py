@@ -41,8 +41,8 @@ def C(f_o: floatarr, f_i: floatarr, temp: floatarr) -> floatarr:
 
 f_earth_10deg = np.array(
     [
-        0.000 + 0.2,  # -90 - -80, 0
-        0.246 + 0.2,  # -80 - -70, 1
+        0.000 + 0.05,  # -90 - -80, 0
+        0.246,  # -80 - -70, 1
         0.896,  # -70 - -60, 2
         0.992,  # -60 - -50, 3
         0.970,  # -50 - -40, 4
@@ -72,7 +72,7 @@ def f_o(lat: floatarr) -> floatarr:
 
 
 # def f_o(lat):
-#     return f_earth_10deg[np.int64(np.floor())]
+#     return f_earth_10deg[np.int64(np.floor(18 * (lat / np.pi + 1 / 2)))]
 
 
 def f_i(Temp: floatarr) -> floatarr:
