@@ -88,10 +88,10 @@ if __name__ == "__main__":
     # x = np.linspace(-1, 1, 30) * np.pi / 2
     # x = np.linspace(-1, 1, 200)
     lats = np.linspace(-1, 1, 200) * np.pi / 2
-    temp: floatarr = np.ones_like(lats) * 350  #
-    temp = np.exp(-5 * (lats) ** 2) * 30 + 255
-    # F_o = f_o(lats)
-    F_o = np.ones_like(lats) * 0.7
+    # temp: floatarr = np.ones_like(lats) * 350  #
+    temp: floatarr = np.exp(-5 * (lats) ** 2) * 30 + 255
+    F_o = f_o(lats)
+    # F_o = np.ones_like(lats) * 0.7
 
     F_i = f_i(temp)
     fig, (ax1, ax2, ax3) = plt.subplots(3, 1)

@@ -156,7 +156,7 @@ def climate_model_in_lat(spacedim=200, time=1):
         Temp[:, n + 1] = Temp[:, n] + yeartosecond * dt / Capacity[:, n] * (
             diff_elem - Ir_emission[:, n] + Source[:, n] * (1 - Albedo[:, n])
         )
-    complexPlotData(degs, Temp, dt, Ir_emission, Source, Albedo, Capacity)
+    # complexPlotData(degs, Temp, dt, Ir_emission, Source, Albedo, Capacity)
     plotdata(degs, Temp, dt, 0, None, 10)
 
 
@@ -287,5 +287,5 @@ def climate_model_in_x(spacedim=200, time=1):
 
 
 if __name__ == "__main__":
-    climate_model_in_lat(60, 200)
+    climate_model_in_lat(60, 100)
     # climate_model_in_x(60, 20)
