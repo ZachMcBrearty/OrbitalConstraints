@@ -9,6 +9,11 @@ floatarr = npt.NDArray[np.float64]
 def ThermalTimeScale(
     Capacity: float | floatarr, Temp: float | floatarr, Ir_emission: float | floatarr
 ) -> float | floatarr:
+    """Capacity: heat capacity of the system
+    Temp: current temperature of the system
+    Ir_emission: rate of energy loss from blackbody radiation
+
+    returns: The characteristic time scale for thermal equilibrium"""
     return Capacity * Temp / Ir_emission
 
 

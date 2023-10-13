@@ -23,8 +23,10 @@ def delta(a: float | floatarr, t: float | floatarr, delta_0: float) -> float | f
 
     returns: δ, the solar declination, -π/2 <= δ <= π/2
     """
+    # T^2 = a^3, ω = 2π/T -> ω = 2π / a^(3/2)
     omega = 2 * np.pi * a ** (-3 / 2)
     L_s = omega * t
+    # sinδ = -sin(δ_0) cos(L_s + π/2)
     return np.arcsin(-np.sin(delta_0) * np.cos(L_s + np.pi / 2))
 
 
@@ -34,6 +36,9 @@ def H(theta: float | floatarr, delta_: float | floatarr) -> float | floatarr:
     delta_: solar declination, radians
 
     returns: 0 < H < π, radian half-day length"""
+    # cos H = -tanθ tanδ,
+    # however tan is unbounded, so approximate by saying if the product
+    # is > 1 then set it to 1 (i.e. H = 0), and < -1 set it to -1 (i.e. H = pi)
     q = -np.tan(theta) * np.tan(delta_)
     if isinstance(q, np.ndarray):
         q[q > 1] = 1
@@ -63,6 +68,7 @@ def S(
     costheta = np.cos(theta)
     sintheta = np.sin(theta)
     H_ = H(theta, delta_)
+    # S = q_0 / π * a^-2 * (H sinθ sinδ + cosθ cosδ sinH)
     return (
         q_0
         / np.pi
@@ -83,9 +89,11 @@ def dist_adv(
 
     returns: distance to star, AU"""
     T = a ** (3 / 2)
+    # modulo as M is periodic in T
     M = 2 * np.pi * ((t + offset) % T)
     E = M
     for _ in range(iter):
+        # E_i+1 = E_i + (M + e sin(E_i) - E_i) / (1 - e cos(E_i))
         E = E + ((M + e * np.sin(E) - E) / (1 - e * np.cos(E)))
     return a * (1 - e * np.cos(E))
 
@@ -102,6 +110,7 @@ def dist_basic(
     T = a ** (3 / 2)
     M = 2 * np.pi * ((t + offset) % T)
     E_0 = M
+    # E_i+1 = M + e sin(E_i)
     E_1 = M + e * np.sin(E_0)
     E_2 = M + e * np.sin(E_1)
 

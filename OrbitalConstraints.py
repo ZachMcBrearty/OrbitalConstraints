@@ -9,15 +9,25 @@
 # d/dx (D(1-x^2)*dT/dx)
 # expand outer derivative
 # d(D(1-x^2))/dx * dT/dx + D(1-x^2)* d^2(T)/ dx^2
-# diff = dD/dx (1-x^2) * dT/dx + D*-2x*dT/dx + D(1-x^2)* d^2(T)/ dx^2
+# define the differential element as
+# (in x) diff_elem = dD/dx (1-x^2) * dT/dx + D*-2x*dT/dx + D(1-x^2)* d^2(T)/ dx^2
+# and in latitude (x = sin(λ))
+# d/dx = 1/cos(λ)d/dλ , d^2/dx^2 = sin(λ) / cos^3(λ) d/dλ + 1/cos^2(λ) d^2/dλ^2
+# diff_elem = dT/dλ * (dD/dλ - D tanλ) + d^2 T/dλ^2
 
 # discretise space derivatives using derivative functions below
-# Forward and backward for edge cases
-# central otherwise
+# for the most part use central and central^2 discretisation
+# edges are more complicated
+# in λ we can apply the boundary condition: dT/dλ = 0 for λ=+/- π/2
+# and use a forward-backward (backward-forward) for the south (north) poles
+# one in from the poles (called edges here) we use a central backward (forward)
+# for the south (north) edge
+
+# in x we simply use forward^2 and backward^2 at the poles and edges.
 
 # All together:
 # T(x_m, t_n+1) = T(x_m, t_n) + Δt / C(x_m, t_n)
-# * (diff - I + S(1-A) )
+# * (diff_elem - I + S(1-A))
 
 import numpy as np
 import numpy.typing as npt
@@ -49,25 +59,40 @@ def backwarddifference(x: list[float] | floatarr, i: int, dx: float) -> float:
     return (x[i] - x[i - 1]) / dx
 
 
-def forwardbackward_pole(x: floatarr, dx: float) -> float:
+def forwardbackward_pole(T: floatarr, dx: float) -> float:
     """Used for pole at the start of the array, i.e. i = 0
-    Assumes dx/dt = 0 at the pole"""
-    return (x[1] - x[0]) / dx**2
+    Assumes dT/dx = 0 at the pole"""
+    # Forward: d^2T/dx^2 = (dT/dx|i=1 - dT/dx|i=0) / dx
+    # dT/dx|i=0 == 0
+    # Backward: d^2T/dx^2 = (T(i=1) - T(i=0)) / dx^2
+    return (T[1] - T[0]) / dx**2
 
 
 def backwardforward_pole(x: floatarr, dx: float) -> float:
     """Used for pole at the end of the array, i.e. i = len(x)-1
     Assumes dx/dt = 0 at the pole"""
+    # Backward: d^2T/dx^2 = (dT/dx|i=i_max - dT/dx|i=i_max-1) / dx
+    # dT/dx|i=i_max == 0
+    # Forward: d^2T/dx^2 = -(T(i=i_max) - T(i=i_max-1)) / dx^2
+    # => d^2T/dx^2 = (T(i=i_max-1) - T(i=i_max)) / dx^2
+    # in python the final entry is -1 and last to final is -2
     return (x[-2] - x[-1]) / dx**2
 
 
 def centralbackward_edge(x: floatarr, dx: float) -> float:
     """Used for one along from the start of the array, i.e. i = 1"""
+    # Central: d^2T/dx^2 = (dT/dx|i=2 - dT/dx|i=0) / 2dx
+    # dT/dx|i=0 == 0
+    # Forward: d^2T/dx^2 = (T(i=2) - T(i=1)) / 2dx^2
     return (x[2] - x[1]) / (2 * dx**2)
 
 
 def centralforward_edge(x: floatarr, dx: float) -> float:
     """Used for one along from the end of the array, i.e. i = len(x)-2"""
+    # Central: d^2T/dx^2 = (dT/dx|i=i_max - dT/dx|i=i_max-2) / 2dx
+    # dT/dx|i=i_max == 0
+    # Backward: d^2T/dx^2 = -(T(i=i_max-1) - T(i=i_max-2)) / 2dx^2
+    # => d^2T/dx^2 = (T(i=i_max-2) - T(i=i_max-1)) / 2dx^2
     return (x[-3] - x[-2]) / (2 * dx**2)
 
 

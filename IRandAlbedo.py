@@ -9,7 +9,8 @@ stef_boltz = 5.670367 * 10**-8  # W m^-2 K^-4
 
 
 def I_1(T: float | floatarr, opt_thick: float = 1.0) -> float | floatarr:
-    """T: temperature, K
+    """Simplest model, black body radiation with constant reflection / reradiation from atmosphere
+    T: temperature, K
     opt_thick: the optical thickness of the atmosphere, unitless
 
     return: simple IR emission, W m^-2"""
@@ -18,14 +19,16 @@ def I_1(T: float | floatarr, opt_thick: float = 1.0) -> float | floatarr:
 
 
 def opt_thick(T: float | floatarr) -> float | floatarr:
-    """T: Temperature, K
+    """Temperature variable reflection / reradiation from atmosphere
+    T: Temperature, K
 
     return: variable optical thickness due to temperature"""
     return 0.79 * (T / 273) ** 3
 
 
 def I_2(T):
-    """T: temperature, K
+    """Blackbody radiation with temperature variable reflection / reradiation
+    T: temperature, K
 
     return: variable IR emission with temperature, W m^-2"""
     return stef_boltz * T**4 / (1 + (3 * opt_thick(T) / 4))
@@ -41,14 +44,29 @@ def I_3(T: float | floatarr, A=2.033 * 10**5, B=2.094 * 10**3) -> float | floata
 
 
 def A_1(T: float | floatarr) -> float | floatarr:
+    """All 3 albedo functions are simple tanh functions interpolating between different values
+    A_1 -> 0.3 - 0.7
+    T: temperature
+
+    returns: albedo based loosely on whether the land is covered by ice or not"""
     return 0.5 - 0.2 * np.tanh((T - 268) / 5)
 
 
 def A_2(T: float | floatarr) -> float | floatarr:
+    """All 3 albedo functions are simple tanh functions interpolating between different values
+    A_2 -> 0.28 - 0.77
+    T: temperature
+
+    returns: albedo based loosely on whether the land is covered by ice or not"""
     return 0.525 - 0.245 * np.tanh((T - 268) / 5)
 
 
 def A_3(T: float | floatarr) -> float | floatarr:
+    """All 3 albedo functions are simple tanh functions interpolating between different values
+    A_3 -> 0.25 - 0.7
+    T: temperature
+
+    returns: albedo based loosely on whether the land is covered by ice or not"""
     return 0.475 - 0.225 * np.tanh((T - 268) / 5)
 
 
