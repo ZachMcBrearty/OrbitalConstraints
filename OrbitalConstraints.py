@@ -67,7 +67,7 @@ def centralbackward_edge(x, dx):
 
 def centralforward_edge(x, dx):
     """Used for one along from the end of the array, i.e. i = len(x)-2"""
-    return (x[-2] - x[-3]) / (2 * dx**2)
+    return (x[-3] - x[-2]) / (2 * dx**2)
 
 
 def forward2ndorder(x: list[float] | floatarr, i: int, dx: float) -> float:
