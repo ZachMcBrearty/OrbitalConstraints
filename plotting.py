@@ -1,4 +1,5 @@
 import matplotlib.pyplot as plt
+import numpy as np
 
 yeartosecond = 365.25 * 24 * 3600  # s / yr
 
@@ -34,6 +35,19 @@ def complexplotdata(degs, Temp, dt, Ir_emission, Source, Albedo, Capacity):
     ax4.set_ylabel("-I")
     ax5.set_ylabel("S(1-A)")
     ax6.set_ylabel("1/Capacity")
+    plt.show()
+
+
+def yearavgplot(degs, temp, dt, start_yr=0, end_yr=None, year_skip=1):
+    if end_yr is None:
+        end_yr = len(temp[0, :]) // 365
+    for n in range(start_yr, end_yr, year_skip):
+        yr_avg = np.average(temp[:, n * 365 : (n + 1) * 365], axis=1)
+        plt.plot(degs, yr_avg, label=f"t={n} yrs")
+    plt.axhline(273, ls="--", label=r"0$^\circ$C")
+    plt.ylabel("Average Temperature, K")
+    plt.xlabel(r"$\lambda$")
+    plt.legend()
     plt.show()
 
 

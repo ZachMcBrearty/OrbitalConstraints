@@ -33,10 +33,10 @@ import numpy as np
 import numpy.typing as npt
 
 
-from InsolationFunction import S
+from InsolationFunction import S, dist
 from HeatCapacity import C, f_o, f_i
 from IRandAlbedo import A_1, A_2, A_2, I_1, I_2, I_3
-from plotting import plotdata, complexplotdata, plt
+from plotting import plotdata, complexplotdata, plt, yearavgplot
 
 floatarr = npt.NDArray[np.float64]
 
@@ -177,13 +177,15 @@ def climate_model_in_lat(spacedim: int = 200, time: float = 1) -> None:
         # f_o_point7 = np.ones_like(lats) * 0.7
         Capacity[:, n] = C(f_o(lats), f_i(Temp[:, n]), Temp[:, n])
         Ir_emission[:, n] = I_2(Temp[:, n])
-        Source[:, n] = S(1, lats, dt * n, np.deg2rad(23.5))
+        a = dist(1, 0.1, dt * n)
+        Source[:, n] = S(a, lats, dt * n, np.deg2rad(23.5))
         Albedo[:, n] = A_2(Temp[:, n])
         Temp[:, n + 1] = Temp[:, n] + yeartosecond * dt / Capacity[:, n] * (
             diff_elem - Ir_emission[:, n] + Source[:, n] * (1 - Albedo[:, n])
         )
     # complexPlotData(degs, Temp, dt, Ir_emission, Source, Albedo, Capacity)
-    plotdata(degs, Temp, dt, 190 * 365, 191 * 365 + 1, 12)
+    # plotdata(degs, Temp, dt, 145 * 365, 146 * 365 + 1, 12)
+    yearavgplot(degs, Temp, dt, 150, 200, 5)
 
 
 def climate_model_in_x(spacedim: int = 200, time: float = 1) -> None:
