@@ -1,8 +1,8 @@
 from datetime import datetime
+from typing import Optional
+import configparser
 
 import numpy as np
-
-from typing import Optional
 
 
 def write_to_file(
@@ -11,7 +11,7 @@ def write_to_file(
     degs: np.ndarray,
     filename: Optional[str] = None,
 ) -> None:
-    if filename is None:
+    if filename is None or filename == '""':
         filename = f"OrbCon{datetime.now().strftime('%Y%m%d%H%M%S')}.npz"
     np.savez(filename, times=times, temps=temps, degs=degs)
 
@@ -30,6 +30,15 @@ def read_files(filenames: list[str]) -> tuple:
     return times, temps, degs
 
 
+def load_config(filename="DEFAULT.ini", path="OrbitalConstraints"):
+    config = configparser.ConfigParser()
+    config.read(path + "/" + "DEFAULT.ini")
+    config.read(path + "/" + filename)
+    for sec in ["PDE", "PLANET", "ORBIT", "FILEMANAGEMENT"]:
+        assert sec in config.sections()
+    return config
+
+
 if __name__ == "__main__":
     times = np.array([0, 2, 4, 6, 8])
     degs = np.array([1, 2, 3, 4])
@@ -40,3 +49,5 @@ if __name__ == "__main__":
     write_to_file(times * 2, degs * 2, temps * 2, filename="two.npz")
     write_to_file(times * 4, degs * 4, temps * 4, filename="three.npz")
     print(read_files(["one.npz", "two.npz", "three.npz"]))
+    # config = load_config("OrbitalConstraints/DEFAULT.ini")
+    # write_to_file([], [], [], config.get("FILEMANAGEMENT", "save_name"))
