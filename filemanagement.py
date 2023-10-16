@@ -13,19 +13,21 @@ def write_to_file(
 ) -> None:
     if filename is None:
         filename = f"OrbCon{datetime.now().strftime('%Y%m%d%H%M%S')}.npz"
-    np.savez(filename, times=times, degs=degs, temps=temps)
+    np.savez(filename, times=times, temps=temps, degs=degs)
 
 
 def read_files(filenames: list[str]) -> tuple:
+    """fileanames: list of files to be loaded.
+    returns: times, degs, temps"""
     times = []
-    degs = []
     temps = []
+    degs = []
     for file_ in filenames:
         with np.load(file_) as a:
             times.append(a["times"])
             degs.append(a["degs"])
             temps.append(a["temps"])
-    return times, degs, temps
+    return times, temps, degs
 
 
 if __name__ == "__main__":

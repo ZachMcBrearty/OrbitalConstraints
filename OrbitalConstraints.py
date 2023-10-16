@@ -37,6 +37,7 @@ from InsolationFunction import S, dist
 from HeatCapacity import C, f_o, f_i
 from IRandAlbedo import A_1, A_2, A_2, I_1, I_2, I_3
 from plotting import plotdata, complexplotdata, plt, yearavgplot
+from filemanagement import write_to_file
 
 floatarr = npt.NDArray[np.float64]
 
@@ -186,6 +187,8 @@ def climate_model_in_lat(spacedim: int = 200, time: float = 1) -> None:
     # complexPlotData(degs, Temp, dt, Ir_emission, Source, Albedo, Capacity)
     # plotdata(degs, Temp, dt, 145 * 365, 146 * 365 + 1, 12)
     yearavgplot(degs, Temp, dt, 150, 200, 5)
+    # times = np.linspace(0, time, timedim)
+    # write_to_file(times, Temp, degs, "InLat_1")
 
 
 def climate_model_in_x(spacedim: int = 200, time: float = 1) -> None:
