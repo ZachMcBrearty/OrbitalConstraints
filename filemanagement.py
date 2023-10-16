@@ -1,6 +1,7 @@
 from datetime import datetime
 
 import numpy as np
+from netCDF4 import Dataset  # type: ignore
 
 from typing import Optional
 
@@ -30,13 +31,23 @@ def read_files(filenames: list[str]) -> tuple:
     return times, temps, degs
 
 
+def load_temps_dataset():
+    with Dataset("NOAATemps.nc", "r") as data:
+        print(data.variables)
+        # print(data["anom"])
+        # q = np.average(data.variables["anom"][124 : 124 + 12, 0, :, :], axis=2)
+        # print(q + 13.9)
+        # print(q.shape)
+
+
 if __name__ == "__main__":
-    times = np.array([0, 2, 4, 6, 8])
-    degs = np.array([1, 2, 3, 4])
-    temps = np.array(
-        [[1, 2, 3, 4], [2, 4, 6, 8], [3, 6, 9, 12], [4, 8, 12, 16], [5, 10, 15, 20]]
-    )
-    write_to_file(times, degs, temps, filename="one.npz")
-    write_to_file(times * 2, degs * 2, temps * 2, filename="two.npz")
-    write_to_file(times * 4, degs * 4, temps * 4, filename="three.npz")
-    print(read_files(["one.npz", "two.npz", "three.npz"]))
+    # times = np.array([0, 2, 4, 6, 8])
+    # degs = np.array([1, 2, 3, 4])
+    # temps = np.array(
+    #     [[1, 2, 3, 4], [2, 4, 6, 8], [3, 6, 9, 12], [4, 8, 12, 16], [5, 10, 15, 20]]
+    # )
+    # write_to_file(times, degs, temps, filename="one.npz")
+    # write_to_file(times * 2, degs * 2, temps * 2, filename="two.npz")
+    # write_to_file(times * 4, degs * 4, temps * 4, filename="three.npz")
+    # print(read_files(["one.npz", "two.npz", "three.npz"]))
+    load_temps_dataset()
