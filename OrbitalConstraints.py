@@ -90,6 +90,22 @@ def centralbackward_edge(x: floatarr, dx: float) -> float:
     return (x[2] - x[1]) / (2 * dx**2)
 
 
+def centralcentral_firstedge(x: floatarr, dx: float) -> float:
+    """Used for one along from the start of the array, i.e. i = 1"""
+    # Central: d^2T/dx^2 = (dT/dx|i=2 - dT/dx|i=0) / 2dx
+    # dT/dx|i=0 == 0
+    # Central: d^2T/dx^2 = (T(i=3) - T(i=1)) / 4dx^2
+    return (x[3] - x[1]) / (4 * dx**2)
+
+
+def centralcentral_secondedge(x: floatarr, dx: float) -> float:
+    """Used for one along from the end of the array, i.e. i = len(x)-2"""
+    # Central: d^2T/dx^2 = (dT/dx|i=i_max - dT/dx|i=i_max-2) / 2dx
+    # dT/dx|i=i_max == 0
+    # Central: d^2T/dx^2 = -(T(i=i_max-1) - T(i=i_max-3)) / 4dx^2
+    return (x[-4] - x[-2]) / (4 * dx**2)
+
+
 def centralforward_edge(x: floatarr, dx: float) -> float:
     """Used for one along from the end of the array, i.e. i = len(x)-2"""
     # Central: d^2T/dx^2 = (dT/dx|i=i_max - dT/dx|i=i_max-2) / 2dx
@@ -153,6 +169,22 @@ def climate_model_in_lat(config: ConfigParser) -> None:
 
     a = config.getfloat("ORBIT", "a")  # semimajoraxis
     e = config.getfloat("ORBIT", "e")  # eccentricity
+    axtilt = np.deg2rad(config.getfloat("PLANET", "obliquity"))  # obliquity
+
+    if (frac := config.get("PLANET", "land_frac_type")) in [
+        "earthlike",
+        "earth",
+        "earth-like",
+        "earth like",
+    ]:
+        F_o = f_o(lats)  # earth like
+    elif frac.startswith("uniform"):
+        # uniform
+        if (q := float(frac.split(":")[1])) > 1 or q < 0:
+            raise ValueError(f"Uniform land-ocean fraction must be 0<f<1, got: {q}")
+        F_o = np.ones_like(lats) * q
+    else:
+        raise ValueError(f"Unknown land-ocean fraction type, got: {frac}")
 
     for n in range(timedim):
         for m in range(spacedim):
@@ -163,11 +195,13 @@ def climate_model_in_lat(config: ConfigParser) -> None:
             elif m == 1:
                 # forward difference for zero edge
                 secondT[1] = centralbackward_edge(Temp[:, n], dlam)
+                # secondT[1] = centralcentral_firstedge(Temp[:, n], dlam)
                 firstT[1] = centraldifference(Temp[:, n], 1, dlam)
                 firstD[1] = centraldifference(Diffusion[:, n], 1, dlam)
             elif m == spacedim - 2:
                 # backwards difference for end edge
                 secondT[-2] = centralforward_edge(Temp[:, n], dlam)
+                # secondT[-2] = centralcentral_secondedge(Temp[:, n], dlam)
                 firstT[-2] = centraldifference(Temp[:, n], -2, dlam)
                 firstD[-2] = centraldifference(Diffusion[:, n], -2, dlam)
             elif m == spacedim - 1:
@@ -186,10 +220,10 @@ def climate_model_in_lat(config: ConfigParser) -> None:
         # T(x_m, t_n+1) = T(x_m, t_n) + Δt / C(x_m, t_n)
         # * (diff - I + S(1-A) )
         # f_o_point7 = np.ones_like(lats) * 0.7
-        Capacity[:, n] = C(f_o(lats), f_i(Temp[:, n]), Temp[:, n])
+        Capacity[:, n] = C(F_o, f_i(Temp[:, n]), Temp[:, n])
         Ir_emission[:, n] = I_2(Temp[:, n])
         r = dist(a, e, dt * n)
-        Source[:, n] = S(r, lats, dt * n, np.deg2rad(23.5))
+        Source[:, n] = S(r, lats, dt * n, axtilt)
         Albedo[:, n] = A_2(Temp[:, n])
         Temp[:, n + 1] = Temp[:, n] + yeartosecond * dt / Capacity[:, n] * (
             diff_elem - Ir_emission[:, n] + Source[:, n] * (1 - Albedo[:, n])
@@ -198,9 +232,10 @@ def climate_model_in_lat(config: ConfigParser) -> None:
     if config.getboolean("FILEMANAGEMENT", "save"):
         times = np.linspace(0, time, timedim)
         write_to_file(times, Temp, degs, config.get("FILEMANAGEMENT", "save_name"))
-    # complexPlotData(degs, Temp, dt, Ir_emission, Source, Albedo, Capacity)
-    # plotdata(degs, Temp, dt, 145 * 365, 146 * 365 + 1, 12)
-    yearavgplot(degs, Temp, dt, 150, 200, 5)
+    else:
+        # complexplotdata(degs, Temp, dt, Ir_emission, Source, Albedo, Capacity)
+        # plotdata(degs, Temp, dt, 145 * 365, 146 * 365 + 1, 12)
+        yearavgplot(degs, Temp, dt, 0, time, time // 20)
 
 
 def climate_model_in_x(spacedim: int = 200, time: float = 1) -> None:
