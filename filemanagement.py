@@ -19,17 +19,23 @@ def write_to_file(
     np.savez(filename, times=times, temps=temps, degs=degs)
 
 
-def read_files(filenames: list[str]) -> tuple:
+def read_files(filenames: str | list[str]) -> tuple:
     """fileanames: list of files to be loaded.
-    returns: times, degs, temps"""
-    times = []
-    temps = []
-    degs = []
-    for file_ in filenames:
-        with np.load(file_) as a:
-            times.append(a["times"])
-            degs.append(a["degs"])
-            temps.append(a["temps"])
+    returns: times, temps, degs"""
+    if isinstance(filenames, str):
+        with np.load(filenames) as a:
+            times = a["times"]
+            degs = a["degs"]
+            temps = a["temps"]
+    else:
+        times = []
+        temps = []
+        degs = []
+        for file_ in filenames:
+            with np.load(file_) as a:
+                times.append(a["times"])
+                degs.append(a["degs"])
+                temps.append(a["temps"])
     return times, temps, degs
 
 
