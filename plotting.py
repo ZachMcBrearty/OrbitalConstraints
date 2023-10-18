@@ -79,4 +79,4 @@ if __name__ == "__main__":
     dt = times[1] - times[0]
 
     # plotdata(degs, temps, dt, 0, 365 * 1, 10)
-    yearavgplot(degs, temps, dt, 0, 150, 10)
+    yearavgplot(degs, temps, dt, 140, 150, 1)
