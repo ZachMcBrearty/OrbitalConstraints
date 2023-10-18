@@ -37,7 +37,9 @@ from InsolationFunction import S, dist
 from HeatCapacity import C, f_o, f_i
 from IRandAlbedo import A_1, A_2, A_2, I_1, I_2, I_3
 from plotting import plotdata, complexplotdata, plt, yearavgplot
-from filemanagement import write_to_file
+from filemanagement import write_to_file, load_config
+
+from configparser import ConfigParser
 
 floatarr = npt.NDArray[np.float64]
 
@@ -110,21 +112,24 @@ def backward2ndorder(x: list[float] | floatarr, i: int, dx: float) -> float:
 
 
 ##  ##
-def climate_model_in_lat(spacedim: int = 200, time: float = 1) -> None:
+def climate_model_in_lat(config: ConfigParser) -> None:
+    # number of spatial nodes
+    spacedim = config.getint(section="PDE", option="spacedim")
+
     dlam = np.pi / (spacedim - 1)  # spacial separation in -pi/2 to pi/2
     lats = np.linspace(-1, 1, spacedim) * (np.pi / 2)
     degs = np.rad2deg(lats)
 
+    # simulation length in years
+    time = config.getfloat(section="PDE", option="time")
+    # simulation timestep in years
+    dt = config.getfloat(section="PDE", option="timestep") / 365
     # timedim may need to be split in to chunks which are then recorded
     # e.g. do a year of evolution then write to file and overwrite the array
-    dt = 1 / 365  # 1 day timestep
     timedim = int(np.ceil(time / dt))
 
     Temp = np.ones((spacedim, timedim + 1))
-    Temp[:, 0] = Temp[:, 0] * 350
-    # Temp[:, 0] = np.linspace(-1, 1, spacedim) * 100 + 250
-    # Temp[:, 0] = np.abs(np.sin(np.linspace(0, 1, spacedim)*np.pi))*50+300
-    # Temp[:, 0] = np.exp(-5 * np.linspace(-1, 1, spacedim) ** 2) * 50 + 300
+    Temp[:, 0] = Temp[:, 0] * config.getfloat("PDE", "start_temp")
 
     Capacity = np.zeros_like(Temp)  # effective heat capacity
     Ir_emission = np.zeros_like(Temp)  # IR emission function (Energy sink)
@@ -133,16 +138,21 @@ def climate_model_in_lat(spacedim: int = 200, time: float = 1) -> None:
     )  # Diurnally averaged insolation function (Energy Source)
     Albedo = np.zeros_like(Temp)  # Albedo
 
-    D_0 = 0.58  # J s^-1 m^-2 K^-1
-    omega_0 = 7.27 * 10**-5  # rad s^-1
-    omega = omega_0
-    D = D_0 * (omega_0 / omega) ** 2
+    D_0 = config.getfloat("PLANET", "D_0")  # J s^-1 m^-2 K^-1
+    p = config.getfloat("PLANET", "p") / 101  # kPa
+    c_p = config.getfloat("PLANET", "c") / 1  # 10^3 g^-1 K^-1
+    m = config.getfloat("PLANET", "m") / 28
+    omega = config.getfloat("PLANET", "omega") / 1  # 7.27 * 10**-5 rad s^-1
+    D = D_0 * p * c_p * m**-2 * omega**-2
 
     Diffusion = np.ones_like(Temp) * D  # diffusion coefficient (Lat)
 
     secondT = np.zeros(spacedim)
     firstT = np.zeros(spacedim)
     firstD = np.zeros(spacedim)
+
+    a = config.getfloat("ORBIT", "a")  # semimajoraxis
+    e = config.getfloat("ORBIT", "e")  # eccentricity
 
     for n in range(timedim):
         for m in range(spacedim):
@@ -178,17 +188,19 @@ def climate_model_in_lat(spacedim: int = 200, time: float = 1) -> None:
         # f_o_point7 = np.ones_like(lats) * 0.7
         Capacity[:, n] = C(f_o(lats), f_i(Temp[:, n]), Temp[:, n])
         Ir_emission[:, n] = I_2(Temp[:, n])
-        a = dist(1, 0.1, dt * n)
-        Source[:, n] = S(a, lats, dt * n, np.deg2rad(23.5))
+        r = dist(a, e, dt * n)
+        Source[:, n] = S(r, lats, dt * n, np.deg2rad(23.5))
         Albedo[:, n] = A_2(Temp[:, n])
         Temp[:, n + 1] = Temp[:, n] + yeartosecond * dt / Capacity[:, n] * (
             diff_elem - Ir_emission[:, n] + Source[:, n] * (1 - Albedo[:, n])
         )
+
+    if config.getboolean("FILEMANAGEMENT", "save"):
+        times = np.linspace(0, time, timedim)
+        write_to_file(times, Temp, degs, config.get("FILEMANAGEMENT", "save_name"))
     # complexPlotData(degs, Temp, dt, Ir_emission, Source, Albedo, Capacity)
     # plotdata(degs, Temp, dt, 145 * 365, 146 * 365 + 1, 12)
     yearavgplot(degs, Temp, dt, 150, 200, 5)
-    # times = np.linspace(0, time, timedim)
-    # write_to_file(times, Temp, degs, "InLat_1")
 
 
 def climate_model_in_x(spacedim: int = 200, time: float = 1) -> None:
@@ -272,5 +284,6 @@ def climate_model_in_x(spacedim: int = 200, time: float = 1) -> None:
 
 
 if __name__ == "__main__":
-    climate_model_in_lat(60, 200)
+    config = load_config("config.ini", "OrbitalConstraints")
+    climate_model_in_lat(config)
     # climate_model_in_x(60, 200)
