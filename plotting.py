@@ -9,7 +9,7 @@ def complexplotdata(degs, Temp, dt, Ir_emission, Source, Albedo, Capacity):
 
     q1 = 0
     q2 = len(degs)
-    for n in range(0, len(Temp[0]) - 1, len(Temp[0]) // 20):
+    for n in range(0, 5, 1):
         ax1.plot(
             degs[q1:q2],
             Temp[q1:q2, n],
@@ -43,7 +43,15 @@ def yearavgplot(degs, temp, dt, start_yr=0, end_yr=None, year_skip=1):
         end_yr = len(temp[0, :]) // 365
     for n in range(start_yr, end_yr, year_skip):
         yr_avg = np.average(temp[:, n * 365 : (n + 1) * 365], axis=1)
-        plt.plot(degs, yr_avg, label=f"t={n} yrs")
+        a = plt.plot(degs, yr_avg, label=f"t={n} yrs")
+    a[0].set_marker("x")
+    plt.plot(
+        degs,
+        302.3 - 45.3 * np.sin(np.deg2rad(degs)) ** 2,
+        marker=".",
+        ls="--",
+        label="fit",
+    )
     plt.axhline(273, ls="--", label=r"0$^\circ$C")
     plt.ylabel("Average Temperature, K")
     plt.xlabel(r"$\lambda$")
@@ -55,9 +63,20 @@ def plotdata(degs, temp, dt, start=0, end=None, numplot=10):
     if end is None:
         end = len(temp[0, :])
     for n in range(start, end, (end - start) // numplot):
-        plt.plot(degs, temp[:, n], label=f"t={dt * n :.3f} yrs")
+        a = plt.plot(degs, temp[:, n], label=f"t={dt * n :.3f} yrs")
     plt.axhline(273, ls="--", label=r"0$^\circ$C")
     plt.ylabel("Temperature, K")
     plt.xlabel(r"$\lambda$")
     plt.legend()
     plt.show()
+
+
+if __name__ == "__main__":
+    from filemanagement import load_config, read_files
+
+    conf = load_config()
+    times, temps, degs = read_files("InLat_3.npz")
+    dt = times[1] - times[0]
+
+    # plotdata(degs, temps, dt, 0, 365 * 1, 10)
+    yearavgplot(degs, temps, dt, 0, 150, 10)
