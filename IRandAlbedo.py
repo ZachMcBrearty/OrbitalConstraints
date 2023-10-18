@@ -23,7 +23,18 @@ def opt_thick(T: float | floatarr) -> float | floatarr:
     T: Temperature, K
 
     return: variable optical thickness due to temperature"""
-    return 0.79 * (T / 273) ** 3
+    if isinstance(T, np.ndarray):
+        o = 0.79 * (T / 273) ** 3
+        o[o > 1] = 1
+        o[o < 0] = 0
+        return o
+    else:
+        if (q := 0.79 * (T / 273) ** 3) > 1:
+            return 1
+        elif q < 0:
+            return 0
+        else:
+            return q
 
 
 def I_2(T):
