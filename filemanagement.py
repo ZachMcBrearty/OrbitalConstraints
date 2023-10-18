@@ -32,12 +32,18 @@ def read_files(filenames: list[str]) -> tuple:
 
 
 def load_temps_dataset():
-    with Dataset("NOAATemps.nc", "r") as data:
-        print(data.variables)
+    import matplotlib.pyplot as plt
+
+    with Dataset("NOAATemps_v5.1.0.nc", "r") as data:
+        print(data.climatology[:])
+        # print(data.variables)
         # print(data["anom"])
-        # q = np.average(data.variables["anom"][124 : 124 + 12, 0, :, :], axis=2)
-        # print(q + 13.9)
+        # t = data.variables["time"][124 : 124 + 12 + 36]
+        # q = np.average(data.variables["anom"][124 : 124 + 12 + 36, 0, :, :], axis=2)
+        # print(q)
         # print(q.shape)
+        # plt.plot(t, q[:, ::4])
+        # plt.show()
 
 
 if __name__ == "__main__":
