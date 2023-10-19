@@ -9,7 +9,7 @@ def complexplotdata(degs, Temp, dt, Ir_emission, Source, Albedo, Capacity):
 
     q1 = 0
     q2 = len(degs)
-    for n in range(0, 5, 1):
+    for n in range(0, 20, 2):
         ax1.plot(
             degs[q1:q2],
             Temp[q1:q2, n],
@@ -28,7 +28,8 @@ def complexplotdata(degs, Temp, dt, Ir_emission, Source, Albedo, Capacity):
         )
         ax4.plot(degs[q1:q2], -Ir_emission[q1:q2, n])
         ax5.plot(degs[q1:q2], Source[q1:q2, n] * (1 - Albedo[q1:q2, n]))
-        ax6.plot(degs[q1:q2], 1 / Capacity[q1:q2, n])
+        # ax6.plot(degs[q1:q2], 1 / Capacity[q1:q2, n])
+        ax6.plot(degs[q1:q2], Source[q1:q2, n])
     ax1.set_ylabel("Temp, K")
     ax2.set_ylabel("-I + S(1-A)")
     ax3.set_ylabel("Diff_elem")
@@ -71,12 +72,35 @@ def plotdata(degs, temp, dt, start=0, end=None, numplot=10):
     plt.show()
 
 
+def colourplot(degs, temps, times, start=0, end=None, year_avg=1):
+    if end is None:
+        end = len(temps[0, :])
+
+    fig, ax = plt.subplots(1, 1)
+    cmap = "RdBu_r"
+
+    ts = times[start : end : year_avg * 365]
+    temp = temps[start:end, :-1]
+
+    tq = np.average(temp.reshape((temp.shape[0], -1, 365 * year_avg)), axis=2)
+
+    pcm = ax.pcolor(ts, degs, tq, cmap=cmap, shading="nearest")
+
+    ax.set_xlabel("time, yr")
+    ax.set_ylabel("latitude, degrees")
+    ax.set_yticks(range(-90, 91, 15))
+    fig.colorbar(pcm, ax=ax)
+
+    plt.show()
+
+
 if __name__ == "__main__":
     from filemanagement import load_config, read_files
 
     conf = load_config()
-    times, temps, degs = read_files("InLat_3.npz")
+    times, temps, degs = read_files("InLat_e0.npz")
     dt = times[1] - times[0]
 
     # plotdata(degs, temps, dt, 0, 365 * 1, 10)
-    yearavgplot(degs, temps, dt, 140, 150, 1)
+    yearavgplot(degs, temps, dt, 90, 100, 10)
+    colourplot(degs, temps, times, 0, None, 1)
