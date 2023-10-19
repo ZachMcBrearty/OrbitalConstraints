@@ -42,21 +42,26 @@ def complexplotdata(degs, Temp, dt, Ir_emission, Source, Albedo, Capacity):
 def yearavgplot(degs, temp, dt, start_yr=0, end_yr=None, year_skip=1):
     if end_yr is None:
         end_yr = len(temp[0, :]) // 365
+    fig, (ax, ax2) = plt.subplots(2, 1)
     for n in range(start_yr, end_yr, year_skip):
         yr_avg = np.average(temp[:, n * 365 : (n + 1) * 365], axis=1)
-        a = plt.plot(degs, yr_avg, label=f"t={n} yrs")
+        a = ax.plot(degs, yr_avg, label=f"t={n} yrs")
     a[0].set_marker("x")
-    plt.plot(
+    ax.plot(
         degs,
         302.3 - 45.3 * np.sin(np.deg2rad(degs)) ** 2,
         marker=".",
         ls="--",
         label="fit",
     )
-    plt.axhline(273, ls="--", label=r"0$^\circ$C")
-    plt.ylabel("Average Temperature, K")
-    plt.xlabel(r"$\lambda$")
-    plt.legend()
+    ax2.plot(degs, np.abs(yr_avg - (302.3 - 45.3 * np.sin(np.deg2rad(degs)) ** 2)))
+    ax.axhline(273, ls="--", label=r"0$^\circ$C")
+    ax.set_ylabel("Average Temperature, K")
+    ax2.set_ylabel("Variation from fit, K")
+    ax2.set_xlabel(r"$\lambda$")
+    ax.set_xticks(range(-90, 91, 15))
+    ax2.set_xticks(range(-90, 91, 15))
+    ax.legend()
     plt.show()
 
 
@@ -67,7 +72,8 @@ def plotdata(degs, temp, dt, start=0, end=None, numplot=10):
         a = plt.plot(degs, temp[:, n], label=f"t={dt * n :.3f} yrs")
     plt.axhline(273, ls="--", label=r"0$^\circ$C")
     plt.ylabel("Temperature, K")
-    plt.xlabel(r"$\lambda$")
+    plt.xlabel(r"$\lambda$, degrees")
+    plt.xticks(range(-90, 91, 15))
     plt.legend()
     plt.show()
 
@@ -80,7 +86,7 @@ def colourplot(degs, temps, times, start=0, end=None, year_avg=1):
     cmap = "RdBu_r"
 
     ts = times[start : end : year_avg * 365]
-    temp = temps[start:end, :-1]
+    temp = temps[start:end, 1:]
 
     tq = np.average(temp.reshape((temp.shape[0], -1, 365 * year_avg)), axis=2)
 
@@ -98,9 +104,9 @@ if __name__ == "__main__":
     from filemanagement import load_config, read_files
 
     conf = load_config()
-    times, temps, degs = read_files("InLat_e0.npz")
+    times, temps, degs = read_files("testing.npz")
     dt = times[1] - times[0]
 
     # plotdata(degs, temps, dt, 0, 365 * 1, 10)
     yearavgplot(degs, temps, dt, 90, 100, 10)
-    colourplot(degs, temps, times, 0, None, 1)
+    colourplot(degs, temps, times, 0, None, 5)

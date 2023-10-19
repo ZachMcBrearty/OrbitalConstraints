@@ -36,8 +36,8 @@ import numpy.typing as npt
 from InsolationFunction import S, dist
 from HeatCapacity import C, f_o, f_i
 from IRandAlbedo import A_1, A_2, A_2, I_1, I_2, I_3
-from plotting import plotdata, complexplotdata, plt, yearavgplot
-from filemanagement import write_to_file, load_config
+from plotting import plotdata, complexplotdata, plt, yearavgplot, colourplot
+from filemanagement import write_to_file, load_config, read_files
 
 from configparser import ConfigParser
 
@@ -194,14 +194,14 @@ def climate_model_in_lat(config: ConfigParser) -> None | tuple:
                 firstD[0] = forwarddifference(Diffusion[:, n], 0, dlam)
             elif m == 1:
                 # forward difference for zero edge
-                secondT[1] = centralbackward_edge(Temp[:, n], dlam)
-                # secondT[1] = centralcentral_firstedge(Temp[:, n], dlam)
+                # secondT[1] = centralbackward_edge(Temp[:, n], dlam)
+                secondT[1] = centralcentral_firstedge(Temp[:, n], dlam)
                 firstT[1] = centraldifference(Temp[:, n], 1, dlam)
                 firstD[1] = centraldifference(Diffusion[:, n], 1, dlam)
             elif m == spacedim - 2:
                 # backwards difference for end edge
-                secondT[-2] = centralforward_edge(Temp[:, n], dlam)
-                # secondT[-2] = centralcentral_secondedge(Temp[:, n], dlam)
+                # secondT[-2] = centralforward_edge(Temp[:, n], dlam)
+                secondT[-2] = centralcentral_secondedge(Temp[:, n], dlam)
                 firstT[-2] = centraldifference(Temp[:, n], -2, dlam)
                 firstD[-2] = centraldifference(Diffusion[:, n], -2, dlam)
             elif m == spacedim - 1:
@@ -324,3 +324,9 @@ if __name__ == "__main__":
     config = load_config("config.ini", "OrbitalConstraints")
     climate_model_in_lat(config)
     # climate_model_in_x(60, 200)
+    times, temps, degs = read_files("testing.npz")
+    dt = times[1] - times[0]
+
+    # plotdata(degs, temps, dt, 0, 365 * 1, 10)
+    yearavgplot(degs, temps, dt, 0, None, 20)
+    colourplot(degs, temps, times, 0, None, 5)

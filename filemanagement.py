@@ -56,7 +56,6 @@ def load_temps_dataset():
 
 def load_config(filename="DEFAULT.ini", path="OrbitalConstraints"):
     config = configparser.ConfigParser()
-    config.read(path + "/" + "DEFAULT.ini")
     config.read(path + "/" + filename)
     for sec in ["PDE", "PLANET", "ORBIT", "FILEMANAGEMENT"]:
         assert sec in config.sections()
