@@ -52,7 +52,12 @@ def H(theta: float | floatarr, delta_: float | floatarr) -> float | floatarr:
 
 
 def S(
-    a: float | floatarr, theta: float | floatarr, t: float | floatarr, delta_0: float
+    a: float,
+    theta: float | floatarr,
+    t: float | floatarr,
+    delta_0: float,
+    e: float,
+    offset: float = 0,
 ) -> float | floatarr:
     """implements equation A8 from appendix A of WK97
     a: semi-major axis, AU
@@ -68,11 +73,12 @@ def S(
     costheta = np.cos(theta)
     sintheta = np.sin(theta)
     H_ = H(theta, delta_)
+    r = dist(a, e, t, offset)
     # S = q_0 / π * a^-2 * (H sinθ sinδ + cosθ cosδ sinH)
     return (
         q_0
         / np.pi
-        * a**-2
+        * r**-2
         * (H_ * sintheta * sindelta + costheta * cosdelta * np.sin(H_))
     )
 
@@ -138,19 +144,25 @@ def dist(
 if __name__ == "__main__":
     import matplotlib.pyplot as plt
 
-    time = np.linspace(2, 4, 300)
+    time = np.linspace(0, 20, 20 * 365)
+    a = 1
+    e = 0.0167
+    delta_0 = np.deg2rad(23.5)
+    off = 0.0
+    insols = S(a, np.pi / 2, time, delta_0, e)
+    # insols = []
+    # for t in range(0, 100):
+    #     insol = np.average()
+    #     insols.append(insol)
 
-    e = 0.1
-    delta_0 = 23.5
-    off = 0.2
-    r = dist(1, e, time, offset=off)
+    plt.plot(time, insols)
 
-    for lat in range(0, 91, 15):
-        eq = S(r, np.deg2rad(lat), time, np.deg2rad(delta_0))
-        a = plt.plot(time, eq, label=f"{lat} deg")
-
-    # plt.axhline(np.average(eq), color=a[0].get_c(), label=f"{lat} deg avg")  # type: ignore
-    plt.title(rf"offset = {off}yr, eccentricity = {e}, $\delta$ = {delta_0}")
+    # r = dist(1, e, time, offset=off)
+    # for lat in range(0, 91, 15):
+    #     eq = S(r, np.deg2rad(lat), time, np.deg2rad(delta_0))
+    #     a = plt.plot(time, eq, label=f"{lat} deg")
+    #     plt.axhline(np.average(eq), color=a[0].get_c(), label=f"{lat} deg avg")  # type: ignore
+    # plt.title(rf"offset = {off}yr, eccentricity = {e}, $\delta$ = {delta_0}")
     plt.xlabel("time, yrs")
     plt.ylabel("Insolation, W m$^{-2}$")
 

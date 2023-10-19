@@ -128,7 +128,7 @@ def backward2ndorder(x: list[float] | floatarr, i: int, dx: float) -> float:
 
 
 ##  ##
-def climate_model_in_lat(config: ConfigParser) -> None:
+def climate_model_in_lat(config: ConfigParser) -> None | tuple:
     # number of spatial nodes
     spacedim = config.getint(section="PDE", option="spacedim")
 
@@ -222,8 +222,8 @@ def climate_model_in_lat(config: ConfigParser) -> None:
         # f_o_point7 = np.ones_like(lats) * 0.7
         Capacity[:, n] = C(F_o, f_i(Temp[:, n]), Temp[:, n])
         Ir_emission[:, n] = I_2(Temp[:, n])
-        r = dist(a, e, dt * n)
-        Source[:, n] = S(r, lats, dt * n, axtilt)
+        # r = dist(a, e, dt * n)
+        Source[:, n] = S(a, lats, dt * n, axtilt, e)
         Albedo[:, n] = A_2(Temp[:, n])
         Temp[:, n + 1] = Temp[:, n] + yeartosecond * dt / Capacity[:, n] * (
             diff_elem - Ir_emission[:, n] + Source[:, n] * (1 - Albedo[:, n])
@@ -235,7 +235,9 @@ def climate_model_in_lat(config: ConfigParser) -> None:
     else:
         # complexplotdata(degs, Temp, dt, Ir_emission, Source, Albedo, Capacity)
         # plotdata(degs, Temp, dt, 145 * 365, 146 * 365 + 1, 12)
-        yearavgplot(degs, Temp, dt, 0, time, time // 20)
+        # yearavgplot(degs, Temp, dt, 0, time, time // 20)
+        times = np.linspace(0, time, timedim)
+        return degs, Temp, times
 
 
 def climate_model_in_x(spacedim: int = 200, time: float = 1) -> None:
