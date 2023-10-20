@@ -128,7 +128,7 @@ def backward2ndorder(x: list[float] | floatarr, i: int, dx: float) -> float:
 
 
 ##  ##
-def climate_model_in_lat(config: ConfigParser) -> None | tuple:
+def climate_model_in_lat(config: ConfigParser) -> tuple:
     # number of spatial nodes
     spacedim = config.getint(section="PDE", option="spacedim")
 
@@ -232,12 +232,12 @@ def climate_model_in_lat(config: ConfigParser) -> None | tuple:
     if config.getboolean("FILEMANAGEMENT", "save"):
         times = np.linspace(0, time, timedim)
         write_to_file(times, Temp, degs, config.get("FILEMANAGEMENT", "save_name"))
-    else:
+    if config.getboolean("FILEMANAGEMENT", "plot"):
         # complexplotdata(degs, Temp, dt, Ir_emission, Source, Albedo, Capacity)
         # plotdata(degs, Temp, dt, 145 * 365, 146 * 365 + 1, 12)
-        # yearavgplot(degs, Temp, dt, 0, time, time // 20)
-        times = np.linspace(0, time, timedim)
-        return degs, Temp, times
+        yearavgplot(degs, Temp, dt, 0, time, int(time // 20))
+    times = np.linspace(0, time, timedim)
+    return degs, Temp, times
 
 
 def climate_model_in_x(spacedim: int = 200, time: float = 1) -> None:
