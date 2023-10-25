@@ -88,9 +88,10 @@ def colourplot(degs, temps, times, start=0, end=None, year_avg=1):
     ts = times[start : end : year_avg * 365]
     temp = temps[start:end, 1:]
 
+    # time average
     tq = np.average(temp.reshape((temp.shape[0], -1, 365 * year_avg)), axis=2)
 
-    pcm = ax.pcolor(ts, degs, tq, cmap=cmap, shading="nearest")
+    pcm = ax.pcolormesh(ts, degs, tq, cmap=cmap, shading="gouraud")  # nearest
 
     ax.set_xlabel("time, yr")
     ax.set_ylabel("latitude, degrees")
