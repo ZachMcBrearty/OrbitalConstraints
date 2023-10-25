@@ -5,8 +5,6 @@ import configparser
 import numpy as np
 from netCDF4 import Dataset  # type: ignore
 
-from typing import Optional
-
 
 def write_to_file(
     times: np.ndarray,

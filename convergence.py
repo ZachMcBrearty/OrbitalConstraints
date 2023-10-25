@@ -13,7 +13,7 @@ def convergence_test(temps, rtol=0.001, atol=0, year_avg=1):
 
     i = 0
     imax = len(tqaa) - 2
-    while not np.isclose(tqaa[i], tqaa[i + 1], rtol=rtol, atol=0) and i != imax:
+    while not np.isclose(tqaa[i], tqaa[i + 1], rtol=rtol, atol=atol) and i != imax:
         i += 1
     if i == imax:
         return -1, 0
@@ -26,6 +26,7 @@ def test_a_convergence(conf, a_min, a_max, a_step, rtol=0.001, plot=False):
     convtemps = []
     as_ = np.arange(a_min, a_max, a_step)
     for a in as_:
+        print(f"Running a={a}")
         conf.set("ORBIT", "a", str(a))
         degs, temps, times = climate_model_in_lat(conf)
         t, temp = convergence_test(temps, rtol, year_avg=1)
@@ -51,6 +52,7 @@ def test_e_convergence(conf, e_min, e_max, e_step, rtol=0.001, plot=False):
     convtemps = []
     es_ = np.arange(e_min, e_max, e_step)
     for e in es_:
+        print(f"Running e={e}")
         conf.set("ORBIT", "e", str(e))
         degs, temps, times = climate_model_in_lat(conf)
         t, temp = convergence_test(temps, rtol, year_avg=1)
@@ -77,6 +79,7 @@ def test_delta_convergence(conf, d_min, d_max, d_step, rtol=0.001, plot=False):
     convtemps = []
     ds_ = np.arange(d_min, d_max, d_step)
     for d in ds_:
+        print(f"Running delta={d}")
         conf.set("PLANET", "obliquity", str(d))
         degs, temps, times = climate_model_in_lat(conf)
         t, temp = convergence_test(temps, rtol, year_avg=1)
@@ -103,6 +106,7 @@ def test_omega_convergence(conf, o_min, o_max, o_step, rtol=0.001, plot=False):
     convtemps = []
     os_ = np.arange(o_min, o_max, o_step)
     for o in os_:
+        print(f"Running omega={o}")
         conf.set("PLANET", "Omega", str(o))
         degs, temps, times = climate_model_in_lat(conf)
         t, temp = convergence_test(temps, rtol, year_avg=1)
@@ -123,6 +127,33 @@ def test_omega_convergence(conf, o_min, o_max, o_step, rtol=0.001, plot=False):
     return os_, tests
 
 
+def test_temp_convergence(conf, t_min, t_max, t_step, rtol=0.001, plot=False):
+    """initial temperature testing"""
+    tests = []
+    convtemps = []
+    ts_ = np.arange(t_min, t_max, t_step)
+    for t in ts_:
+        print(f"Running inittemp={t}")
+        conf.set("PDE", "start_temp", str(t))
+        degs, temps, times = climate_model_in_lat(conf)
+        t, temp = convergence_test(temps, rtol, year_avg=1)
+        tests.append(t)
+        convtemps.append(temp)
+
+    if plot:
+        fig, (ax1, ax2) = plt.subplots(2, 1)
+        ax1.scatter(ts_, tests)
+        ax2.scatter(ts_, convtemps)
+        ax2.set_xlabel(r"Initial Temperature, K")
+        ax1.set_xticks(np.linspace(min(ts_), max(ts_), 10))
+        ax2.set_xticks(np.linspace(min(ts_), max(ts_), 10))
+        ax1.set_ylabel("Time to converge, years")
+        ax2.set_ylabel("Global convergent temperature, K")
+        plt.show()
+
+    return ts_, tests
+
+
 if __name__ == "__main__":
     conf = load_config()
 
@@ -132,11 +163,14 @@ if __name__ == "__main__":
     conf.set("ORBIT", "a", "1")
     conf.set("ORBIT", "e", "0")
     conf.set("PLANET", "obliquity", "23.5")
+    conf.set("PLANET", "omega", "1")
+    conf.set("PDE", "start_temp", "350")
 
-    # print(test_a_convergence(conf, 0.5, 2, 0.1, plot=True))
-    # print(test_e_convergence(conf, 0, 0.3, 0.01, plot=True))
-    # print(test_delta_convergence(conf, 0, 181, 10, plot=True))
-    print(test_omega_convergence(conf, 3, 10.1, 1, plot=True))
+    # print(test_a_convergence(conf, 0.5, 2.05, 0.1, rtol=0.0001, plot=True))
+    # print(test_e_convergence(conf, 0, 0.91, 0.1, rtol=0.0001, plot=True))
+    # print(test_delta_convergence(conf, 0, 181, 10, rtol=0.0001, plot=True))
+    # print(test_omega_convergence(conf, 0.3, 3, 0.3, rtol=0.0001, plot=True))
+    print(test_temp_convergence(conf, 100, 501, 50, rtol=0.0001, plot=True))
     # degs, temps, times = climate_model_in_lat(conf)
 
     # print(convergence_test(temps, 0.0001))

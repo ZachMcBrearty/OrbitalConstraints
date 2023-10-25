@@ -35,7 +35,7 @@ import numpy.typing as npt
 
 from InsolationFunction import S, dist
 from HeatCapacity import C, f_o, f_i
-from IRandAlbedo import A_1, A_2, A_2, I_1, I_2, I_3
+from IRandAlbedo import A_1, A_2, A_3, I_1, I_2, I_3
 from plotting import plotdata, complexplotdata, plt, yearavgplot, colourplot
 from filemanagement import write_to_file, load_config, read_files
 

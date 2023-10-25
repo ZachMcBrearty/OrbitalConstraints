@@ -102,11 +102,13 @@ def colourplot(degs, temps, times, start=0, end=None, year_avg=1):
 
 if __name__ == "__main__":
     from filemanagement import load_config, read_files
+    from convergence import convergence_test
 
     conf = load_config()
     times, temps, degs = read_files("testing.npz")
     dt = times[1] - times[0]
 
     # plotdata(degs, temps, dt, 0, 365 * 1, 10)
-    yearavgplot(degs, temps, dt, 90, 100, 10)
+    print(convergence_test(temps, rtol=0.0001))
+    yearavgplot(degs, temps, dt, 0, None, 10)
     colourplot(degs, temps, times, 0, None, 5)
