@@ -228,6 +228,11 @@ def climate_model_in_lat(config: ConfigParser) -> tuple:
         Temp[:, n + 1] = Temp[:, n] + yeartosecond * dt / Capacity[:, n] * (
             diff_elem - Ir_emission[:, n] + Source[:, n] * (1 - Albedo[:, n])
         )
+        # if 100 * 365 <= n < 101 * 365:
+        #     Temp[len(Temp) // 2, n + 1] = 200
+        #     Temp[len(Temp) // 2 - 1, n + 1] = 200
+        #     Temp[len(Temp) // 2 + 1, n + 1] = 200
+        #     Temp[len(Temp) // 2 - 2, n + 1] = 200
 
     if config.getboolean("FILEMANAGEMENT", "save"):
         times = np.linspace(0, time, timedim)
@@ -324,9 +329,9 @@ if __name__ == "__main__":
     config = load_config("config.ini", "OrbitalConstraints")
     climate_model_in_lat(config)
     # climate_model_in_x(60, 200)
-    times, temps, degs = read_files("testing.npz")
+    times, temps, degs = read_files(config.get("FILEMANAGEMENT", "save_name") + ".npz")
     dt = times[1] - times[0]
 
     # plotdata(degs, temps, dt, 0, 365 * 1, 10)
     yearavgplot(degs, temps, dt, 0, None, 20)
-    colourplot(degs, temps, times, 0, None, 5)
+    colourplot(degs, temps, times, None, None, 5)
