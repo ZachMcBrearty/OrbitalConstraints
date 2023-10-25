@@ -8,8 +8,10 @@ from filemanagement import load_config
 def convergence_test(temps, rtol=0.001, atol=0, year_avg=1):
     """returns: how long the data set took to converge in years, -1 if never"""
     tq = temps[:, 1:].reshape(temps.shape[0], -1, 365 * year_avg)
-    tqa = np.average(tq, axis=2)
-    tqaa = np.average(tqa, axis=0)
+    tqa = np.average(tq, axis=2)  # average over time
+    tqaa = np.average(
+        tqa, axis=0, weights=np.cos(np.linspace(-np.pi / 2, np.pi / 2, temps.shape[0]))
+    )  # average over latitude, weighted by area
 
     i = 0
     imax = len(tqaa) - 2
@@ -159,12 +161,18 @@ if __name__ == "__main__":
 
     conf.set("FILEMANAGEMENT", "save", "False")
     conf.set("FILEMANAGEMENT", "plot", "False")
+
+    conf.set("PDE", "spacedim", "60")
     conf.set("PDE", "time", "100")
+    conf.set("PDE", "timestep", "1")
+    conf.set("PDE", "start_temp", "350")
+
+    conf.set("PLANET", "omega", "1")
+    conf.set("PLANET", "land_frac_type", "uniform:0.7")
+    conf.set("PLANET", "obliquity", "23.5")
+
     conf.set("ORBIT", "a", "1")
     conf.set("ORBIT", "e", "0")
-    conf.set("PLANET", "obliquity", "23.5")
-    conf.set("PLANET", "omega", "1")
-    conf.set("PDE", "start_temp", "350")
 
     # print(test_a_convergence(conf, 0.5, 2.05, 0.1, rtol=0.0001, plot=True))
     # print(test_e_convergence(conf, 0, 0.91, 0.1, rtol=0.0001, plot=True))
