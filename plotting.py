@@ -78,25 +78,93 @@ def plotdata(degs, temp, dt, start=0, end=None, numplot=10):
     plt.show()
 
 
-def colourplot(degs, temps, times, start=0, end=None, year_avg=1):
-    if end is None:
-        end = len(temps[0, :])
+def colourplot(
+    degs,
+    temps,
+    times,
+    yr_start=None,
+    yr_end=None,
+    year_avg=1,
+    lat_start=None,
+    lat_end=None,
+):
+    if yr_start is None:
+        yr_start = 0
+    else:
+        yr_start *= 365
+    if yr_end is None:
+        yr_end = temps.shape[1]
+    else:
+        yr_end = (yr_end + 1) * 365
+
+    if lat_start is None:
+        lat_start = 0
+    if lat_end is None:
+        lat_end = degs.shape[0]
 
     fig, ax = plt.subplots(1, 1)
     cmap = "RdBu_r"
-
-    ts = times[start : end : year_avg * 365]
-    temp = temps[start:end, 1:]
+    ts = times[yr_start : yr_end : year_avg * 365]
+    temp = temps[lat_start:lat_end, yr_start + 1 : yr_end + 1]
 
     # time average
     tq = np.average(temp.reshape((temp.shape[0], -1, 365 * year_avg)), axis=2)
 
-    pcm = ax.pcolormesh(ts, degs, tq, cmap=cmap, shading="gouraud")  # nearest
+    pcm = ax.pcolormesh(
+        ts, degs[lat_start:lat_end], tq, cmap=cmap, shading="nearest"
+    )  # nearest
 
     ax.set_xlabel("time, yr")
     ax.set_ylabel("latitude, degrees")
-    ax.set_yticks(range(-90, 91, 15))
+    ax.set_yticks(np.linspace(degs[lat_start], degs[lat_end - 1], 12, endpoint=True))
     fig.colorbar(pcm, ax=ax)
+    plt.tight_layout()
+    plt.show()
+
+
+def threecolourplot(
+    plt1,
+    plt2,
+    plt3,
+    yr_start=None,
+    yr_end=None,
+    year_avg=1,
+):
+    if yr_start is None:
+        yr_start = 0
+    else:
+        yr_start *= 365
+    if yr_end is None:
+        yr_end = plt1[1].shape[1]
+    else:
+        yr_end = (yr_end + 1) * 365
+
+    fig, (ax1, ax2, ax3) = plt.subplots(3, 1)
+    cmap = "RdBu_r"
+    ts = plt1[0][yr_start : yr_end : year_avg * 365]
+
+    temp1 = plt1[1][:, yr_start + 1 : yr_end + 1]
+    temp2 = plt2[1][:, yr_start + 1 : yr_end + 1]
+    temp3 = plt3[1][:, yr_start + 1 : yr_end + 1]
+
+    # time average
+    tq1 = np.average(temp1.reshape((temp1.shape[0], -1, 365 * year_avg)), axis=2)
+    tq2 = np.average(temp2.reshape((temp2.shape[0], -1, 365 * year_avg)), axis=2)
+    tq3 = np.average(temp3.reshape((temp3.shape[0], -1, 365 * year_avg)), axis=2)
+
+    pcm1 = ax1.pcolormesh(ts, plt1[2], tq1, cmap=cmap, shading="nearest")  # nearest
+    pcm2 = ax2.pcolormesh(ts, plt2[2], tq2, cmap=cmap, shading="nearest")  # nearest
+    pcm3 = ax3.pcolormesh(ts, plt3[2], tq3, cmap=cmap, shading="nearest")  # nearest
+
+    ax3.set_xlabel("time, yr")
+    ax1.set_ylabel("latitude, degrees")
+    ax2.set_ylabel("latitude, degrees")
+    ax3.set_ylabel("latitude, degrees")
+    ax1.set_yticks(np.linspace(-90, 90, 13, endpoint=True))
+    ax2.set_yticks(np.linspace(-90, 90, 13, endpoint=True))
+    ax3.set_yticks(np.linspace(-90, 90, 13, endpoint=True))
+    plt.tight_layout()
+    fig.colorbar(pcm1, ax=(ax1, ax2, ax3))
 
     plt.show()
 
@@ -106,10 +174,17 @@ if __name__ == "__main__":
     from convergence import convergence_test
 
     conf = load_config()
-    times, temps, degs = read_files("testing.npz")
-    dt = times[1] - times[0]
+    times, temps, degs = read_files("testing_1.5_low.npz")
+    # dt = times[1] - times[0]
 
     # plotdata(degs, temps, dt, 0, 365 * 1, 10)
-    print(convergence_test(temps, rtol=0.0001))
-    yearavgplot(degs, temps, dt, 0, None, 10)
-    colourplot(degs, temps, times, 0, None, 5)
+    # print(convergence_test(temps, rtol=0.0001))
+    # yearavgplot(degs, temps, dt, 90, 120, 1)
+    colourplot(degs, temps, times, 95, 150, 1, None, None)
+    # colourplot(degs, temps, times, None, None, 1, None, None)
+
+    # one = read_files("testing_1.5.npz")
+    # two = read_files("testing_3.npz")
+    # three = read_files("testing_6.npz")
+
+    # threecolourplot(one, two, three, 90, 120, 1)
