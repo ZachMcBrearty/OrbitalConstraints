@@ -8,13 +8,21 @@ from ClimateModel import climate_model_in_lat
 from filemanagement import load_config, CONF_PARSER_TYPE
 
 
-def convergence_test(temps: NDArray, rtol=0.001, atol=0, year_avg=1):
+def convergence_test(
+    temps: NDArray,
+    rtol: float = 0.001,
+    atol: float = 0,
+    year_avg: int = 1,
+    dt: float = 1,
+) -> tuple[int, float]:
     """returns: how long the data set took to converge in years, -1 if never"""
     # data should be in year-long chunks,
     # find the length of extra data which doesnt fit into a year,
     # and then skip from the start of the dataset
-    a = int(temps.size % (365 * 60 * year_avg) / 60)
-    tq = temps[:, a:].reshape(temps.shape[0], -1, 365 * year_avg)
+    year_len = int(365 / dt)
+    # -> i.e. each timestep is dt, so a year is 365 / dt datapoints long
+    a = int(temps.size % (year_len * 60 * year_avg) / 60)
+    tq = temps[:, a:].reshape(temps.shape[0], -1, year_len * year_avg)
     tqa = np.average(tq, axis=2)  # average over time
     tqaa = np.average(
         tqa, axis=0, weights=np.cos(np.linspace(-np.pi / 2, np.pi / 2, temps.shape[0]))
@@ -57,7 +65,9 @@ def gen_convergence_test(
                 print(f"Running {val_name}={val}")
             conf.set(val_section, val_name, str(val))
             degs, temps, times = climate_model_in_lat(conf)
-            t, temp = convergence_test(temps, rtol, year_avg=1)
+            t, temp = convergence_test(
+                temps, rtol, year_avg=1, dt=conf.getfloat("PDE", "timestep")
+            )
             tests.append(t)
             convtemps.append(temp)
 
@@ -117,6 +127,7 @@ if __name__ == "__main__":
     # print(test_temp_convergence(conf, 100, 501, 50, rtol=0.0001))
     # print(test_spacedim_convergence(conf, 140, 150, 1, rtol=0.0001))
     print(test_timestep_convergence(conf, 0.25, 3.1, 0.25, rtol=0.0001))
+    # print(test_timestep_convergence(conf, 3, 10.1, 0.5, rtol=0.0001))
     # degs, temps, times = climate_model_in_lat(conf)
 
     # print(convergence_test(temps, 0.0001))
