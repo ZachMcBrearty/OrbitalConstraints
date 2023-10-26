@@ -10,6 +10,9 @@ from filemanagement import load_config, CONF_PARSER_TYPE
 
 def convergence_test(temps: NDArray, rtol=0.001, atol=0, year_avg=1):
     """returns: how long the data set took to converge in years, -1 if never"""
+    # data should be in year-long chunks,
+    # find the length of extra data which doesnt fit into a year,
+    # and then skip from the start of the dataset
     a = int(temps.size % (365 * 60 * year_avg) / 60)
     tq = temps[:, a:].reshape(temps.shape[0], -1, 365 * year_avg)
     tqa = np.average(tq, axis=2)  # average over time
