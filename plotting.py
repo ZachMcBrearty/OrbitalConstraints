@@ -1,3 +1,5 @@
+from typing import Optional
+
 import matplotlib.pyplot as plt
 import numpy as np
 
@@ -167,6 +169,35 @@ def threecolourplot(
     fig.colorbar(pcm1, ax=(ax1, ax2, ax3))
 
     plt.show()
+
+
+def convergence_plot_single(
+    tests,
+    convtemps,
+    val_name: str,
+    val_min: float,
+    val_max: float,
+    val_step: float,
+    val_unit: Optional[str] = None,
+):
+    if val_unit is None:
+        val_unit = ""
+    else:
+        val_unit = ", " + val_unit
+    val_range = np.arange(val_min, val_max, val_step)
+    fig, (ax1, ax2) = plt.subplots(2, 1)
+    ax1.scatter(val_range, tests)
+    ax2.scatter(val_range, convtemps)
+    ax2.set_xlabel(f"{val_name} {val_unit}")
+    ax1.set_xticks(np.linspace(min(val_range), max(val_range), 11))
+    ax2.set_xticks(np.linspace(min(val_range), max(val_range), 11))
+    ax1.set_ylabel("Time to converge, years")
+    ax2.set_ylabel("Global convergent temperature, K")
+    plt.show()
+
+
+def convergence_plot_dual():
+    pass
 
 
 if __name__ == "__main__":

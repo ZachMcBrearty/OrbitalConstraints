@@ -5,7 +5,8 @@ from numpy.typing import NDArray
 import matplotlib.pyplot as plt
 
 from ClimateModel import climate_model_in_lat
-from filemanagement import load_config, CONF_PARSER_TYPE
+from filemanagement import load_config, write_to_file, CONF_PARSER_TYPE
+from plotting import convergence_plot_single, convergence_plot_dual
 
 
 def convergence_test(
@@ -43,12 +44,13 @@ def gen_convergence_test(
     val_name: str,
     verbose=False,
     plot=False,
+    save=True,
     val_unit: Optional[str] = None,
 ):
-    if val_unit is None:
-        val_unit = ""
-    else:
-        val_unit = ", " + val_unit
+    # if val_unit is None:
+    #     val_unit = ""
+    # else:
+    #     val_unit = ", " + val_unit
 
     def t(
         conf: CONF_PARSER_TYPE,
@@ -70,36 +72,50 @@ def gen_convergence_test(
             )
             tests.append(t)
             convtemps.append(temp)
+            if save:
+                write_to_file(
+                    times,
+                    temps,
+                    degs,
+                    f"single_{val_name}/single_{val_name}_{round(val,3)}.npz",
+                )
 
         if plot:
-            fig, (ax1, ax2) = plt.subplots(2, 1)
-            ax1.scatter(val_range, tests)
-            ax2.scatter(val_range, convtemps)
-            ax2.set_xlabel(f"{val_name} {val_unit}")
-            ax1.set_xticks(np.linspace(min(val_range), max(val_range), 11))
-            ax2.set_xticks(np.linspace(min(val_range), max(val_range), 11))
-            ax1.set_ylabel("Time to converge, years")
-            ax2.set_ylabel("Global convergent temperature, K")
-            plt.show()
+            convergence_plot_single(
+                tests, convtemps, val_name, val_min, val_max, val_step, val_unit
+            )
+            # fig, (ax1, ax2) = plt.subplots(2, 1)
+            # ax1.scatter(val_range, tests)
+            # ax2.scatter(val_range, convtemps)
+            # ax2.set_xlabel(f"{val_name} {val_unit}")
+            # ax1.set_xticks(np.linspace(min(val_range), max(val_range), 11))
+            # ax2.set_xticks(np.linspace(min(val_range), max(val_range), 11))
+            # ax1.set_ylabel("Time to converge, years")
+            # ax2.set_ylabel("Global convergent temperature, K")
+            # plt.show()
 
         return val_range, tests, convtemps
 
     return t
 
 
-test_spacedim_convergence = gen_convergence_test("PDE", "spacedim", True, True, None)
-test_timestep_convergence = gen_convergence_test("PDE", "timestep", True, True, "days")
-test_temp_convergence = gen_convergence_test("PDE", "start_temp", True, True, "K")
+test_spacedim_convergence = gen_convergence_test(
+    "PDE", "spacedim", True, True, True, None
+)
+test_timestep_convergence = gen_convergence_test(
+    "PDE", "timestep", True, True, True, "days"
+)
+test_temp_convergence = gen_convergence_test("PDE", "start_temp", True, True, True, "K")
 
 test_omega_convergence = gen_convergence_test(
-    "PLANET", "omega", True, True, "day$^{-1}$"
+    "PLANET", "omega", True, True, True, "day$^{-1}$"
 )
 test_delta_convergence = gen_convergence_test(
-    "PLANET", "obliquity", True, True, r"$^{\circ}"
+    "PLANET", "obliquity", True, True, True, r"$^{\circ}"
 )
 
-test_a_convergence = gen_convergence_test("ORBIT", "a", True, True, "AU")
-test_e_convergence = gen_convergence_test("ORBIT", "e", True, True, None)
+test_a_convergence = gen_convergence_test("ORBIT", "a", True, True, True, "AU")
+test_e_convergence = gen_convergence_test("ORBIT", "e", True, True, True, None)
 
 
 def gen_paramspace(
@@ -111,6 +127,7 @@ def gen_paramspace(
     plot=False,
     val_unit_1: Optional[str] = None,
     val_unit_2: Optional[str] = None,
+    save=False,
 ):
     if val_unit_1 is None:
         val_unit_1 = ""
@@ -147,6 +164,9 @@ def gen_paramspace(
                 )
                 tests[i][j] = t
                 convtemps[i][j] = temp
+                if save:
+                    filename = f"dual_{val_name_1}_{val_name_2}/dual_{val_name_1}_{round(val_1,3)}_{val_name_2}_{round(val_2, 3)}.npz"
+                    write_to_file(times, temps, degs, filename)
         if plot:
             fig, (ax1, ax2) = plt.subplots(2, 1)
             ax1: plt.Axes
@@ -171,7 +191,26 @@ def gen_paramspace(
 
 
 dual_a_e_convergence = gen_paramspace(
-    "ORBIT", "a", "ORBIT", "e", True, True, "AU", None
+    "ORBIT",
+    "a",
+    "ORBIT",
+    "e",
+    verbose=True,
+    plot=True,
+    val_unit_1="AU",
+    val_unit_2=None,
+    save=True,
+)
+dual_a_delta_convergence = gen_paramspace(
+    "ORBIT",
+    "a",
+    "PLANET",
+    "obliquity",
+    verbose=True,
+    plot=True,
+    val_unit_1="AU",
+    val_unit_2=None,
+    save=True,
 )
 
 if __name__ == "__main__":
@@ -201,4 +240,5 @@ if __name__ == "__main__":
     # print(test_timestep_convergence(conf, 0.25, 3.1, 0.25, rtol=0.0001))
     # print(test_timestep_convergence(conf, 3, 10.1, 0.5, rtol=0.0001))
 
-    print(dual_a_e_convergence(conf, 0.6, 2.05, 0.2, 0, 0.91, 0.3, 0.001))
+    # print(dual_a_e_convergence(conf, 0.5, 2.05, 0.1, 0, 0.91, 0.1, 0.001))
+    print(dual_a_delta_convergence(conf, 0.5, 2.05, 0.1, 0, 0.91, 0.1, 0.001))
