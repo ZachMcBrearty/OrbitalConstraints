@@ -102,6 +102,78 @@ test_a_convergence = gen_convergence_test("ORBIT", "a", True, True, "AU")
 test_e_convergence = gen_convergence_test("ORBIT", "e", True, True, None)
 
 
+def gen_paramspace(
+    val_sec_1: str,
+    val_name_1: str,
+    val_sec_2: str,
+    val_name_2: str,
+    verbose=False,
+    plot=False,
+    val_unit_1: Optional[str] = None,
+    val_unit_2: Optional[str] = None,
+):
+    if val_unit_1 is None:
+        val_unit_1 = ""
+    else:
+        val_unit_1 = ", " + val_unit_1
+    if val_unit_2 is None:
+        val_unit_2 = ""
+    else:
+        val_unit_2 = ", " + val_unit_2
+
+    def t(
+        conf: CONF_PARSER_TYPE,
+        val_min_1: float,
+        val_max_1: float,
+        val_step_1: float,
+        val_min_2: float,
+        val_max_2: float,
+        val_step_2: float,
+        rtol=0.0001,
+    ) -> tuple[NDArray, NDArray, NDArray, NDArray]:
+        val_1_range = np.arange(val_min_1, val_max_1, val_step_1)
+        val_2_range = np.arange(val_min_2, val_max_2, val_step_2)
+        tests = np.zeros((len(val_1_range), len(val_2_range)))
+        convtemps = np.zeros_like(tests)
+        for i, val_1 in enumerate(val_1_range):
+            for j, val_2 in enumerate(val_2_range):
+                if verbose:
+                    print(f"Running {val_name_1}={val_1}, {val_name_2}={val_2}")
+                conf.set(val_sec_1, val_name_1, str(val_1))
+                conf.set(val_sec_2, val_name_2, str(val_2))
+                degs, temps, times = climate_model_in_lat(conf)
+                t, temp = convergence_test(
+                    temps, rtol, year_avg=1, dt=conf.getfloat("PDE", "timestep")
+                )
+                tests[i][j] = t
+                convtemps[i][j] = temp
+        if plot:
+            fig, (ax1, ax2) = plt.subplots(2, 1)
+            ax1: plt.Axes
+            ax2: plt.Axes
+            converge_time_map = ax1.pcolormesh(
+                val_1_range, val_2_range, tests.T, cmap="RdBu_r", shading="nearest"
+            )
+            converge_temp_map = ax2.pcolormesh(
+                val_1_range, val_2_range, convtemps.T, cmap="RdBu_r", shading="nearest"
+            )
+            fig.colorbar(converge_time_map, ax=ax1, label="Time to converge, years")
+            fig.colorbar(converge_temp_map, ax=ax2, label="Convergent Temperature, K")
+            ax1.set_ylabel(f"{val_name_2} {val_unit_2}")
+            ax1.set_xlabel(f"{val_name_1} {val_unit_1}")
+            ax2.set_ylabel(f"{val_name_2} {val_unit_2}")
+            ax2.set_xlabel(f"{val_name_1} {val_unit_1}")
+            plt.show()
+
+        return val_1_range, val_2_range, tests, convtemps
+
+    return t
+
+
+dual_a_e_convergence = gen_paramspace(
+    "ORBIT", "a", "ORBIT", "e", True, True, "AU", None
+)
+
 if __name__ == "__main__":
     conf = load_config()
 
@@ -109,7 +181,7 @@ if __name__ == "__main__":
     conf.set("FILEMANAGEMENT", "plot", "False")
 
     conf.set("PDE", "spacedim", "60")  #
-    conf.set("PDE", "time", "100")
+    conf.set("PDE", "time", "200")
     conf.set("PDE", "timestep", "1")  #
     conf.set("PDE", "start_temp", "350")  #
 
@@ -126,8 +198,7 @@ if __name__ == "__main__":
     # print(test_omega_convergence(conf, 0.3, 3, 0.3, rtol=0.0001, plot=True))
     # print(test_temp_convergence(conf, 100, 501, 50, rtol=0.0001))
     # print(test_spacedim_convergence(conf, 140, 150, 1, rtol=0.0001))
-    print(test_timestep_convergence(conf, 0.25, 3.1, 0.25, rtol=0.0001))
+    # print(test_timestep_convergence(conf, 0.25, 3.1, 0.25, rtol=0.0001))
     # print(test_timestep_convergence(conf, 3, 10.1, 0.5, rtol=0.0001))
-    # degs, temps, times = climate_model_in_lat(conf)
 
-    # print(convergence_test(temps, 0.0001))
+    print(dual_a_e_convergence(conf, 0.6, 2.05, 0.2, 0, 0.91, 0.3, 0.001))

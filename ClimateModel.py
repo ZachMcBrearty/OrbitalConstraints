@@ -246,12 +246,18 @@ def climate_model_in_lat(config: ConfigParser) -> tuple:
 
 
 if __name__ == "__main__":
-    config = load_config("config.ini", "OrbitalConstraints")
-    climate_model_in_lat(config)
-    # climate_model_in_x(60, 200)
-    times, temps, degs = read_files(config.get("FILEMANAGEMENT", "save_name") + ".npz")
-    dt = times[1] - times[0]
+    import cProfile
+    from pstats import SortKey, Stats
+
+    with cProfile.Profile() as p:
+        config = load_config("config.ini", "OrbitalConstraints")
+        climate_model_in_lat(config)
+        Stats(p).strip_dirs().sort_stats(SortKey.CUMULATIVE).print_stats()
+    # times, temps, degs = read_files(
+    #     config.get("FILEMANAGEMENT", "save_name") + ".npz"
+    # )
+    # dt = times[1] - times[0]
 
     # plotdata(degs, temps, dt, 0, 365 * 1, 10)
-    yearavgplot(degs, temps, dt, 0, None, 20)
-    colourplot(degs, temps, times, None, None, 5)
+    # yearavgplot(degs, temps, dt, 0, None, 20)
+    # colourplot(degs, temps, times, None, None, 5)
