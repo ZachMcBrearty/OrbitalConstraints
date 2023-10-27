@@ -46,7 +46,7 @@ def yearavgplot(degs, temp, dt, start_yr=0, end_yr=None, year_skip=1):
     for n in range(start_yr, end_yr, year_skip):
         yr_avg = np.average(temp[:, n * 365 : (n + 1) * 365], axis=1)
         a = ax.plot(degs, yr_avg, label=f"t={n} yrs")
-    a[0].set_marker("x")
+    a[0].set_marker("x")  # type:ignore
     ax.plot(
         degs,
         302.3 - 45.3 * np.sin(np.deg2rad(degs)) ** 2,
@@ -54,7 +54,7 @@ def yearavgplot(degs, temp, dt, start_yr=0, end_yr=None, year_skip=1):
         ls="--",
         label="fit",
     )
-    ax2.plot(degs, np.abs(yr_avg - (302.3 - 45.3 * np.sin(np.deg2rad(degs)) ** 2)))
+    ax2.plot(degs, np.abs(yr_avg - (302.3 - 45.3 * np.sin(np.deg2rad(degs)) ** 2)))  # type: ignore
     ax.axhline(273, ls="--", label=r"0$^\circ$C")
     ax.set_ylabel("Average Temperature, K")
     ax2.set_ylabel("Variation from fit, K")
