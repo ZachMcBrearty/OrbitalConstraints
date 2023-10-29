@@ -311,7 +311,7 @@ if __name__ == "__main__":
     conf.set("PDE", "starttemp", "350")  #
 
     conf.set("PLANET", "omega", "1")  #
-    conf.set("PLANET", "land_frac_type", "uniform:0.7")
+    conf.set("PLANET", "landfractype", "uniform:0.7")
     conf.set("PLANET", "obliquity", "23.5")  #
 
     conf.set("ORBIT", "a", "1")  #

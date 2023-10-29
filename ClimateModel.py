@@ -172,7 +172,7 @@ def climate_model_in_lat(
     e = config.getfloat("ORBIT", "e")  # eccentricity
     axtilt = np.deg2rad(config.getfloat("PLANET", "obliquity"))  # obliquity
 
-    if (frac := config.get("PLANET", "land_frac_type")) in [
+    if (frac := config.get("PLANET", "landfractype")) in [
         "earthlike",
         "earth",
         "earth-like",
