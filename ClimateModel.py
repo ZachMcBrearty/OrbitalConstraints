@@ -32,7 +32,6 @@
 import numpy as np
 import numpy.typing as npt
 
-
 from InsolationFunction import S, dist
 from HeatCapacity import C, f_o, f_i
 from IRandAlbedo import A_1, A_2, A_3, I_1, I_2, I_3
@@ -128,7 +127,9 @@ def backward2ndorder(x: list[float] | floatarr, i: int, dx: float) -> float:
 
 
 ##  ##
-def climate_model_in_lat(config: ConfigParser) -> tuple:
+def climate_model_in_lat(
+    config: ConfigParser,
+) -> tuple[npt.NDArray, npt.NDArray, npt.NDArray]:
     # number of spatial nodes
     spacedim = config.getint(section="PDE", option="spacedim")
 
@@ -145,7 +146,7 @@ def climate_model_in_lat(config: ConfigParser) -> tuple:
     timedim = int(np.ceil(time / dt))
 
     Temp = np.ones((spacedim, timedim + 1))
-    Temp[:, 0] = Temp[:, 0] * config.getfloat("PDE", "start_temp")
+    Temp[:, 0] = Temp[:, 0] * config.getfloat("PDE", "starttemp")
 
     Capacity = np.zeros_like(Temp)  # effective heat capacity
     Ir_emission = np.zeros_like(Temp)  # IR emission function (Energy sink)
@@ -233,15 +234,16 @@ def climate_model_in_lat(config: ConfigParser) -> tuple:
         #     Temp[len(Temp) // 2 - 1, n + 1] = 200
         #     Temp[len(Temp) // 2 + 1, n + 1] = 200
         #     Temp[len(Temp) // 2 - 2, n + 1] = 200
+    times = np.linspace(0, time, timedim)
 
     if config.getboolean("FILEMANAGEMENT", "save"):
-        times = np.linspace(0, time, timedim)
         write_to_file(times, Temp, degs, config.get("FILEMANAGEMENT", "save_name"))
+
     if config.getboolean("FILEMANAGEMENT", "plot"):
         # complexplotdata(degs, Temp, dt, Ir_emission, Source, Albedo, Capacity)
         # plotdata(degs, Temp, dt, 145 * 365, 146 * 365 + 1, 12)
         yearavgplot(degs, Temp, dt, 0, time, int(time // 20))
-    times = np.linspace(0, time, timedim)
+
     return degs, Temp, times
 
 

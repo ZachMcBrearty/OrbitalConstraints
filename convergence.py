@@ -93,15 +93,6 @@ def gen_convergence_test(
             convergence_plot_single(
                 tests, convtemps, val_name, val_min, val_max, val_step, val_unit
             )
-            # fig, (ax1, ax2) = plt.subplots(2, 1)
-            # ax1.scatter(val_range, tests)
-            # ax2.scatter(val_range, convtemps)
-            # ax2.set_xlabel(f"{val_name} {val_unit}")
-            # ax1.set_xticks(np.linspace(min(val_range), max(val_range), 11))
-            # ax2.set_xticks(np.linspace(min(val_range), max(val_range), 11))
-            # ax1.set_ylabel("Time to converge, years")
-            # ax2.set_ylabel("Global convergent temperature, K")
-            # plt.show()
 
         return val_range, tests, convtemps
 
@@ -114,7 +105,7 @@ test_spacedim_convergence = gen_convergence_test(
 test_timestep_convergence = gen_convergence_test(
     "PDE", "timestep", True, True, True, "days"
 )
-test_temp_convergence = gen_convergence_test("PDE", "start_temp", True, True, True, "K")
+test_temp_convergence = gen_convergence_test("PDE", "starttemp", True, True, True, "K")
 
 test_omega_convergence = gen_convergence_test(
     "PLANET", "omega", True, True, True, "day$^{-1}$"
@@ -226,7 +217,7 @@ dual_a_temp_convergence = gen_paramspace(
     "ORBIT",
     "a",
     "PDE",
-    "start_temp",
+    "starttemp",
     True,
     True,
     "AU",
@@ -243,7 +234,7 @@ dual_e_omega_convergence = gen_paramspace(
 )
 
 dual_e_starttemp_convergence = gen_paramspace(
-    "ORBIT", "e", "PDE", "start_temp", True, True, None, "K", True
+    "ORBIT", "e", "PDE", "starttemp", True, True, None, "K", True
 )
 
 dual_delta_omega_convergence = gen_paramspace(
@@ -259,22 +250,22 @@ dual_delta_omega_convergence = gen_paramspace(
 )
 
 dual_delta_starttemp_convergence = gen_paramspace(
-    "PLANET", "obliquity", "PDE", "start_temp", True, True, r"$^{\circ}$", "K", True
+    "PLANET", "obliquity", "PDE", "starttemp", True, True, r"$^{\circ}$", "K", True
 )
 
 dual_omega_starttemp_convergence = gen_paramspace(
-    "PLANET", "omega", "PDE", "start_temp", True, True, "days$^{-1}$", "K", True
+    "PLANET", "omega", "PDE", "starttemp", True, True, "days$^{-1}$", "K", True
 )
 
 
 def reprocess_paramspace(
-    foldername,
-    folderpath,
-    val_1_name,
-    val_2_name,
-    val_1_unit=None,
-    val_2_unit=None,
-    rtol=0.0001,
+    foldername: str,
+    folderpath: str,
+    val_1_name: str,
+    val_2_name: str,
+    val_1_unit: Optional[str] = None,
+    val_2_unit: Optional[str] = None,
+    rtol: float = 0.0001,
 ):
     val_1_range = []
     val_2_range = []
@@ -317,7 +308,7 @@ if __name__ == "__main__":
     conf.set("PDE", "spacedim", "60")  #
     conf.set("PDE", "time", "200")
     conf.set("PDE", "timestep", "1")  #
-    conf.set("PDE", "start_temp", "350")  #
+    conf.set("PDE", "starttemp", "350")  #
 
     conf.set("PLANET", "omega", "1")  #
     conf.set("PLANET", "land_frac_type", "uniform:0.7")
@@ -339,11 +330,23 @@ if __name__ == "__main__":
     # print(dual_a_delta_convergence(conf, 0.5, 2.05, 0.1, 0, 91, 10, 0.001))
     # print(dual_a_omega_convergence(conf, 0.5, 2.05, 0.1, 0.25, 3.1, 0.25, 0.001))
     # print(dual_a_temp_convergence(conf, 0.5, 2.05, 0.1, 150, 500, 50, 0.001))
+
     # print(dual_e_delta_convergence(conf, 0, 0.91, 0.1, 0, 91, 10, 0.001))
     # print(dual_e_omega_convergence(conf, 0, 0.91, 0.1, 0.25, 3.1, 0.25, 0.001))
     # print(dual_e_starttemp_convergence(conf, 0, 0.91, 0.1, 150, 500, 50, 0.001))
+
     # print(dual_delta_omega_convergence(conf, 70, 91, 10, 0.25, 3.1, 0.25, 0.001))
     # print(dual_delta_starttemp_convergence(conf, 0, 91, 10, 150, 500, 50, 0.001))
+
     # print(dual_omega_starttemp_convergence(conf, 0.25, 3.1, 0.25, 150, 500, 50, 0.001))
 
     reprocess_paramspace("dual_a_e", os.path.curdir, "a", "e", "au", None, 0.001)
+    reprocess_paramspace(
+        "dual_a_obliquity", os.path.curdir, "a", "obliquity", "au", r"$^{\circ}$", 0.001
+    )
+    reprocess_paramspace(
+        "dual_a_omega", os.path.curdir, "a", "omega", "au", "days$^{-1}$", 0.001
+    )
+    reprocess_paramspace(
+        "dual_a_starttemp", os.path.curdir, "a", "starttemp", "au", None, 0.001
+    )
