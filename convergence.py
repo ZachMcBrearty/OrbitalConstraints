@@ -6,7 +6,12 @@ from numpy.typing import NDArray
 import matplotlib.pyplot as plt
 
 from ClimateModel import climate_model_in_lat
-from filemanagement import load_config, write_to_file, CONF_PARSER_TYPE
+from filemanagement import (
+    load_config,
+    write_to_file,
+    read_dual_folder,
+    CONF_PARSER_TYPE,
+)
 from plotting import convergence_plot_single, convergence_plot_dual
 
 
@@ -262,8 +267,45 @@ dual_omega_starttemp_convergence = gen_paramspace(
 )
 
 
-def reprocess_paramspace():
-    pass
+def reprocess_paramspace(
+    foldername,
+    folderpath,
+    val_1_name,
+    val_2_name,
+    val_1_unit=None,
+    val_2_unit=None,
+    rtol=0.0001,
+):
+    val_1_range = []
+    val_2_range = []
+    tests = []
+    convtemps = []
+    data = read_dual_folder(foldername, folderpath)
+    for i, datum in enumerate(data):
+        val_1, val_2, (times, temps, degs) = datum
+        dt = (times[1] - times[0]) * 365
+        t, temp = convergence_test(temps, rtol, year_avg=1, dt=dt)
+        if val_1 not in val_1_range:
+            val_1_range.append(val_1)
+        if val_2 not in val_2_range:
+            val_2_range.append(val_2)
+        tests.append(t)
+        convtemps.append(temp)
+    xl = len(val_1_range)
+    yl = len(val_2_range)
+    tests = np.array(tests).reshape(xl, yl)
+    convtemps = np.array(convtemps).reshape(xl, yl)
+    convergence_plot_dual(
+        tests,
+        convtemps,
+        val_1_name,
+        val_1_range,
+        val_2_name,
+        val_2_range,
+        rtol,
+        val_1_unit,
+        val_2_unit,
+    )
 
 
 if __name__ == "__main__":
@@ -303,3 +345,5 @@ if __name__ == "__main__":
     # print(dual_delta_omega_convergence(conf, 70, 91, 10, 0.25, 3.1, 0.25, 0.001))
     # print(dual_delta_starttemp_convergence(conf, 0, 91, 10, 150, 500, 50, 0.001))
     # print(dual_omega_starttemp_convergence(conf, 0.25, 3.1, 0.25, 150, 500, 50, 0.001))
+
+    reprocess_paramspace("dual_a_e", os.path.curdir, "a", "e", "au", None, 0.001)

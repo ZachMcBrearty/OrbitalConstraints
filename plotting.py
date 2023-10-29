@@ -237,11 +237,11 @@ def convergence_plot_dual(
 
 
 if __name__ == "__main__":
-    from filemanagement import load_config, read_files
+    from filemanagement import load_config, read_file
     from convergence import convergence_test
 
     conf = load_config()
-    times, temps, degs = read_files("testing_1.5_low.npz")
+    times, temps, degs = read_file("testing_1.5_low.npz")
     # dt = times[1] - times[0]
 
     # plotdata(degs, temps, dt, 0, 365 * 1, 10)

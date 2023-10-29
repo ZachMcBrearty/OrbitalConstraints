@@ -37,7 +37,7 @@ from InsolationFunction import S, dist
 from HeatCapacity import C, f_o, f_i
 from IRandAlbedo import A_1, A_2, A_3, I_1, I_2, I_3
 from plotting import plotdata, complexplotdata, plt, yearavgplot, colourplot
-from filemanagement import write_to_file, load_config, read_files
+from filemanagement import write_to_file, load_config, read_file
 
 from configparser import ConfigParser
 
@@ -253,7 +253,7 @@ if __name__ == "__main__":
         config = load_config("config.ini", "OrbitalConstraints")
         climate_model_in_lat(config)
         Stats(p).strip_dirs().sort_stats(SortKey.CUMULATIVE).print_stats()
-    # times, temps, degs = read_files(
+    # times, temps, degs = read_file(
     #     config.get("FILEMANAGEMENT", "save_name") + ".npz"
     # )
     # dt = times[1] - times[0]
