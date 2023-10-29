@@ -65,6 +65,10 @@ def gen_convergence_test(
         val_step: float,
         rtol=0.0001,
     ) -> tuple[NDArray[np.floating], list[float], list[float]]:
+        if not conf.has_option(val_section, val_name):
+            raise ValueError(
+                f"Supplied config file has no section {val_section} or option {val_name}"
+            )
         tests = []
         convtemps = []
         val_range = np.arange(val_min, val_max, val_step)
@@ -139,6 +143,14 @@ def gen_paramspace(
         val_step_2: float,
         rtol=0.0001,
     ) -> tuple[NDArray, NDArray, NDArray, NDArray]:
+        if not conf.has_option(val_sec_1, val_name_1):
+            raise ValueError(
+                f"Supplied config file has no section {val_sec_1} or option {val_name_1}"
+            )
+        if not conf.has_option(val_sec_2, val_name_2):
+            raise ValueError(
+                f"Supplied config file has no section {val_sec_2} or option {val_name_2}"
+            )
         val_1_range = np.arange(val_min_1, val_max_1, val_step_1)
         val_2_range = np.arange(val_min_2, val_max_2, val_step_2)
         tests = np.zeros((len(val_1_range), len(val_2_range)))
