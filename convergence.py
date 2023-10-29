@@ -1,4 +1,5 @@
 from typing import Optional
+import os
 
 import numpy as np
 from numpy.typing import NDArray
@@ -73,11 +74,14 @@ def gen_convergence_test(
             tests.append(t)
             convtemps.append(temp)
             if save:
+                if not os.path.exists(f"./single_{val_name}/"):
+                    os.mkdir(f"./single_{val_name}/")
+                filename = f"./single_{val_name}/single_{val_name}_{round(val,3)}.npz"
                 write_to_file(
                     times,
                     temps,
                     degs,
-                    f"single_{val_name}/single_{val_name}_{round(val,3)}.npz",
+                    filename,
                 )
 
         if plot:
@@ -129,15 +133,6 @@ def gen_paramspace(
     val_unit_2: Optional[str] = None,
     save=False,
 ):
-    if val_unit_1 is None:
-        val_unit_1 = ""
-    else:
-        val_unit_1 = ", " + val_unit_1
-    if val_unit_2 is None:
-        val_unit_2 = ""
-    else:
-        val_unit_2 = ", " + val_unit_2
-
     def t(
         conf: CONF_PARSER_TYPE,
         val_min_1: float,
@@ -165,25 +160,22 @@ def gen_paramspace(
                 tests[i][j] = t
                 convtemps[i][j] = temp
                 if save:
-                    filename = f"dual_{val_name_1}_{val_name_2}/dual_{val_name_1}_{round(val_1,3)}_{val_name_2}_{round(val_2, 3)}.npz"
+                    if not os.path.exists(f"./dual_{val_name_1}_{val_name_2}/"):
+                        os.mkdir(f"./dual_{val_name_1}_{val_name_2}/")
+                    filename = f"./dual_{val_name_1}_{val_name_2}/dual_{val_name_1}_{round(val_1,3)}_{val_name_2}_{round(val_2, 3)}.npz"
                     write_to_file(times, temps, degs, filename)
         if plot:
-            fig, (ax1, ax2) = plt.subplots(2, 1)
-            ax1: plt.Axes
-            ax2: plt.Axes
-            converge_time_map = ax1.pcolormesh(
-                val_1_range, val_2_range, tests.T, cmap="RdBu_r", shading="nearest"
+            convergence_plot_dual(
+                tests,
+                convtemps,
+                val_name_1,
+                val_1_range,
+                val_name_2,
+                val_2_range,
+                rtol,
+                val_unit_1,
+                val_unit_2,
             )
-            converge_temp_map = ax2.pcolormesh(
-                val_1_range, val_2_range, convtemps.T, cmap="RdBu_r", shading="nearest"
-            )
-            fig.colorbar(converge_time_map, ax=ax1, label="Time to converge, years")
-            fig.colorbar(converge_temp_map, ax=ax2, label="Convergent Temperature, K")
-            ax1.set_ylabel(f"{val_name_2} {val_unit_2}")
-            ax1.set_xlabel(f"{val_name_1} {val_unit_1}")
-            ax2.set_ylabel(f"{val_name_2} {val_unit_2}")
-            ax2.set_xlabel(f"{val_name_1} {val_unit_1}")
-            plt.show()
 
         return val_1_range, val_2_range, tests, convtemps
 
@@ -209,9 +201,70 @@ dual_a_delta_convergence = gen_paramspace(
     verbose=True,
     plot=True,
     val_unit_1="AU",
-    val_unit_2=None,
+    val_unit_2=r"$^{\circ}$",
     save=True,
 )
+
+dual_a_omega_convergence = gen_paramspace(
+    "ORBIT",
+    "a",
+    "PLANET",
+    "omega",
+    True,
+    True,
+    "AU",
+    "days$^-1$",
+    True,
+)
+
+dual_a_temp_convergence = gen_paramspace(
+    "ORBIT",
+    "a",
+    "PDE",
+    "start_temp",
+    True,
+    True,
+    "AU",
+    "K",
+    True,
+)
+
+dual_e_delta_convergence = gen_paramspace(
+    "ORBIT", "e", "PLANET", "obliquity", True, True, None, r"$^{\circ}$", True
+)
+
+dual_e_omega_convergence = gen_paramspace(
+    "ORBIT", "e", "PLANET", "omega", True, True, None, "days$^{-1}$", True
+)
+
+dual_e_starttemp_convergence = gen_paramspace(
+    "ORBIT", "e", "PDE", "start_temp", True, True, None, "K", True
+)
+
+dual_delta_omega_convergence = gen_paramspace(
+    "PLANET",
+    "obliquity",
+    "PLANET",
+    "omega",
+    True,
+    True,
+    r"$^{\circ}$",
+    "days$^{-1}$",
+    True,
+)
+
+dual_delta_starttemp_convergence = gen_paramspace(
+    "PLANET", "obliquity", "PDE", "start_temp", True, True, r"$^{\circ}$", "K", True
+)
+
+dual_omega_starttemp_convergence = gen_paramspace(
+    "PLANET", "omega", "PDE", "start_temp", True, True, "days$^{-1}$", "K", True
+)
+
+
+def reprocess_paramspace():
+    pass
+
 
 if __name__ == "__main__":
     conf = load_config()
@@ -240,5 +293,13 @@ if __name__ == "__main__":
     # print(test_timestep_convergence(conf, 0.25, 3.1, 0.25, rtol=0.0001))
     # print(test_timestep_convergence(conf, 3, 10.1, 0.5, rtol=0.0001))
 
-    # print(dual_a_e_convergence(conf, 0.5, 2.05, 0.1, 0, 0.91, 0.1, 0.001))
-    print(dual_a_delta_convergence(conf, 0.5, 2.05, 0.1, 0, 0.91, 0.1, 0.001))
+    print(dual_a_e_convergence(conf, 0.5, 2.05, 0.1, 0, 0.91, 0.1, 0.001))
+    # print(dual_a_delta_convergence(conf, 0.5, 2.05, 0.1, 0, 91, 10, 0.001))
+    # print(dual_a_omega_convergence(conf, 0.5, 2.05, 0.1, 0.25, 3.1, 0.25, 0.001))
+    # print(dual_a_temp_convergence(conf, 0.5, 2.05, 0.1, 150, 500, 50, 0.001))
+    # print(dual_e_delta_convergence(conf, 0, 0.91, 0.1, 0, 91, 10, 0.001))
+    # print(dual_e_omega_convergence(conf, 0, 0.91, 0.1, 0.25, 3.1, 0.25, 0.001))
+    # print(dual_e_starttemp_convergence(conf, 0, 0.91, 0.1, 150, 500, 50, 0.001))
+    # print(dual_delta_omega_convergence(conf, 70, 91, 10, 0.25, 3.1, 0.25, 0.001))
+    # print(dual_delta_starttemp_convergence(conf, 0, 91, 10, 150, 500, 50, 0.001))
+    # print(dual_omega_starttemp_convergence(conf, 0.25, 3.1, 0.25, 150, 500, 50, 0.001))

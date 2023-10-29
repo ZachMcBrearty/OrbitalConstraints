@@ -3,6 +3,8 @@ from typing import Optional
 import matplotlib.pyplot as plt
 import numpy as np
 
+from filemanagement import read_dual_folder
+
 yeartosecond = 365.25 * 24 * 3600  # s / yr
 
 
@@ -196,8 +198,42 @@ def convergence_plot_single(
     plt.show()
 
 
-def convergence_plot_dual():
-    pass
+def convergence_plot_dual(
+    tests,
+    convtemps,
+    val_name_1,
+    val_1_range,
+    val_name_2,
+    val_2_range,
+    rtol=0.0001,
+    val_unit_1=None,
+    val_unit_2=None,
+):
+    if val_unit_1 is None:
+        val_unit_1 = ""
+    else:
+        val_unit_1 = ", " + val_unit_1
+    if val_unit_2 is None:
+        val_unit_2 = ""
+    else:
+        val_unit_2 = ", " + val_unit_2
+
+    fig, (ax1, ax2) = plt.subplots(2, 1)
+    ax1: plt.Axes
+    ax2: plt.Axes
+    converge_time_map = ax1.pcolormesh(
+        val_1_range, val_2_range, tests.T, cmap="RdBu_r", shading="nearest"
+    )
+    converge_temp_map = ax2.pcolormesh(
+        val_1_range, val_2_range, convtemps.T, cmap="RdBu_r", shading="nearest"
+    )
+    fig.colorbar(converge_time_map, ax=ax1, label="Time to converge, years")
+    fig.colorbar(converge_temp_map, ax=ax2, label="Convergent Temperature, K")
+    ax1.set_ylabel(f"{val_name_2} {val_unit_2}")
+    ax1.set_xlabel(f"{val_name_1} {val_unit_1}")
+    ax2.set_ylabel(f"{val_name_2} {val_unit_2}")
+    ax2.set_xlabel(f"{val_name_1} {val_unit_1}")
+    plt.show()
 
 
 if __name__ == "__main__":

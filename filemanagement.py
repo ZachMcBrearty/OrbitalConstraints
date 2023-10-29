@@ -1,6 +1,7 @@
 from datetime import datetime
 from typing import Optional
 import configparser
+import os
 
 import numpy as np
 from netCDF4 import Dataset  # type: ignore
@@ -62,13 +63,32 @@ def load_config(filename="DEFAULT.ini", path="OrbitalConstraints"):
     return config
 
 
+def read_single_folder(foldername, folderpath):
+    pass
+
+
+def read_dual_folder(foldername, folderpath):
+    dual, first_name, second_name = foldername.split("_")
+    assert dual == "dual"  # must be a "dual..." folder
+    os.chdir(folderpath + os.sep + foldername)
+    files = os.listdir()
+    data = read_files(files)
+    first_val_range = []
+    second_val_range = []
+    for name in files:
+        dual, first_name_file, first_val, second_name_file, second_val = name.split("_")
+        if (
+            dual != "dual"
+            or first_name != first_name_file
+            or second_name != second_name_file
+        ):  # ingnore extraneous files
+            continue
+        first_val_range.append(first_val)
+        second_val_range.append(second_val.strip(".npz"))
+    return first_name, second_name, first_val_range, second_val_range, data
+
+
 if __name__ == "__main__":
-    times = np.array([0, 2, 4, 6, 8])
-    degs = np.array([1, 2, 3, 4])
-    temps = np.array(
-        [[1, 2, 3, 4], [2, 4, 6, 8], [3, 6, 9, 12], [4, 8, 12, 16], [5, 10, 15, 20]]
-    )
-    write_to_file(times, degs, temps, filename="one.npz")
-    write_to_file(times * 2, degs * 2, temps * 2, filename="two.npz")
-    write_to_file(times * 4, degs * 4, temps * 4, filename="three.npz")
-    print(read_files(["one.npz", "two.npz", "three.npz"]))
+    fn, sn, fvr, svr, d = read_dual_folder("dual_a_e", os.path.curdir)
+    print(fn, sn)
+    print(fvr, svr)
