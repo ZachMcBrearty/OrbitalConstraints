@@ -64,10 +64,9 @@ def read_dual_folder(
 ) -> Generator[tuple[str, str, tuple[NDArray, NDArray, NDArray]], None, None]:
     dual, first_name, second_name = foldername.split("_")
     assert dual == "dual"  # must be a "dual..." folder
-    os.chdir(folderpath + os.sep + foldername)
-    files = os.listdir()
+    files = os.listdir(folderpath + os.sep + foldername)
     for file in files:
-        data = read_file(file)
+        data = read_file(folderpath + os.sep + foldername + os.sep + file)
         dual, first_name_file, first_val, second_name_file, second_val = file.strip(
             ".npz"
         ).split("_")

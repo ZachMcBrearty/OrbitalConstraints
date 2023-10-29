@@ -331,14 +331,14 @@ if __name__ == "__main__":
 
     # print(test_a_convergence(conf, 0.5, 2.05, 0.1, rtol=0.0001, plot=True))
     # print(test_e_convergence(conf, 0, 0.91, 0.1, rtol=0.0001, plot=True))
-    # print(test_delta_convergence(conf, 0, 181, 10, rtol=0.0001, plot=True))
+    print(test_delta_convergence(conf, 0, 181, 10, rtol=0.0001))
     # print(test_omega_convergence(conf, 0.3, 3, 0.3, rtol=0.0001, plot=True))
     # print(test_temp_convergence(conf, 100, 501, 50, rtol=0.0001))
     # print(test_spacedim_convergence(conf, 140, 150, 1, rtol=0.0001))
     # print(test_timestep_convergence(conf, 0.25, 3.1, 0.25, rtol=0.0001))
     # print(test_timestep_convergence(conf, 3, 10.1, 0.5, rtol=0.0001))
 
-    print(dual_a_e_convergence(conf, 0.5, 2.05, 0.1, 0, 0.91, 0.1, 0.001))
+    # print(dual_a_e_convergence(conf, 0.5, 2.05, 0.1, 0, 0.91, 0.1, 0.001))
     # print(dual_a_delta_convergence(conf, 0.5, 2.05, 0.1, 0, 91, 10, 0.001))
     # print(dual_a_omega_convergence(conf, 0.5, 2.05, 0.1, 0.25, 3.1, 0.25, 0.001))
     # print(dual_a_temp_convergence(conf, 0.5, 2.05, 0.1, 150, 500, 50, 0.001))
@@ -352,13 +352,64 @@ if __name__ == "__main__":
 
     # print(dual_omega_starttemp_convergence(conf, 0.25, 3.1, 0.25, 150, 500, 50, 0.001))
 
-    reprocess_paramspace("dual_a_e", os.path.curdir, "a", "e", "au", None, 0.001)
-    reprocess_paramspace(
-        "dual_a_obliquity", os.path.curdir, "a", "obliquity", "au", r"$^{\circ}$", 0.001
-    )
-    reprocess_paramspace(
-        "dual_a_omega", os.path.curdir, "a", "omega", "au", "days$^{-1}$", 0.001
-    )
-    reprocess_paramspace(
-        "dual_a_starttemp", os.path.curdir, "a", "starttemp", "au", None, 0.001
-    )
+    # reprocess_paramspace("dual_a_e", os.path.curdir, "a", "e", "au", None, 0.0001)
+    # reprocess_paramspace(
+    #     "dual_a_obliquity",
+    #     os.path.curdir,
+    #     "a",
+    #     "obliquity",
+    #     "au",
+    #     r"$^{\circ}$",
+    #     0.0001,
+    # )
+    # reprocess_paramspace(
+    #     "dual_a_omega", os.path.curdir, "a", "omega", "au", "days$^{-1}$", 0.0001
+    # )
+    # reprocess_paramspace(
+    #     "dual_a_starttemp", os.path.curdir, "a", "starttemp", "au", "K", 0.0001
+    # )
+
+    # reprocess_paramspace(
+    #     "dual_e_obliquity",
+    #     os.path.curdir,
+    #     "e",
+    #     "obliquity",
+    #     None,
+    #     r"$^{\circ}$",
+    #     0.0001,
+    # )
+    # reprocess_paramspace(
+    #     "dual_e_omega", os.path.curdir, "e", "omega", None, "days$^{-1}$", 0.0001
+    # )
+    # reprocess_paramspace(
+    #     "dual_e_starttemp", os.path.curdir, "e", "starttemp", None, "K", 0.0001
+    # )
+
+    # reprocess_paramspace(
+    #     "dual_obliquity_omega",
+    #     os.path.curdir,
+    #     "obliquity",
+    #     "omega",
+    #     r"$^{\circ}$",
+    #     "days$^{-1}$",
+    #     0.0001,
+    # )
+    # reprocess_paramspace(
+    #     "dual_obliquity_starttemp",
+    #     os.path.curdir,
+    #     "obliquity",
+    #     "starttemp",
+    #     r"$^{\circ}$",
+    #     "K",
+    #     0.0001,
+    # )
+
+    # reprocess_paramspace(
+    #     "dual_omega_starttemp",
+    #     os.path.curdir,
+    #     "omega",
+    #     "starttemp",
+    #     "days$^{-1}$",
+    #     "K",
+    #     0.0001,
+    # )
