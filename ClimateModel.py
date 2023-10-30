@@ -29,20 +29,17 @@
 # T(x_m, t_n+1) = T(x_m, t_n) + Δt / C(x_m, t_n)
 # * (diff_elem - I + S(1-A))
 
+from configparser import ConfigParser
+
 import numpy as np
 import numpy.typing as npt
 
+from Constants import yeartosecond, floatarr
 from InsolationFunction import S, dist
 from HeatCapacity import C, f_o, f_i
 from IRandAlbedo import A_1, A_2, A_3, I_1, I_2, I_3
 from plotting import plotdata, complexplotdata, plt, yearavgplot, colourplot
 from filemanagement import write_to_file, load_config, read_file
-
-from configparser import ConfigParser
-
-floatarr = npt.NDArray[np.float64]
-
-yeartosecond = 365.25 * 24 * 3600  # s / yr
 
 
 ## derivatives ##

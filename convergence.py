@@ -5,6 +5,7 @@ import numpy as np
 from numpy.typing import NDArray
 import matplotlib.pyplot as plt
 
+from Constants import *
 from ClimateModel import climate_model_in_lat
 from filemanagement import (
     load_config,
@@ -104,22 +105,24 @@ def gen_convergence_test(
 
 
 test_spacedim_convergence = gen_convergence_test(
-    "PDE", "spacedim", True, True, True, None
+    "PDE", "spacedim", True, True, True, spacedim_unit
 )
 test_timestep_convergence = gen_convergence_test(
-    "PDE", "timestep", True, True, True, "days"
+    "PDE", "timestep", True, True, True, timestep_unit
 )
-test_temp_convergence = gen_convergence_test("PDE", "starttemp", True, True, True, "K")
+test_temp_convergence = gen_convergence_test(
+    "PDE", "starttemp", True, True, True, temp_unit
+)
 
 test_omega_convergence = gen_convergence_test(
-    "PLANET", "omega", True, True, True, "day$^{-1}$"
+    "PLANET", "omega", True, True, True, omega_unit
 )
 test_delta_convergence = gen_convergence_test(
-    "PLANET", "obliquity", True, True, True, r"$^{\circ}"
+    "PLANET", "obliquity", True, True, True, obliquity_unit
 )
 
-test_a_convergence = gen_convergence_test("ORBIT", "a", True, True, True, "AU")
-test_e_convergence = gen_convergence_test("ORBIT", "e", True, True, True, None)
+test_a_convergence = gen_convergence_test("ORBIT", "a", True, True, True, a_unit)
+test_e_convergence = gen_convergence_test("ORBIT", "e", True, True, True, e_unit)
 
 
 def gen_paramspace(
@@ -197,8 +200,8 @@ dual_a_e_convergence = gen_paramspace(
     "e",
     verbose=True,
     plot=True,
-    val_unit_1="AU",
-    val_unit_2=None,
+    val_unit_1=a_unit,
+    val_unit_2=e_unit,
     save=True,
 )
 dual_a_delta_convergence = gen_paramspace(
@@ -208,8 +211,8 @@ dual_a_delta_convergence = gen_paramspace(
     "obliquity",
     verbose=True,
     plot=True,
-    val_unit_1="AU",
-    val_unit_2=r"$^{\circ}$",
+    val_unit_1=a_unit,
+    val_unit_2=obliquity_unit,
     save=True,
 )
 
@@ -220,8 +223,8 @@ dual_a_omega_convergence = gen_paramspace(
     "omega",
     True,
     True,
-    "AU",
-    "days$^-1$",
+    a_unit,
+    omega_unit,
     True,
 )
 
@@ -232,21 +235,21 @@ dual_a_temp_convergence = gen_paramspace(
     "starttemp",
     True,
     True,
-    "AU",
-    "K",
+    a_unit,
+    temp_unit,
     True,
 )
 
 dual_e_delta_convergence = gen_paramspace(
-    "ORBIT", "e", "PLANET", "obliquity", True, True, None, r"$^{\circ}$", True
+    "ORBIT", "e", "PLANET", "obliquity", True, True, e_unit, obliquity_unit, True
 )
 
 dual_e_omega_convergence = gen_paramspace(
-    "ORBIT", "e", "PLANET", "omega", True, True, None, "days$^{-1}$", True
+    "ORBIT", "e", "PLANET", "omega", True, True, e_unit, omega_unit, True
 )
 
 dual_e_starttemp_convergence = gen_paramspace(
-    "ORBIT", "e", "PDE", "starttemp", True, True, None, "K", True
+    "ORBIT", "e", "PDE", "starttemp", True, True, e_unit, temp_unit, True
 )
 
 dual_delta_omega_convergence = gen_paramspace(
@@ -256,17 +259,25 @@ dual_delta_omega_convergence = gen_paramspace(
     "omega",
     True,
     True,
-    r"$^{\circ}$",
-    "days$^{-1}$",
+    obliquity_unit,
+    omega_unit,
     True,
 )
 
 dual_delta_starttemp_convergence = gen_paramspace(
-    "PLANET", "obliquity", "PDE", "starttemp", True, True, r"$^{\circ}$", "K", True
+    "PLANET",
+    "obliquity",
+    "PDE",
+    "starttemp",
+    True,
+    True,
+    obliquity_unit,
+    temp_unit,
+    True,
 )
 
 dual_omega_starttemp_convergence = gen_paramspace(
-    "PLANET", "omega", "PDE", "starttemp", True, True, "days$^{-1}$", "K", True
+    "PLANET", "omega", "PDE", "starttemp", True, True, omega_unit, temp_unit, True
 )
 
 
