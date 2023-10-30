@@ -340,9 +340,10 @@ if __name__ == "__main__":
     conf.set("ORBIT", "a", "1")  #
     conf.set("ORBIT", "e", "0")  #
 
+    #### TODO: generate single param-space data####
     # print(test_a_convergence(conf, 0.5, 2.05, 0.1, rtol=0.0001, plot=True))
     # print(test_e_convergence(conf, 0, 0.91, 0.1, rtol=0.0001, plot=True))
-    print(test_delta_convergence(conf, 0, 181, 10, rtol=0.0001))
+    # print(test_delta_convergence(conf, 0, 181, 10, rtol=0.0001))
     # print(test_omega_convergence(conf, 0.3, 3, 0.3, rtol=0.0001, plot=True))
     # print(test_temp_convergence(conf, 100, 501, 50, rtol=0.0001))
     # print(test_spacedim_convergence(conf, 140, 150, 1, rtol=0.0001))
