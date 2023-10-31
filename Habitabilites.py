@@ -53,7 +53,6 @@ def f_hab(
     return H_temps_sum_sum
 
 
-#### TODO: requires single_paramspace loading (and data generation) ####
 def time_habitability_paramspace(
     foldername: str,
     folderpath: str,
@@ -61,8 +60,9 @@ def time_habitability_paramspace(
     val_unit: Optional[str] = None,
     min_year=190,
     max_year=200,
-    avg_year=1,
 ):
+    """Latitude band habitability, averaged over a number of years
+    min_year to max_year: years to average over"""
     assert val_name != "spacedim"  # i.e. spacedim should be constant
     val_range = []
     habitability_time = []
@@ -104,9 +104,50 @@ def area_habitability_paramspace(
     folderpath: str,
     val_name: str,
     val_unit: Optional[str] = None,
-    year=190,
+    min_year=190,
+    max_year=195,
 ):
-    pass
+    """yearly habitability averaged over all latitudes
+    min year to max_year: years to show"""
+    assert val_name != "timestep"  # i.e. timestep should be constant
+    val_range = []
+    habitability_lat = []
+    data = read_single_folder(foldername, folderpath)
+    for i, datum in enumerate(data):
+        val, (times, temps, degs) = datum
+        lats = np.deg2rad(degs)
+        dlat = abs(lats[1] - lats[0])
+        dt = abs(times[1] - times[0])  # years
+        # 365 * dt years = dt days
+        # 365 days per year / (365 * dt) days = datapoints per year
+        # datapoints per year = 1 / dt
+        slice_min = int(min_year / dt)
+        slice_max = int((max_year) / dt) + 1
+        temps_red = temps.T[slice_min:slice_max]
+        times_red = times[slice_min:slice_max]
+        lat_hab = f_area(temps_red, lats, dlat)
+        if val not in val_range:
+            val_range.append(val)
+        habitability_lat.append(lat_hab)
+
+    if val_unit is None:
+        val_unit = ""
+    else:
+        val_unit = ", " + val_unit
+
+    fig, ax = plt.subplots(1, 1)
+    ax: plt.Axes
+    lat_hab_map = ax.pcolormesh(
+        val_range,
+        times_red,
+        np.array(habitability_lat).T,
+        cmap="RdBu_r",
+        shading="nearest",
+    )
+    fig.colorbar(lat_hab_map, ax=ax, label="Area averaged habitability")
+    ax.set_ylabel("Time, years")
+    ax.set_xlabel(f"{val_name} {val_unit}")
+    plt.show()
 
 
 def habitability_paramspace(
@@ -170,17 +211,30 @@ def habitability_paramspace(
 if __name__ == "__main__":
     import os
 
-    time_habitability_paramspace("single_a", os.path.curdir, "a", a_unit)
-    time_habitability_paramspace("single_e", os.path.curdir, "e", e_unit)
-    time_habitability_paramspace(
+    # time_habitability_paramspace("single_a", os.path.curdir, "a", a_unit)
+    # time_habitability_paramspace("single_e", os.path.curdir, "e", e_unit)
+    # time_habitability_paramspace(
+    #     "single_obliquity", os.path.curdir, "obliquity", obliquity_unit
+    # )
+    # time_habitability_paramspace("single_omega", os.path.curdir, "omega", omega_unit)
+    # time_habitability_paramspace(
+    #     "single_starttemp", os.path.curdir, "starttemp", temp_unit
+    # )
+    # time_habitability_paramspace(
+    #     "single_timestep", os.path.curdir, "timestep", timestep_unit
+    # )
+
+    area_habitability_paramspace("single_a", os.path.curdir, "a", a_unit)
+    area_habitability_paramspace("single_e", os.path.curdir, "e", e_unit)
+    area_habitability_paramspace(
         "single_obliquity", os.path.curdir, "obliquity", obliquity_unit
     )
-    time_habitability_paramspace("single_omega", os.path.curdir, "omega", omega_unit)
-    time_habitability_paramspace(
+    area_habitability_paramspace("single_omega", os.path.curdir, "omega", omega_unit)
+    area_habitability_paramspace(
         "single_starttemp", os.path.curdir, "starttemp", temp_unit
     )
-    time_habitability_paramspace(
-        "single_timestep", os.path.curdir, "timestep", timestep_unit
+    area_habitability_paramspace(
+        "single_spacedim", os.path.curdir, "spacedim", spacedim_unit
     )
 
     # habitability_paramspace("dual_a_e", os.path.curdir, "a", "e", a_unit, e_unit)
