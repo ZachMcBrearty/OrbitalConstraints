@@ -29,8 +29,9 @@ def convergence_test(
     # and then skip from the start of the dataset
     year_len = int(365 / dt)
     # -> i.e. each timestep is dt, so a year is 365 / dt datapoints long
-    a = int(temps.size % (year_len * 60 * year_avg) / 60)
-    tq = temps[:, a:].reshape(temps.shape[0], -1, year_len * year_avg)
+    spacedim = temps.shape[0]
+    a = int(temps.size % (year_len * spacedim * year_avg) / spacedim)
+    tq = temps[:, a:].reshape(spacedim, -1, year_len * year_avg)
     tqa = np.average(tq, axis=2)  # average over time
     tqaa = np.average(
         tqa, axis=0, weights=np.cos(np.linspace(-np.pi / 2, np.pi / 2, temps.shape[0]))
@@ -105,24 +106,24 @@ def gen_convergence_test(
 
 
 test_spacedim_convergence = gen_convergence_test(
-    "PDE", "spacedim", True, True, True, spacedim_unit
+    "PDE", "spacedim", True, False, True, spacedim_unit
 )
 test_timestep_convergence = gen_convergence_test(
-    "PDE", "timestep", True, True, True, timestep_unit
+    "PDE", "timestep", True, False, True, timestep_unit
 )
 test_temp_convergence = gen_convergence_test(
-    "PDE", "starttemp", True, True, True, temp_unit
+    "PDE", "starttemp", True, False, True, temp_unit
 )
 
 test_omega_convergence = gen_convergence_test(
-    "PLANET", "omega", True, True, True, omega_unit
+    "PLANET", "omega", True, False, True, omega_unit
 )
 test_delta_convergence = gen_convergence_test(
-    "PLANET", "obliquity", True, True, True, obliquity_unit
+    "PLANET", "obliquity", True, False, True, obliquity_unit
 )
 
-test_a_convergence = gen_convergence_test("ORBIT", "a", True, True, True, a_unit)
-test_e_convergence = gen_convergence_test("ORBIT", "e", True, True, True, e_unit)
+test_a_convergence = gen_convergence_test("ORBIT", "a", True, False, True, a_unit)
+test_e_convergence = gen_convergence_test("ORBIT", "e", True, False, True, e_unit)
 
 
 def gen_paramspace(
@@ -340,14 +341,15 @@ if __name__ == "__main__":
     conf.set("ORBIT", "a", "1")  #
     conf.set("ORBIT", "e", "0")  #
 
-    #### TODO: generate single param-space data####
-    # print(test_a_convergence(conf, 0.5, 2.05, 0.1, rtol=0.0001, plot=True))
-    # print(test_e_convergence(conf, 0, 0.91, 0.1, rtol=0.0001, plot=True))
+    # print(test_a_convergence(conf, 0.5, 2.05, 0.1, rtol=0.0001))
+    # print(test_e_convergence(conf, 0, 0.91, 0.1, rtol=0.0001))
     # print(test_delta_convergence(conf, 0, 181, 10, rtol=0.0001))
-    # print(test_omega_convergence(conf, 0.3, 3, 0.3, rtol=0.0001, plot=True))
+    # print(test_omega_convergence(conf, 0.3, 3, 0.3, rtol=0.0001))
     # print(test_temp_convergence(conf, 100, 501, 50, rtol=0.0001))
-    # print(test_spacedim_convergence(conf, 140, 150, 1, rtol=0.0001))
+    # print(test_spacedim_convergence(conf, 30, 180, 15, rtol=0.0001))
+    # conf.set("PDE", "time", "300")
     # print(test_timestep_convergence(conf, 0.25, 3.1, 0.25, rtol=0.0001))
+    # conf.set("PDE", "time", "500")
     # print(test_timestep_convergence(conf, 3, 10.1, 0.5, rtol=0.0001))
 
     # print(dual_a_e_convergence(conf, 0.5, 2.05, 0.1, 0, 0.91, 0.1, 0.001))
