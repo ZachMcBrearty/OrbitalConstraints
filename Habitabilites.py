@@ -18,7 +18,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 from Constants import *
-from filemanagement import read_dual_folder, read_file
+from filemanagement import read_dual_folder, read_single_folder, read_file
 
 
 def H(temps: NDArray) -> NDArray:
@@ -55,13 +55,56 @@ def f_hab(
 
 #### TODO: requires single_paramspace loading (and data generation) ####
 def time_habitability_paramspace(
-    foldername, folderpath, val_name, val_unit: Optional[str] = None, year=190
+    foldername: str,
+    folderpath: str,
+    val_name: str,
+    val_unit: Optional[str] = None,
+    min_year=190,
+    max_year=200,
+    avg_year=1,
 ):
-    pass
+    assert val_name != "spacedim"  # i.e. spacedim should be constant
+    val_range = []
+    habitability_time = []
+    data = read_single_folder(foldername, folderpath)
+    for i, datum in enumerate(data):
+        val, (times, temps, degs) = datum
+        dt = abs(times[1] - times[0])  # years
+        # 365 * dt years = dt days
+        # 365 days per year / (365 * dt) days = datapoints per year
+        # datapoints per year = 1 / dt
+        slice_min = int(min_year / dt)
+        slice_max = int((max_year + 1) / dt)
+        temps_red = temps.T[slice_min:slice_max]
+        times_red = times[slice_min:slice_max]
+
+        time_hab = f_time(temps_red, times_red, dt)
+        if val not in val_range:
+            val_range.append(val)
+        habitability_time.append(time_hab)
+
+    if val_unit is None:
+        val_unit = ""
+    else:
+        val_unit = ", " + val_unit
+
+    fig, ax = plt.subplots(1, 1)
+    ax: plt.Axes
+    time_hab_map = ax.pcolormesh(
+        val_range, degs, np.array(habitability_time).T, cmap="RdBu_r", shading="nearest"
+    )
+    fig.colorbar(time_hab_map, ax=ax, label="Time averaged habitability")
+    ax.set_ylabel(r"Latitude, $^{\circ}$")
+    ax.set_xlabel(f"{val_name} {val_unit}")
+    plt.show()
 
 
 def area_habitability_paramspace(
-    foldername, folderpath, val_name, val_unit: Optional[str] = None, year=190
+    foldername: str,
+    folderpath: str,
+    val_name: str,
+    val_unit: Optional[str] = None,
+    year=190,
 ):
     pass
 
@@ -85,7 +128,7 @@ def habitability_paramspace(
         dt = abs(times[1] - times[0])  # 1
         dlat = abs(lats[1] - lats[0])
         temps_red = temps.T[
-            int(365 * 365 * dt * year) : int(365 * 365 * dt * (year + 1))
+            int(365 * 365 / dt * year) : int(365 * 365 / dt * (year + 1))
         ]
         times_red = times[int(365 * 365 * dt * year) : int(365 * 365 * dt * (year + 1))]
         tot_hab = f_hab(
@@ -115,10 +158,10 @@ def habitability_paramspace(
 
     fig, ax1 = plt.subplots(1, 1)
     ax1: plt.Axes
-    converge_time_map = ax1.pcolormesh(
+    tot_hab_map = ax1.pcolormesh(
         val_1_range, val_2_range, total_habitability.T, cmap="RdBu_r", shading="nearest"
     )
-    fig.colorbar(converge_time_map, ax=ax1, label="Total Habitability")
+    fig.colorbar(tot_hab_map, ax=ax1, label="Total Habitability")
     ax1.set_ylabel(f"{val_2_name} {val_2_unit}")
     ax1.set_xlabel(f"{val_1_name} {val_1_unit}")
     plt.show()
@@ -126,6 +169,19 @@ def habitability_paramspace(
 
 if __name__ == "__main__":
     import os
+
+    time_habitability_paramspace("single_a", os.path.curdir, "a", a_unit)
+    time_habitability_paramspace("single_e", os.path.curdir, "e", e_unit)
+    time_habitability_paramspace(
+        "single_obliquity", os.path.curdir, "obliquity", obliquity_unit
+    )
+    time_habitability_paramspace("single_omega", os.path.curdir, "omega", omega_unit)
+    time_habitability_paramspace(
+        "single_starttemp", os.path.curdir, "starttemp", temp_unit
+    )
+    time_habitability_paramspace(
+        "single_timestep", os.path.curdir, "timestep", timestep_unit
+    )
 
     # habitability_paramspace("dual_a_e", os.path.curdir, "a", "e", a_unit, e_unit)
     # habitability_paramspace(

@@ -57,16 +57,14 @@ def load_config(filename="DEFAULT.ini", path="OrbitalConstraints"):
 
 def read_single_folder(
     foldername: str, folderpath: str
-) -> Generator[tuple[str, str, tuple[NDArray, NDArray, NDArray]], None, None]:
-    single, first_name, second_name = foldername.split("_")
+) -> Generator[tuple[str, tuple[NDArray, NDArray, NDArray]], None, None]:
+    single, first_name = foldername.split("_")
     assert single == "single"  # must be a "single..." folder
     files = os.listdir(folderpath + os.sep + foldername)
     for file in files:
         data = read_file(folderpath + os.sep + foldername + os.sep + file)
-        single, first_name_file, first_val, second_name_file, second_val = file.strip(
-            ".npz"
-        ).split("_")
-        yield first_val, second_val, data
+        single, first_name_file, first_val = file.strip(".npz").split("_")
+        yield first_val, data
 
 
 def read_dual_folder(
