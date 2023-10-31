@@ -323,9 +323,7 @@ def reprocess_paramspace(
     )
 
 
-if __name__ == "__main__":
-    conf = load_config()
-
+def reset_conf(conf):
     conf.set("FILEMANAGEMENT", "save", "False")
     conf.set("FILEMANAGEMENT", "plot", "False")
 
@@ -340,12 +338,22 @@ if __name__ == "__main__":
 
     conf.set("ORBIT", "a", "1")  #
     conf.set("ORBIT", "e", "0")  #
+    return conf
+
+
+if __name__ == "__main__":
+    conf = load_config()
+    reset_conf(conf)
 
     # print(test_a_convergence(conf, 0.5, 2.05, 0.1, rtol=0.0001))
     print(test_e_convergence(conf, 0, 0.91, 0.1, rtol=0.0001))
+    reset_conf(conf)
     print(test_delta_convergence(conf, 0, 181, 10, rtol=0.0001))
+    reset_conf(conf)
     print(test_omega_convergence(conf, 0.3, 3, 0.3, rtol=0.0001))
+    reset_conf(conf)
     print(test_temp_convergence(conf, 100, 501, 50, rtol=0.0001))
+    reset_conf(conf)
     # print(test_spacedim_convergence(conf, 30, 180, 15, rtol=0.0001))
     # conf.set("PDE", "time", "300")
     # print(test_timestep_convergence(conf, 0.25, 3.1, 0.25, rtol=0.0001))
