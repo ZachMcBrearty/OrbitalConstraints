@@ -164,9 +164,9 @@ def threecolourplot(
     ax1.set_ylabel("latitude, degrees")
     ax2.set_ylabel("latitude, degrees")
     ax3.set_ylabel("latitude, degrees")
-    ax1.set_yticks(np.linspace(-90, 90, 13, endpoint=True))
-    ax2.set_yticks(np.linspace(-90, 90, 13, endpoint=True))
-    ax3.set_yticks(np.linspace(-90, 90, 13, endpoint=True))
+    ax1.set_yticks(np.linspace(-90, 90, 9, endpoint=True))
+    ax2.set_yticks(np.linspace(-90, 90, 9, endpoint=True))
+    ax3.set_yticks(np.linspace(-90, 90, 9, endpoint=True))
     plt.tight_layout()
     fig.colorbar(pcm1, ax=(ax1, ax2, ax3))
 
@@ -241,13 +241,18 @@ if __name__ == "__main__":
     from convergence import convergence_test
 
     conf = load_config()
-    times, temps, degs = read_file("testing_1.5_low.npz")
-    # dt = times[1] - times[0]
+    # q0 = read_file("single_omega/single_omega_2.41.npz")
+    # q1 = read_file("single_omega/single_omega_2.415.npz")
+    # q2 = read_file("single_omega/single_omega_2.42.npz")
+    # threecolourplot(q0, q1, q2, None, None, 1)
 
+    times, temps, degs = read_file("omega.npz")
+    dt = times[1] - times[0]
+    colourplot(degs, temps, times, None, None, 1)
     # plotdata(degs, temps, dt, 0, 365 * 1, 10)
     # print(convergence_test(temps, rtol=0.0001))
     # yearavgplot(degs, temps, dt, 90, 120, 1)
-    colourplot(degs, temps, times, 95, 150, 1, None, None)
+
     # colourplot(degs, temps, times, None, None, 1, None, None)
 
     # one = read_files("testing_1.5.npz")
