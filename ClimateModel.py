@@ -223,6 +223,9 @@ def climate_model_in_lat(
         # r = dist(a, e, dt * n)
         Source[:, n] = S(a, lats, dt * n, axtilt, e)
         Albedo[:, n] = A_2(Temp[:, n])
+        if 100 * 365 <= n < 101 * 365:
+            diff_elem += 25
+
         Temp[:, n + 1] = Temp[:, n] + yeartosecond * dt / Capacity[:, n] * (
             diff_elem - Ir_emission[:, n] + Source[:, n] * (1 - Albedo[:, n])
         )
@@ -237,9 +240,7 @@ def climate_model_in_lat(
         write_to_file(times, Temp, degs, config.get("FILEMANAGEMENT", "save_name"))
 
     if config.getboolean("FILEMANAGEMENT", "plot"):
-        # complexplotdata(degs, Temp, dt, Ir_emission, Source, Albedo, Capacity)
-        # plotdata(degs, Temp, dt, 145 * 365, 146 * 365 + 1, 12)
-        yearavgplot(degs, Temp, dt, 0, time, int(time // 20))
+        colourplot(degs, Temp, times, 90)
 
     return degs, Temp, times
 
