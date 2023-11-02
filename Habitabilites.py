@@ -67,6 +67,7 @@ def time_habitability_paramspace(
     val_range = []
     habitability_time = []
     data = read_single_folder(foldername, folderpath)
+    degs = None
     for i, datum in enumerate(data):
         val, (times, temps, degs) = datum
         dt = abs(times[1] - times[0])  # years
@@ -82,6 +83,8 @@ def time_habitability_paramspace(
         if (float_val := float(val)) not in val_range:
             val_range.append(float_val)
         habitability_time.append(time_hab)
+
+    assert degs is not None
 
     if val_unit is None:
         val_unit = ""
@@ -113,6 +116,7 @@ def area_habitability_paramspace(
     val_range = []
     habitability_lat = []
     data = read_single_folder(foldername, folderpath)
+    times_red = None
     for i, datum in enumerate(data):
         val, (times, temps, degs) = datum
         lats = np.deg2rad(degs)
@@ -129,6 +133,8 @@ def area_habitability_paramspace(
         if (float_val := float(val)) not in val_range:
             val_range.append(float_val)
         habitability_lat.append(lat_hab)
+
+    assert times_red is not None
 
     if val_unit is None:
         val_unit = ""
