@@ -25,8 +25,8 @@ def H(temps: NDArray) -> NDArray:
     """temps: numpy array of temperatures.
     returns: 1 if 273 < temp < 373 ; 0 otherwise, for each temp in temps"""
     ret = np.ones_like(temps)
-    ret[temps > 373] = 0
-    ret[temps < 273] = 0
+    ret[temps >= 373] = 0
+    ret[temps <= 273] = 0
     return ret
 
 
@@ -79,8 +79,8 @@ def time_habitability_paramspace(
         times_red = times[slice_min:slice_max]
 
         time_hab = f_time(temps_red, times_red, dt)
-        if val not in val_range:
-            val_range.append(val)
+        if (float_val := float(val)) not in val_range:
+            val_range.append(float_val)
         habitability_time.append(time_hab)
 
     if val_unit is None:
@@ -126,8 +126,8 @@ def area_habitability_paramspace(
         temps_red = temps.T[slice_min:slice_max]
         times_red = times[slice_min:slice_max]
         lat_hab = f_area(temps_red, lats, dlat)
-        if val not in val_range:
-            val_range.append(val)
+        if (float_val := float(val)) not in val_range:
+            val_range.append(float_val)
         habitability_lat.append(lat_hab)
 
     if val_unit is None:
@@ -168,10 +168,8 @@ def habitability_paramspace(
         lats = np.deg2rad(degs)
         dt = abs(times[1] - times[0])  # 1
         dlat = abs(lats[1] - lats[0])
-        temps_red = temps.T[
-            int(365 * 365 / dt * year) : int(365 * 365 / dt * (year + 1))
-        ]
-        times_red = times[int(365 * 365 * dt * year) : int(365 * 365 * dt * (year + 1))]
+        temps_red = temps.T[int(year / dt) : int((year + 1) / dt)]
+        times_red = times[int(year / dt) : int((year + 1) / dt)]
         tot_hab = f_hab(
             temps_red,
             lats,
@@ -216,7 +214,7 @@ if __name__ == "__main__":
     # time_habitability_paramspace(
     #     "single_obliquity", os.path.curdir, "obliquity", obliquity_unit
     # )
-    # time_habitability_paramspace("single_omega", os.path.curdir, "omega", omega_unit)
+    time_habitability_paramspace("single_omega", os.path.curdir, "omega", omega_unit)
     # time_habitability_paramspace(
     #     "single_starttemp", os.path.curdir, "starttemp", temp_unit
     # )
@@ -224,18 +222,18 @@ if __name__ == "__main__":
     #     "single_timestep", os.path.curdir, "timestep", timestep_unit
     # )
 
-    area_habitability_paramspace("single_a", os.path.curdir, "a", a_unit)
-    area_habitability_paramspace("single_e", os.path.curdir, "e", e_unit)
-    area_habitability_paramspace(
-        "single_obliquity", os.path.curdir, "obliquity", obliquity_unit
-    )
+    # area_habitability_paramspace("single_a", os.path.curdir, "a", a_unit)
+    # area_habitability_paramspace("single_e", os.path.curdir, "e", e_unit)
+    # area_habitability_paramspace(
+    #     "single_obliquity", os.path.curdir, "obliquity", obliquity_unit
+    # )
     area_habitability_paramspace("single_omega", os.path.curdir, "omega", omega_unit)
-    area_habitability_paramspace(
-        "single_starttemp", os.path.curdir, "starttemp", temp_unit
-    )
-    area_habitability_paramspace(
-        "single_spacedim", os.path.curdir, "spacedim", spacedim_unit
-    )
+    # area_habitability_paramspace(
+    #     "single_starttemp", os.path.curdir, "starttemp", temp_unit
+    # )
+    # area_habitability_paramspace(
+    #     "single_spacedim", os.path.curdir, "spacedim", spacedim_unit
+    # )
 
     # habitability_paramspace("dual_a_e", os.path.curdir, "a", "e", a_unit, e_unit)
     # habitability_paramspace(
