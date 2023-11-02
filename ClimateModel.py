@@ -248,10 +248,10 @@ if __name__ == "__main__":
     import cProfile
     from pstats import SortKey, Stats
 
-    with cProfile.Profile() as p:
-        config = load_config("config.ini", "OrbitalConstraints")
-        climate_model_in_lat(config)
-        Stats(p).strip_dirs().sort_stats(SortKey.CUMULATIVE).print_stats()
+    # with cProfile.Profile() as p:
+    config = load_config("config.ini", "OrbitalConstraints")
+    climate_model_in_lat(config)
+    # Stats(p).strip_dirs().sort_stats(SortKey.CUMULATIVE).print_stats()
     # times, temps, degs = read_file(
     #     config.get("FILEMANAGEMENT", "save_name") + ".npz"
     # )

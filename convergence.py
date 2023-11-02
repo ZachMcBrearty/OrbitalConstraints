@@ -211,7 +211,7 @@ dual_a_delta_convergence = gen_paramspace(
     "PLANET",
     "obliquity",
     verbose=True,
-    plot=True,
+    plot=False,
     val_unit_1=a_unit,
     val_unit_2=obliquity_unit,
     save=True,
@@ -223,7 +223,7 @@ dual_a_omega_convergence = gen_paramspace(
     "PLANET",
     "omega",
     True,
-    True,
+    False,
     a_unit,
     omega_unit,
     True,
@@ -235,22 +235,22 @@ dual_a_temp_convergence = gen_paramspace(
     "PDE",
     "starttemp",
     True,
-    True,
+    False,
     a_unit,
     temp_unit,
     True,
 )
 
 dual_e_delta_convergence = gen_paramspace(
-    "ORBIT", "e", "PLANET", "obliquity", True, True, e_unit, obliquity_unit, True
+    "ORBIT", "e", "PLANET", "obliquity", True, False, e_unit, obliquity_unit, True
 )
 
 dual_e_omega_convergence = gen_paramspace(
-    "ORBIT", "e", "PLANET", "omega", True, True, e_unit, omega_unit, True
+    "ORBIT", "e", "PLANET", "omega", True, False, e_unit, omega_unit, True
 )
 
 dual_e_starttemp_convergence = gen_paramspace(
-    "ORBIT", "e", "PDE", "starttemp", True, True, e_unit, temp_unit, True
+    "ORBIT", "e", "PDE", "starttemp", True, False, e_unit, temp_unit, True
 )
 
 dual_delta_omega_convergence = gen_paramspace(
@@ -259,7 +259,7 @@ dual_delta_omega_convergence = gen_paramspace(
     "PLANET",
     "omega",
     True,
-    True,
+    False,
     obliquity_unit,
     omega_unit,
     True,
@@ -271,14 +271,14 @@ dual_delta_starttemp_convergence = gen_paramspace(
     "PDE",
     "starttemp",
     True,
-    True,
+    False,
     obliquity_unit,
     temp_unit,
     True,
 )
 
 dual_omega_starttemp_convergence = gen_paramspace(
-    "PLANET", "omega", "PDE", "starttemp", True, True, omega_unit, temp_unit, True
+    "PLANET", "omega", "PDE", "starttemp", True, False, omega_unit, temp_unit, True
 )
 
 
@@ -346,31 +346,43 @@ if __name__ == "__main__":
     reset_conf(conf)
 
     # print(test_a_convergence(conf, 0.5, 2.05, 0.1, rtol=0.0001))
-    print(test_e_convergence(conf, 0, 0.91, 0.1, rtol=0.0001))
+    # reset_conf(conf)
+    # print(test_e_convergence(conf, 0, 0.91, 0.1, rtol=0.0001))
+    # reset_conf(conf)
+    # print(test_delta_convergence(conf, 0, 181, 10, rtol=0.0001))
+    # reset_conf(conf)
+    print(test_omega_convergence(conf, 2.4, 2.45, 0.005, rtol=0.0001))
     reset_conf(conf)
-    print(test_delta_convergence(conf, 0, 181, 10, rtol=0.0001))
-    reset_conf(conf)
-    print(test_omega_convergence(conf, 0.3, 3, 0.3, rtol=0.0001))
-    reset_conf(conf)
-    print(test_temp_convergence(conf, 100, 501, 50, rtol=0.0001))
-    reset_conf(conf)
+    # print(test_temp_convergence(conf, 100, 501, 50, rtol=0.0001))
+    # reset_conf(conf)
     # print(test_spacedim_convergence(conf, 30, 180, 15, rtol=0.0001))
     # conf.set("PDE", "time", "300")
     # print(test_timestep_convergence(conf, 0.25, 3.1, 0.25, rtol=0.0001))
 
+    # reset_conf(conf)
     # print(dual_a_e_convergence(conf, 0.5, 2.05, 0.1, 0, 0.91, 0.1, 0.001))
+    # reset_conf(conf)
     # print(dual_a_delta_convergence(conf, 0.5, 2.05, 0.1, 0, 91, 10, 0.001))
+    # reset_conf(conf)
     # print(dual_a_omega_convergence(conf, 0.5, 2.05, 0.1, 0.25, 3.1, 0.25, 0.001))
+    # reset_conf(conf)
     # print(dual_a_temp_convergence(conf, 0.5, 2.05, 0.1, 150, 500, 50, 0.001))
+    # reset_conf(conf)
 
     # print(dual_e_delta_convergence(conf, 0, 0.91, 0.1, 0, 91, 10, 0.001))
+    # reset_conf(conf)
     # print(dual_e_omega_convergence(conf, 0, 0.91, 0.1, 0.25, 3.1, 0.25, 0.001))
+    # reset_conf(conf)
     # print(dual_e_starttemp_convergence(conf, 0, 0.91, 0.1, 150, 500, 50, 0.001))
+    # reset_conf(conf)
 
     # print(dual_delta_omega_convergence(conf, 70, 91, 10, 0.25, 3.1, 0.25, 0.001))
+    # reset_conf(conf)
     # print(dual_delta_starttemp_convergence(conf, 0, 91, 10, 150, 500, 50, 0.001))
+    # reset_conf(conf)
 
     # print(dual_omega_starttemp_convergence(conf, 0.25, 3.1, 0.25, 150, 500, 50, 0.001))
+    # reset_conf(conf)
 
     # reprocess_paramspace("dual_a_e", os.path.curdir, "a", "e", "au", None, 0.0001)
     # reprocess_paramspace(
