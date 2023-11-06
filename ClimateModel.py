@@ -82,7 +82,7 @@ def centralbackward_edge(x: floatarr, dx: float) -> float:
     """Used for one along from the start of the array, i.e. i = 1"""
     # Central: d^2T/dx^2 = (dT/dx|i=2 - dT/dx|i=0) / 2dx
     # dT/dx|i=0 == 0
-    # Forward: d^2T/dx^2 = (T(i=2) - T(i=1)) / 2dx^2
+    # Backward: d^2T/dx^2 = (T(i=2) - T(i=1)) / 2dx^2
     return (x[2] - x[1]) / (2 * dx**2)
 
 
@@ -106,7 +106,7 @@ def centralforward_edge(x: floatarr, dx: float) -> float:
     """Used for one along from the end of the array, i.e. i = len(x)-2"""
     # Central: d^2T/dx^2 = (dT/dx|i=i_max - dT/dx|i=i_max-2) / 2dx
     # dT/dx|i=i_max == 0
-    # Backward: d^2T/dx^2 = -(T(i=i_max-1) - T(i=i_max-2)) / 2dx^2
+    # Forward: d^2T/dx^2 = -(T(i=i_max-1) - T(i=i_max-2)) / 2dx^2
     # => d^2T/dx^2 = (T(i=i_max-2) - T(i=i_max-1)) / 2dx^2
     return (x[-3] - x[-2]) / (2 * dx**2)
 

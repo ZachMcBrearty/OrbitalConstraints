@@ -11,9 +11,10 @@ from filemanagement import (
     load_config,
     write_to_file,
     read_dual_folder,
+    read_single_folder,
     CONF_PARSER_TYPE,
 )
-from plotting import convergence_plot_single, convergence_plot_dual
+from plotting import convergence_plot_single, convergence_plot_dual, ecc_fit_plot
 
 
 def convergence_test(
@@ -282,6 +283,34 @@ dual_omega_starttemp_convergence = gen_paramspace(
 )
 
 
+def reprocess_single_param(
+    foldername: str,
+    folderpath: str,
+    val_1_name: str,
+    val_1_unit: Optional[str] = None,
+    rtol: float = 0.0001,
+):
+    val_1_range = []
+    tests = []
+    convtemps = []
+    data = read_single_folder(foldername, folderpath)
+    for i, datum in enumerate(data):
+        val_1, (times, temps, degs) = datum
+        dt = (times[1] - times[0]) * 365
+        t, temp = convergence_test(temps, rtol, year_avg=1, dt=dt)
+        if (q := float(val_1)) not in val_1_range:
+            val_1_range.append(q)
+        tests.append(t)
+        convtemps.append(temp)
+    ecc_fit_plot(
+        tests,
+        convtemps,
+        val_1_name,
+        val_1_range,
+        val_1_unit,
+    )
+
+
 def reprocess_paramspace(
     foldername: str,
     folderpath: str,
@@ -351,8 +380,8 @@ if __name__ == "__main__":
     # reset_conf(conf)
     # print(test_delta_convergence(conf, 0, 181, 10, rtol=0.0001))
     # reset_conf(conf)
-    print(test_omega_convergence(conf, 2.4, 2.45, 0.005, rtol=0.0001))
-    reset_conf(conf)
+    # print(test_omega_convergence(conf, 2.4, 2.45, 0.005, rtol=0.0001))
+    # reset_conf(conf)
     # print(test_temp_convergence(conf, 100, 501, 50, rtol=0.0001))
     # reset_conf(conf)
     # print(test_spacedim_convergence(conf, 30, 180, 15, rtol=0.0001))
@@ -384,6 +413,7 @@ if __name__ == "__main__":
     # print(dual_omega_starttemp_convergence(conf, 0.25, 3.1, 0.25, 150, 500, 50, 0.001))
     # reset_conf(conf)
 
+    reprocess_single_param("single_e", os.path.curdir, "e", e_unit, 0.0001)
     # reprocess_paramspace("dual_a_e", os.path.curdir, "a", "e", "au", None, 0.0001)
     # reprocess_paramspace(
     #     "dual_a_obliquity",

@@ -177,24 +177,66 @@ def convergence_plot_single(
     tests,
     convtemps,
     val_name: str,
-    val_min: float,
-    val_max: float,
-    val_step: float,
+    val_range,
     val_unit: Optional[str] = None,
 ):
     if val_unit is None:
         val_unit = ""
     else:
         val_unit = ", " + val_unit
-    val_range = np.arange(val_min, val_max, val_step)
+    # val_range = np.arange(val_min, val_max, val_step)
+    # fit_range = np.linspace(min(val_range), max(val_range), 100, endpoint=True)
+    # fit_vals = convtemps[0] * (1 - fit_range**2) ** (-1 / 4)
     fig, (ax1, ax2) = plt.subplots(2, 1)
     ax1.scatter(val_range, tests)
     ax2.scatter(val_range, convtemps)
+    # ax2.plot(fit_range, fit_vals, label="(1-e^2)^{-1/4} fit")
     ax2.set_xlabel(f"{val_name} {val_unit}")
     ax1.set_xticks(np.linspace(min(val_range), max(val_range), 11))
     ax2.set_xticks(np.linspace(min(val_range), max(val_range), 11))
     ax1.set_ylabel("Time to converge, years")
     ax2.set_ylabel("Global convergent temperature, K")
+    plt.show()
+
+
+def ecc_fit_plot(
+    tests,
+    convtemps,
+    val_name: str,
+    val_range,
+    val_unit: Optional[str] = None,
+):
+    val_range = np.array(val_range)
+    if val_unit is None:
+        val_unit = ""
+    else:
+        val_unit = ", " + val_unit
+    fit_range = np.linspace(min(val_range), max(val_range), 100, endpoint=True)
+    fit_vals_1 = convtemps[0] * (1 - fit_range**2) ** (-1 / 4)
+    fit_vals_2 = convtemps[0] * (1 - fit_range**2) ** (-1 / 8)
+    fig, (ax1, ax2) = plt.subplots(2, 1)
+    ax1: plt.Axes
+    ax2: plt.Axes
+    ax1.scatter(val_range, convtemps)
+    ax1.plot(fit_range, fit_vals_1, label="$(1-e^2)^{-1/4}$ fit")
+    ax1.plot(fit_range, fit_vals_2, label="$(1-e^2)^{-1/8}$ fit")
+    ax2.scatter(
+        val_range,
+        abs(convtemps - convtemps[0] * (1 - val_range**2) ** (-1 / 4)) / convtemps,
+        label="$(1-e^2)^{-1/4}$ residuals",
+    )
+    ax2.scatter(
+        val_range,
+        abs(convtemps - convtemps[0] * (1 - val_range**2) ** (-1 / 8)) / convtemps,
+        label="$(1-e^2)^{-1/8}$ residuals",
+    )
+    ax2.set_xlabel(f"{val_name} {val_unit}")
+    ax1.set_xticks(val_range)
+    ax2.set_xticks(val_range)
+    ax2.set_ylabel("Residual")
+    ax1.set_ylabel("Global convergent temperature, K")
+    ax1.legend()
+    ax2.legend()
     plt.show()
 
 
