@@ -413,7 +413,8 @@ if __name__ == "__main__":
     # print(dual_omega_starttemp_convergence(conf, 0.25, 3.1, 0.25, 150, 500, 50, 0.001))
     # reset_conf(conf)
 
-    reprocess_single_param("single_e", os.path.curdir, "e", e_unit, 0.0001)
+    # reprocess_single_param("single_e", os.path.curdir, "e", e_unit, 0.0001)
+    reprocess_single_param("single_a", os.path.curdir, "a", a_unit, 0.0001)
     # reprocess_paramspace("dual_a_e", os.path.curdir, "a", "e", "au", None, 0.0001)
     # reprocess_paramspace(
     #     "dual_a_obliquity",

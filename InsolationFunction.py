@@ -97,6 +97,7 @@ def dist_adv(
     T = a ** (3 / 2)
     # modulo as M is periodic in T
     M = 2 * np.pi * ((t + offset) % T)
+    # M = E - e SinE
     E = M
     for _ in range(iter):
         # E_i+1 = E_i + (M + e sin(E_i) - E_i) / (1 - e cos(E_i))

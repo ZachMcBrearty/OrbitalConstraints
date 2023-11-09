@@ -211,24 +211,29 @@ def ecc_fit_plot(
         val_unit = ""
     else:
         val_unit = ", " + val_unit
-    fit_range = np.linspace(min(val_range), max(val_range), 100, endpoint=True)
-    fit_vals_1 = convtemps[0] * (1 - fit_range**2) ** (-1 / 4)
-    fit_vals_2 = convtemps[0] * (1 - fit_range**2) ** (-1 / 8)
+    fit_range_1 = np.linspace(val_range[0], val_range[5], 100, endpoint=True)
+    fit_vals_1 = convtemps[0] * (fit_range_1 / val_range[0]) ** (-1 / 2)
+
+    fit_range_2 = np.linspace(val_range[6], val_range[-1], endpoint=True)
+    fit_vals_2 = convtemps[6] * (fit_range_2 / val_range[6]) ** (-1 / 4)
+
     fig, (ax1, ax2) = plt.subplots(2, 1)
     ax1: plt.Axes
     ax2: plt.Axes
-    ax1.scatter(val_range, convtemps)
-    ax1.plot(fit_range, fit_vals_1, label="$(1-e^2)^{-1/4}$ fit")
-    ax1.plot(fit_range, fit_vals_2, label="$(1-e^2)^{-1/8}$ fit")
+    ax1.scatter(val_range, convtemps, label="Model data")
+    ax1.plot(fit_range_1, fit_vals_1, label="$a^{-1/2}$ fit on temperate")
+    ax1.plot(fit_range_2, fit_vals_2, label="$a^{-1/4}$ fit on snowball")
     ax2.scatter(
-        val_range,
-        abs(convtemps - convtemps[0] * (1 - val_range**2) ** (-1 / 4)) / convtemps,
-        label="$(1-e^2)^{-1/4}$ residuals",
+        val_range[0:6],
+        (convtemps[0:6] - convtemps[0] * (val_range[0:6] / val_range[0]) ** (-1 / 2))
+        / convtemps[0:6],
+        label="$a^{-1/2}$ residuals temperate",
     )
     ax2.scatter(
-        val_range,
-        abs(convtemps - convtemps[0] * (1 - val_range**2) ** (-1 / 8)) / convtemps,
-        label="$(1-e^2)^{-1/8}$ residuals",
+        val_range[6:],
+        (convtemps[6:] - convtemps[6] * (val_range[6:] / val_range[6]) ** (-1 / 4))
+        / convtemps[6:],
+        label="$a^{-1/4}$ residuals snowball",
     )
     ax2.set_xlabel(f"{val_name} {val_unit}")
     ax1.set_xticks(val_range)
@@ -236,7 +241,7 @@ def ecc_fit_plot(
     ax2.set_ylabel("Residual")
     ax1.set_ylabel("Global convergent temperature, K")
     ax1.legend()
-    ax2.legend()
+    # ax2.legend()
     plt.show()
 
 
