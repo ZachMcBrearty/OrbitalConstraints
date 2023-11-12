@@ -309,8 +309,8 @@ def climate_model_in_lat(
     firstT = np.zeros(spacedim)
     firstD = np.zeros(spacedim)
 
-    a = config.getfloat("ORBIT", "a")  # semimajoraxis
-    e = config.getfloat("ORBIT", "e")  # eccentricity
+    a = config.getfloat("ORBIT", "gassemimajoraxis")  # semimajoraxis
+    e = config.getfloat("ORBIT", "gasgianteccentricity")  # eccentricity
     axtilt = np.deg2rad(config.getfloat("PLANET", "obliquity"))  # obliquity
 
     if (frac := config.get("PLANET", "landfractype")) in [
@@ -327,6 +327,8 @@ def climate_model_in_lat(
         F_o = np.ones_like(lats) * q
     else:
         raise ValueError(f"Unknown land-ocean fraction type, got: {frac}")
+
+    orbits = orbital_model(config, 24)
 
     for n in range(timedim):
         for m in range(spacedim):
@@ -365,10 +367,18 @@ def climate_model_in_lat(
         Capacity[:, n] = C(F_o, f_i(Temp[:, n]), Temp[:, n])
         Ir_emission[:, n] = I_2(Temp[:, n])
         # r = dist(a, e, dt * n)
-        Source[:, n] = S(a, lats, dt * n, axtilt, e)
+        eclip = 0
+        star, gas, moon, eclipsed = next(orbits)
+        eclip += eclipsed
+        for _ in range(12 - 1):
+            star, gas, moon, eclipsed = next(orbits)
+            eclip += eclipsed
+        eclip /= 12
+
+        Source[:, n] = S(a, lats, dt * n, axtilt, e) * eclip
         Albedo[:, n] = A_2(Temp[:, n])
-        if 100 * 365 <= n < 101 * 365:
-            diff_elem += 25
+        # if 100 * 365 <= n < 101 * 365:
+        #     diff_elem += 25
 
         Temp[:, n + 1] = Temp[:, n] + yeartosecond * dt / Capacity[:, n] * (
             diff_elem - Ir_emission[:, n] + Source[:, n] * (1 - Albedo[:, n])
@@ -384,110 +394,18 @@ def climate_model_in_lat(
         write_to_file(times, Temp, degs, config.get("FILEMANAGEMENT", "save_name"))
 
     if config.getboolean("FILEMANAGEMENT", "plot"):
-        colourplot(degs, Temp, times, 90)
+        colourplot(degs, Temp, times)
 
     return degs, Temp, times
 
 
 if __name__ == "__main__":
-    import matplotlib.pyplot as plt
-    from matplotlib.animation import FuncAnimation
-
-    config = load_config("config.ini", "OrbitalConstraints")
-    r_star = config.getfloat("ORBIT", "starradius")
-    r_gas = config.getfloat("ORBIT", "gasgiantradius")
-    n = 10
-    poses = orbital_model(config, dt_steps=n)
-    # for x in range(15000):
-    #     next(poses)
-    fig, ax = plt.subplots()
-    ax: plt.Axes
-    fig.set_figheight(5)
-    fig.set_figwidth(5)
-    star, gas, moon = [0, 0], [0, 0], [0, 0]
-    (ln1,) = ax.plot(0, 0, "ro", ms=5)
-    (ln2,) = ax.plot(0, 0, "bo", ms=5)
-    (ln3,) = ax.plot(0, 0, "go", ms=5)
-    text = ax.text(0.75, 0.9, f"Eclipsed: {1}", transform=ax.transAxes)
-
-    (toptop,) = ax.plot([0, 0], [1, 1], "b-")
-    (bottombottom,) = ax.plot([0, 0], [-1, -1], "b-")
-    (topbottom,) = ax.plot([0, 0], [1, -1], "g-")
-    (bottomtop,) = ax.plot([0, 0], [-1, 1], "g-")
-
-    def init():
-        return (ln1, ln2, ln3, text, toptop, bottombottom, topbottom, bottomtop)
-
-    def animate(i):
-        eclip = 0
-        star, gas, moon, eclipsed = next(poses)
-        eclip += eclipsed
-        for _ in range(n - 1):
-            star, gas, moon, eclipsed = next(poses)
-            eclip += eclipsed
-        center = gas
-        eclip /= n
-        ln1.set_data(star - center)
-        ln2.set_data(gas - center)
-        ln3.set_data(moon - center)
-        text.set_text(f"Eclipsed: {eclip}")
-        star_to_gas_dir = (gas - star) / r(gas - star)
-        perp_up = np.array([star_to_gas_dir[1], -star_to_gas_dir[0]])
-        perp_down = np.array([-star_to_gas_dir[1], star_to_gas_dir[0]])
-        q = star + r_star * perp_up
-        p = gas + r_gas * perp_up
-        toptop.set_data(
-            [q[0] - center[0], p[0] - center[0], 2 * p[0] - center[0]],  # moon[0]],
-            [
-                q[1] - center[1],
-                p[1] - center[1],
-                line(2 * p[0], q, p) - center[1],
-            ],  # line(moon[0], q, p)],
-        )
-        q = star + r_star * perp_down
-        p = gas + r_gas * perp_down
-        bottombottom.set_data(
-            [q[0] - center[0], p[0] - center[0], 2 * p[0] - center[0]],  # moon[0]],
-            [
-                q[1] - center[1],
-                p[1] - center[1],
-                line(2 * p[0], q, p) - center[1],
-            ],  # line(moon[0], q, p)],
-        )
-        q = star + r_star * perp_up
-        p = gas + r_gas * perp_down
-        topbottom.set_data(
-            [q[0] - center[0], p[0] - center[0], 2 * p[0] - center[0]],  # moon[0]],
-            [
-                q[1] - center[1],
-                p[1] - center[1],
-                line(2 * p[0], q, p) - center[1],
-            ],  # line(moon[0], q, p)],
-        )
-        q = star + r_star * perp_down
-        p = gas + r_gas * perp_up
-        bottomtop.set_data(
-            [q[0] - center[0], p[0] - center[0], 2 * p[0] - center[0]],  # moon[0]],
-            [
-                q[1] - center[1],
-                p[1] - center[1],
-                line(2 * p[0], q, p) - center[1],
-            ],  # line(moon[0], q, p)],
-        )
-        return (ln1, ln2, ln3, text, toptop, bottombottom, topbottom, bottomtop)
-
-    bound = 6 * 1.5 * 10**11
-    ax.set_xbound(-bound, bound)
-    ax.set_ybound(-bound, bound)
-
-    ani = FuncAnimation(fig, animate, frames=range(0, 1000), init_func=init, blit=True)
-    plt.show()
     # import cProfile
     # from pstats import SortKey, Stats
 
     # # with cProfile.Profile() as p:
-    # config = load_config("config.ini", "OrbitalConstraints")
-    # climate_model_in_lat(config)
+    config = load_config("config.ini", "OrbitalConstraints")
+    climate_model_in_lat(config)
     # Stats(p).strip_dirs().sort_stats(SortKey.CUMULATIVE).print_stats()
     # times, temps, degs = read_file(
     #     config.get("FILEMANAGEMENT", "save_name") + ".npz"

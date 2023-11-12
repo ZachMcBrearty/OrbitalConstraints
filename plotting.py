@@ -281,19 +281,117 @@ def convergence_plot_dual(
     plt.show()
 
 
+def orbital_animation():
+    import matplotlib.pyplot as plt
+    from matplotlib.animation import FuncAnimation
+    from ClimateModel import orbital_model, line, r
+    from filemanagement import load_config
+
+    config = load_config("config.ini", "OrbitalConstraints")
+    r_star = config.getfloat("ORBIT", "starradius")
+    r_gas = config.getfloat("ORBIT", "gasgiantradius")
+    n = 24
+    poses = orbital_model(config, dt_steps=n)
+    # for x in range(15000):
+    #     next(poses)
+    fig, ax = plt.subplots()
+    ax: plt.Axes
+    fig.set_figheight(5)
+    fig.set_figwidth(5)
+    star, gas, moon = [0, 0], [0, 0], [0, 0]
+    (ln1,) = ax.plot(0, 0, "ro", ms=5)
+    (ln2,) = ax.plot(0, 0, "bo", ms=5)
+    (ln3,) = ax.plot(0, 0, "go", ms=5)
+    text = ax.text(0.75, 0.9, f"Eclipsed: {1}", transform=ax.transAxes)
+
+    (toptop,) = ax.plot([0, 0], [1, 1], "b-")
+    (bottombottom,) = ax.plot([0, 0], [-1, -1], "b-")
+    (topbottom,) = ax.plot([0, 0], [1, -1], "g-")
+    (bottomtop,) = ax.plot([0, 0], [-1, 1], "g-")
+
+    def init():
+        return (ln1, ln2, ln3, text, toptop, bottombottom, topbottom, bottomtop)
+
+    def animate(i):
+        eclip = 0
+        star, gas, moon, eclipsed = next(poses)
+        eclip += eclipsed
+        for _ in range(n - 1):
+            star, gas, moon, eclipsed = next(poses)
+            eclip += eclipsed
+        center = gas
+        eclip /= n
+        ln1.set_data(star - center)
+        ln2.set_data(gas - center)
+        ln3.set_data(moon - center)
+        text.set_text(f"Eclipsed: {eclip}")
+        star_to_gas_dir = (gas - star) / r(gas - star)
+        perp_up = np.array([star_to_gas_dir[1], -star_to_gas_dir[0]])
+        perp_down = np.array([-star_to_gas_dir[1], star_to_gas_dir[0]])
+        q = star + r_star * perp_up
+        p = gas + r_gas * perp_up
+        toptop.set_data(
+            [q[0] - center[0], p[0] - center[0], 2 * p[0] - center[0]],  # moon[0]],
+            [
+                q[1] - center[1],
+                p[1] - center[1],
+                line(2 * p[0], q, p) - center[1],
+            ],  # line(moon[0], q, p)],
+        )
+        q = star + r_star * perp_down
+        p = gas + r_gas * perp_down
+        bottombottom.set_data(
+            [q[0] - center[0], p[0] - center[0], 2 * p[0] - center[0]],  # moon[0]],
+            [
+                q[1] - center[1],
+                p[1] - center[1],
+                line(2 * p[0], q, p) - center[1],
+            ],  # line(moon[0], q, p)],
+        )
+        q = star + r_star * perp_up
+        p = gas + r_gas * perp_down
+        topbottom.set_data(
+            [q[0] - center[0], p[0] - center[0], 2 * p[0] - center[0]],  # moon[0]],
+            [
+                q[1] - center[1],
+                p[1] - center[1],
+                line(2 * p[0], q, p) - center[1],
+            ],  # line(moon[0], q, p)],
+        )
+        q = star + r_star * perp_down
+        p = gas + r_gas * perp_up
+        bottomtop.set_data(
+            [q[0] - center[0], p[0] - center[0], 2 * p[0] - center[0]],  # moon[0]],
+            [
+                q[1] - center[1],
+                p[1] - center[1],
+                line(2 * p[0], q, p) - center[1],
+            ],  # line(moon[0], q, p)],
+        )
+        return (ln1, ln2, ln3, text, toptop, bottombottom, topbottom, bottomtop)
+
+    bound = 1.2 * 1.5 * 10**11
+    ax.set_xbound(-bound, bound)
+    ax.set_ybound(-bound, bound)
+
+    ani = FuncAnimation(fig, animate, frames=range(0, 1000), init_func=init, blit=True)
+    plt.show()
+
+
 if __name__ == "__main__":
-    from filemanagement import load_config, read_file
-    from convergence import convergence_test
+    orbital_animation()
+    # from filemanagement import load_config, read_file
+    # from convergence import convergence_test
 
-    conf = load_config()
-    # q0 = read_file("single_omega/single_omega_2.41.npz")
-    # q1 = read_file("single_omega/single_omega_2.415.npz")
-    # q2 = read_file("single_omega/single_omega_2.42.npz")
-    # threecolourplot(q0, q1, q2, None, None, 1)
+    # conf = load_config()
+    # # q0 = read_file("single_omega/single_omega_2.41.npz")
+    # # q1 = read_file("single_omega/single_omega_2.415.npz")
+    # # q2 = read_file("single_omega/single_omega_2.42.npz")
+    # # threecolourplot(q0, q1, q2, None, None, 1)
 
-    times, temps, degs = read_file("omega.npz")
-    dt = times[1] - times[0]
-    colourplot(degs, temps, times, None, None, 1)
+    # times, temps, degs = read_file("omega.npz")
+    # dt = times[1] - times[0]
+    # colourplot(degs, temps, times, None, None, 1)
     # plotdata(degs, temps, dt, 0, 365 * 1, 10)
     # print(convergence_test(temps, rtol=0.0001))
     # yearavgplot(degs, temps, dt, 90, 120, 1)
