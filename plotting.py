@@ -3,9 +3,7 @@ from typing import Optional
 import matplotlib.pyplot as plt
 import numpy as np
 
-from filemanagement import read_dual_folder
-
-yeartosecond = 365.25 * 24 * 3600  # s / yr
+from Constants import yeartosecond
 
 
 def complexplotdata(degs, Temp, dt, Ir_emission, Source, Albedo, Capacity):
