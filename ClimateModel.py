@@ -35,11 +35,11 @@ import numpy as np
 import numpy.typing as npt
 
 from Constants import yeartosecond, floatarr
-from InsolationFunction import S, dist
+from InsolationFunction import S
 from HeatCapacity import C, f_o, f_i
 from IRandAlbedo import A_1, A_2, A_3, I_1, I_2, I_3
-from plotting import plotdata, complexplotdata, plt, yearavgplot, colourplot
-from filemanagement import write_to_file, load_config, read_file
+from plotting import colourplot
+from filemanagement import write_to_file, load_config
 
 
 ## derivatives ##
@@ -121,6 +121,150 @@ def central2ndorder(x: list[float] | floatarr, i: int, dx: float) -> float:
 
 def backward2ndorder(x: list[float] | floatarr, i: int, dx: float) -> float:
     return (x[i] - 2 * x[i - 1] + x[i - 2]) / dx**2
+
+
+def getexp(conf, sec, val):
+    q = conf.get(sec, val)
+    a, b = q.split("e")
+    return float(a) * pow(10, float(b))
+
+
+def r(pos):
+    return np.sqrt(np.sum(pos**2))
+
+
+def line(x, p1, p2):
+    # y - y2 = m(x - x2); m = (y2-y1) / (x2 - x1)
+    return p2[1] + (p2[1] - p1[1]) * (x - p2[0]) / (p2[0] - p1[0])
+
+
+def check_eclipse(starpos, gaspos, moonpos, star_rad, gas_rad) -> float:
+    # if the planet is infront of the gas giant do nothing
+    # i.e. the planet cannot block the light for the moon
+    if r(moonpos - starpos) < r(gaspos - starpos):
+        return 1.0
+    # find unit vector from star to gas giant
+    star_to_gas_dir = (gaspos - starpos) / r(gaspos - starpos)
+    # rotate 90deg left and right to get edges of the star and planet
+    perp_up = np.array([-star_to_gas_dir[1], star_to_gas_dir[0]])
+    perp_down = np.array([star_to_gas_dir[1], -star_to_gas_dir[0]])
+    star_up = starpos + perp_up * star_rad
+    star_down = starpos + perp_down * star_rad
+    gas_up = gaspos + perp_up * gas_rad
+    gas_down = gaspos + perp_down * gas_rad
+
+    # logic is reversed since the system is "upside-down"
+    if moonpos[0] < 0:
+        # Umbra:
+        # lines from edges of star to same edges to planet
+        if (moonpos[1] > line(moonpos[0], star_up, gas_up)) and (
+            moonpos[1] < line(moonpos[0], star_down, gas_down)
+        ):
+            q = 0.0
+        # Penumbra:
+        # lines from edges of star to opposite edges of planet
+        elif (moonpos[1] > line(moonpos[0], star_down, gas_up)) and (
+            moonpos[1] < line(moonpos[0], star_up, gas_down)
+        ):
+            q = 0.5
+        # unblocked
+        else:
+            q = 1.0
+    else:
+        if (moonpos[1] < line(moonpos[0], star_up, gas_up)) and (
+            moonpos[1] > line(moonpos[0], star_down, gas_down)
+        ):
+            q = 0.0
+        elif (moonpos[1] < line(moonpos[0], star_down, gas_up)) and (
+            moonpos[1] > line(moonpos[0], star_up, gas_down)
+        ):
+            q = 0.5
+        else:
+            q = 1.0
+    return q
+
+
+def orbital_model(conf: ConfigParser, dt_steps=10):
+    G = 6.67 * 10**-11 * (24 * 60 * 60) ** 2  # s^-2 -> days^-2
+    star = np.array([[0.0, 0.0], [0.0, 0.0], [0.0, 0.0]], dtype=float)
+    gas = np.array([[0.0, 0.0], [0.0, 0.0], [0.0, 0.0]], dtype=float)
+    moon = np.array([[0.0, 0.0], [0.0, 0.0], [0.0, 0.0]], dtype=float)
+
+    dt = conf.getfloat("PDE", "timestep") / dt_steps  # days
+    M_star = getexp(conf, "ORBIT", "starmass")
+    r_star = conf.getfloat("ORBIT", "starradius")
+    M_gas = getexp(conf, "ORBIT", "gasgiantmass")
+    r_gas = conf.getfloat("ORBIT", "gasgiantradius")
+    M_moon = getexp(conf, "ORBIT", "moonmass")
+
+    gas_a = getexp(conf, "ORBIT", "gassemimajoraxis")
+    gas_ecc = conf.getfloat("ORBIT", "gasgianteccentricity")
+    moon_a = getexp(conf, "ORBIT", "moonsemimajoraxis")
+    moon_ecc = conf.getfloat("ORBIT", "mooneccentricity")
+
+    gas[0][0] = gas_a * (1 + gas_ecc)
+    moon[0][0] = gas[0][0] + moon_a * (1 + moon_ecc)
+
+    # v^2 = GM(2/r - 1/a) = GM/a
+    # use vis-viva equation to put giant (and moon) on orbit around the star
+    gas[1][1] = np.sqrt(G * M_star * (2 / gas[0][0] - 1 / gas_a))
+    # then use vis-viva to put moon on orbit around giant
+    moon[1][1] = gas[1][1] + np.sqrt(
+        G * M_gas * (2 / (moon_a * (1 + moon_ecc)) - 1 / moon_a)
+    )
+    # then use conservation of momentum to set the star on the opposite orbit
+    # so center of momentum doesnt move
+    star[1][1] = -gas[1][1] * M_gas / M_star - moon[1][1] * M_moon / M_star  #
+    epss = 0
+    # setup Leapfrog (ie put velocities back 1/2 timestep)
+    stargas = np.sum((gas[0] - star[0]) ** 2 + epss) ** (-3 / 2)
+    starmoon = np.sum((moon[0] - star[0]) ** 2 + epss) ** (-3 / 2)
+    moongas = np.sum((gas[0] - moon[0]) ** 2 + epss) ** (-3 / 2)
+
+    star[2] = -(
+        G * M_gas * (star[0] - gas[0]) * stargas
+        + G * M_moon * (star[0] - moon[0]) * starmoon
+    )
+    gas[2] = -(
+        +G * M_star * (gas[0] - star[0]) * stargas
+        + G * M_moon * (gas[0] - moon[0]) * moongas
+    )
+    moon[2] = -(
+        +G * M_gas * (moon[0] - gas[0]) * moongas
+        + G * M_star * (moon[0] - star[0]) * starmoon
+    )
+    leapfrog_update_matrix = np.array([[1, -dt / 2, 0], [0, 1, -dt / 2], [0, 0, 0]])
+    star = leapfrog_update_matrix @ star
+    gas = leapfrog_update_matrix @ gas
+    moon = leapfrog_update_matrix @ moon
+
+    update_matrix = np.array([[1, dt, 0], [0, 1, dt], [0, 0, 0]])
+    eclipsed = check_eclipse(star[0], gas[0], moon[0], r_star, r_gas)
+
+    yield star[0], gas[0], moon[0], eclipsed
+    while True:
+        stargas = np.sum((gas[0] - star[0]) ** 2 + epss) ** (-3 / 2)
+        starmoon = np.sum((moon[0] - star[0]) ** 2 + epss) ** (-3 / 2)
+        moongas = np.sum((gas[0] - moon[0]) ** 2 + epss) ** (-3 / 2)
+
+        star[2] = -(
+            G * M_gas * (star[0] - gas[0]) * stargas
+            + G * M_moon * (star[0] - moon[0]) * starmoon
+        )
+        gas[2] = -(
+            +G * M_star * (gas[0] - star[0]) * stargas
+            + G * M_moon * (gas[0] - moon[0]) * moongas
+        )
+        moon[2] = -(
+            +G * M_gas * (moon[0] - gas[0]) * moongas
+            + G * M_star * (moon[0] - star[0]) * starmoon
+        )
+
+        star = update_matrix @ star
+        gas = update_matrix @ gas
+        moon = update_matrix @ moon
+        eclipsed = check_eclipse(star[0], gas[0], moon[0], r_star, r_gas)
+        yield star[0], gas[0], moon[0], eclipsed
 
 
 ##  ##
@@ -246,12 +390,104 @@ def climate_model_in_lat(
 
 
 if __name__ == "__main__":
-    import cProfile
-    from pstats import SortKey, Stats
+    import matplotlib.pyplot as plt
+    from matplotlib.animation import FuncAnimation
 
-    # with cProfile.Profile() as p:
     config = load_config("config.ini", "OrbitalConstraints")
-    climate_model_in_lat(config)
+    r_star = config.getfloat("ORBIT", "starradius")
+    r_gas = config.getfloat("ORBIT", "gasgiantradius")
+    n = 10
+    poses = orbital_model(config, dt_steps=n)
+    # for x in range(15000):
+    #     next(poses)
+    fig, ax = plt.subplots()
+    ax: plt.Axes
+    fig.set_figheight(5)
+    fig.set_figwidth(5)
+    star, gas, moon = [0, 0], [0, 0], [0, 0]
+    (ln1,) = ax.plot(0, 0, "ro", ms=5)
+    (ln2,) = ax.plot(0, 0, "bo", ms=5)
+    (ln3,) = ax.plot(0, 0, "go", ms=5)
+    text = ax.text(0.75, 0.9, f"Eclipsed: {1}", transform=ax.transAxes)
+
+    (toptop,) = ax.plot([0, 0], [1, 1], "b-")
+    (bottombottom,) = ax.plot([0, 0], [-1, -1], "b-")
+    (topbottom,) = ax.plot([0, 0], [1, -1], "g-")
+    (bottomtop,) = ax.plot([0, 0], [-1, 1], "g-")
+
+    def init():
+        return (ln1, ln2, ln3, text, toptop, bottombottom, topbottom, bottomtop)
+
+    def animate(i):
+        eclip = 0
+        star, gas, moon, eclipsed = next(poses)
+        eclip += eclipsed
+        for _ in range(n - 1):
+            star, gas, moon, eclipsed = next(poses)
+            eclip += eclipsed
+        center = gas
+        eclip /= n
+        ln1.set_data(star - center)
+        ln2.set_data(gas - center)
+        ln3.set_data(moon - center)
+        text.set_text(f"Eclipsed: {eclip}")
+        star_to_gas_dir = (gas - star) / r(gas - star)
+        perp_up = np.array([star_to_gas_dir[1], -star_to_gas_dir[0]])
+        perp_down = np.array([-star_to_gas_dir[1], star_to_gas_dir[0]])
+        q = star + r_star * perp_up
+        p = gas + r_gas * perp_up
+        toptop.set_data(
+            [q[0] - center[0], p[0] - center[0], 2 * p[0] - center[0]],  # moon[0]],
+            [
+                q[1] - center[1],
+                p[1] - center[1],
+                line(2 * p[0], q, p) - center[1],
+            ],  # line(moon[0], q, p)],
+        )
+        q = star + r_star * perp_down
+        p = gas + r_gas * perp_down
+        bottombottom.set_data(
+            [q[0] - center[0], p[0] - center[0], 2 * p[0] - center[0]],  # moon[0]],
+            [
+                q[1] - center[1],
+                p[1] - center[1],
+                line(2 * p[0], q, p) - center[1],
+            ],  # line(moon[0], q, p)],
+        )
+        q = star + r_star * perp_up
+        p = gas + r_gas * perp_down
+        topbottom.set_data(
+            [q[0] - center[0], p[0] - center[0], 2 * p[0] - center[0]],  # moon[0]],
+            [
+                q[1] - center[1],
+                p[1] - center[1],
+                line(2 * p[0], q, p) - center[1],
+            ],  # line(moon[0], q, p)],
+        )
+        q = star + r_star * perp_down
+        p = gas + r_gas * perp_up
+        bottomtop.set_data(
+            [q[0] - center[0], p[0] - center[0], 2 * p[0] - center[0]],  # moon[0]],
+            [
+                q[1] - center[1],
+                p[1] - center[1],
+                line(2 * p[0], q, p) - center[1],
+            ],  # line(moon[0], q, p)],
+        )
+        return (ln1, ln2, ln3, text, toptop, bottombottom, topbottom, bottomtop)
+
+    bound = 6 * 1.5 * 10**11
+    ax.set_xbound(-bound, bound)
+    ax.set_ybound(-bound, bound)
+
+    ani = FuncAnimation(fig, animate, frames=range(0, 1000), init_func=init, blit=True)
+    plt.show()
+    # import cProfile
+    # from pstats import SortKey, Stats
+
+    # # with cProfile.Profile() as p:
+    # config = load_config("config.ini", "OrbitalConstraints")
+    # climate_model_in_lat(config)
     # Stats(p).strip_dirs().sort_stats(SortKey.CUMULATIVE).print_stats()
     # times, temps, degs = read_file(
     #     config.get("FILEMANAGEMENT", "save_name") + ".npz"
