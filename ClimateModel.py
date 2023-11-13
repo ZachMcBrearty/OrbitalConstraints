@@ -34,11 +34,11 @@ from configparser import ConfigParser
 import numpy as np
 import numpy.typing as npt
 
-from Constants import yeartosecond, floatarr
+from Constants import *
 from InsolationFunction import S
 from HeatCapacity import C, f_o, f_i
 from IRandAlbedo import A_1, A_2, A_3, I_1, I_2, I_3
-from plotting import colourplot
+from plotting import colourplot, complexplotdata
 from filemanagement import write_to_file, load_config
 
 
@@ -185,21 +185,21 @@ def check_eclipse(starpos, gaspos, moonpos, star_rad, gas_rad) -> float:
 
 
 def orbital_model(conf: ConfigParser, dt_steps=10):
-    G = 6.67 * 10**-11 * (24 * 60 * 60) ** 2  # s^-2 -> days^-2
+    G_prime = G * (24 * 60 * 60) ** 2  # s^-2 -> days^-2
     star = np.array([[0.0, 0.0], [0.0, 0.0], [0.0, 0.0]], dtype=float)
     gas = np.array([[0.0, 0.0], [0.0, 0.0], [0.0, 0.0]], dtype=float)
     moon = np.array([[0.0, 0.0], [0.0, 0.0], [0.0, 0.0]], dtype=float)
 
     dt = conf.getfloat("PDE", "timestep") / dt_steps  # days
-    M_star = getexp(conf, "ORBIT", "starmass")
-    r_star = conf.getfloat("ORBIT", "starradius")
-    M_gas = getexp(conf, "ORBIT", "gasgiantmass")
-    r_gas = conf.getfloat("ORBIT", "gasgiantradius")
-    M_moon = getexp(conf, "ORBIT", "moonmass")
+    M_star = conf.getfloat("ORBIT", "starmass") * MASS["solar"]
+    r_star = conf.getfloat("ORBIT", "starradius") * RADIUS["solar"]
+    M_gas = conf.getfloat("ORBIT", "gasgiantmass") * MASS["jupiter"]
+    r_gas = conf.getfloat("ORBIT", "gasgiantradius") * RADIUS["jupiter"]
+    M_moon = conf.getfloat("ORBIT", "moonmass") * MASS["luna"]
 
-    gas_a = getexp(conf, "ORBIT", "gassemimajoraxis")
+    gas_a = conf.getfloat("ORBIT", "gassemimajoraxis") * AU
     gas_ecc = conf.getfloat("ORBIT", "gasgianteccentricity")
-    moon_a = getexp(conf, "ORBIT", "moonsemimajoraxis")
+    moon_a = conf.getfloat("ORBIT", "moonsemimajoraxis") * AU
     moon_ecc = conf.getfloat("ORBIT", "mooneccentricity")
 
     gas[0][0] = gas_a * (1 + gas_ecc)
@@ -207,10 +207,10 @@ def orbital_model(conf: ConfigParser, dt_steps=10):
 
     # v^2 = GM(2/r - 1/a) = GM/a
     # use vis-viva equation to put giant (and moon) on orbit around the star
-    gas[1][1] = np.sqrt(G * M_star * (2 / gas[0][0] - 1 / gas_a))
+    gas[1][1] = np.sqrt(G_prime * M_star * (2 / gas[0][0] - 1 / gas_a))
     # then use vis-viva to put moon on orbit around giant
     moon[1][1] = gas[1][1] + np.sqrt(
-        G * M_gas * (2 / (moon_a * (1 + moon_ecc)) - 1 / moon_a)
+        G_prime * M_gas * (2 / (moon_a * (1 + moon_ecc)) - 1 / moon_a)
     )
     # then use conservation of momentum to set the star on the opposite orbit
     # so center of momentum doesnt move
@@ -222,16 +222,16 @@ def orbital_model(conf: ConfigParser, dt_steps=10):
     moongas = np.sum((gas[0] - moon[0]) ** 2 + epss) ** (-3 / 2)
 
     star[2] = -(
-        G * M_gas * (star[0] - gas[0]) * stargas
-        + G * M_moon * (star[0] - moon[0]) * starmoon
+        G_prime * M_gas * (star[0] - gas[0]) * stargas
+        + G_prime * M_moon * (star[0] - moon[0]) * starmoon
     )
     gas[2] = -(
-        +G * M_star * (gas[0] - star[0]) * stargas
-        + G * M_moon * (gas[0] - moon[0]) * moongas
+        +G_prime * M_star * (gas[0] - star[0]) * stargas
+        + G_prime * M_moon * (gas[0] - moon[0]) * moongas
     )
     moon[2] = -(
-        +G * M_gas * (moon[0] - gas[0]) * moongas
-        + G * M_star * (moon[0] - star[0]) * starmoon
+        +G_prime * M_gas * (moon[0] - gas[0]) * moongas
+        + G_prime * M_star * (moon[0] - star[0]) * starmoon
     )
     leapfrog_update_matrix = np.array([[1, -dt / 2, 0], [0, 1, -dt / 2], [0, 0, 0]])
     star = leapfrog_update_matrix @ star
@@ -248,16 +248,16 @@ def orbital_model(conf: ConfigParser, dt_steps=10):
         moongas = np.sum((gas[0] - moon[0]) ** 2 + epss) ** (-3 / 2)
 
         star[2] = -(
-            G * M_gas * (star[0] - gas[0]) * stargas
-            + G * M_moon * (star[0] - moon[0]) * starmoon
+            G_prime * M_gas * (star[0] - gas[0]) * stargas
+            + G_prime * M_moon * (star[0] - moon[0]) * starmoon
         )
         gas[2] = -(
-            +G * M_star * (gas[0] - star[0]) * stargas
-            + G * M_moon * (gas[0] - moon[0]) * moongas
+            +G_prime * M_star * (gas[0] - star[0]) * stargas
+            + G_prime * M_moon * (gas[0] - moon[0]) * moongas
         )
         moon[2] = -(
-            +G * M_gas * (moon[0] - gas[0]) * moongas
-            + G * M_star * (moon[0] - star[0]) * starmoon
+            +G_prime * M_gas * (moon[0] - gas[0]) * moongas
+            + G_prime * M_star * (moon[0] - star[0]) * starmoon
         )
 
         star = update_matrix @ star
@@ -374,13 +374,15 @@ def climate_model_in_lat(
             star, gas, moon, eclipsed = next(orbits)
             eclip += eclipsed
         eclip /= 12
+        # if eclip < 1:
+        #     print(f"Eclipsed at {dt*n}")
 
         Source[:, n] = S(a, lats, dt * n, axtilt, e) * eclip
         Albedo[:, n] = A_2(Temp[:, n])
         # if 100 * 365 <= n < 101 * 365:
         #     diff_elem += 25
 
-        Temp[:, n + 1] = Temp[:, n] + yeartosecond * dt / Capacity[:, n] * (
+        Temp[:, n + 1] = Temp[:, n] + YEARTOSECOND * dt / Capacity[:, n] * (
             diff_elem - Ir_emission[:, n] + Source[:, n] * (1 - Albedo[:, n])
         )
         # if 100 * 365 <= n < 101 * 365:
@@ -394,6 +396,7 @@ def climate_model_in_lat(
         write_to_file(times, Temp, degs, config.get("FILEMANAGEMENT", "save_name"))
 
     if config.getboolean("FILEMANAGEMENT", "plot"):
+        # complexplotdata(degs, Temp, dt, Ir_emission, Source, Albedo, Capacity)
         colourplot(degs, Temp, times)
 
     return degs, Temp, times

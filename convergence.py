@@ -14,7 +14,12 @@ from filemanagement import (
     read_single_folder,
     CONF_PARSER_TYPE,
 )
-from plotting import convergence_plot_single, convergence_plot_dual, ecc_fit_plot
+from plotting import (
+    convergence_plot_single,
+    convergence_plot_dual,
+    ecc_fit_plot,
+    convergence_plot_single_compare,
+)
 
 
 def convergence_test(
@@ -98,7 +103,11 @@ def gen_convergence_test(
 
         if plot:
             convergence_plot_single(
-                tests, convtemps, val_name, val_min, val_max, val_step, val_unit
+                tests,
+                convtemps,
+                val_name,
+                np.arange(val_min, val_max, val_step),
+                val_unit,
             )
 
         return val_range, tests, convtemps
@@ -123,8 +132,12 @@ test_delta_convergence = gen_convergence_test(
     "PLANET", "obliquity", True, False, True, obliquity_unit
 )
 
-test_a_convergence = gen_convergence_test("ORBIT", "a", True, False, True, a_unit)
-test_e_convergence = gen_convergence_test("ORBIT", "e", True, False, True, e_unit)
+test_a_convergence = gen_convergence_test(
+    "ORBIT", "gassemimajoraxis", True, False, True, a_unit
+)
+test_e_convergence = gen_convergence_test(
+    "ORBIT", "gasgianteccentricity", True, False, True, e_unit
+)
 
 
 def gen_paramspace(
@@ -311,6 +324,55 @@ def reprocess_single_param(
     )
 
 
+def reprocess_single_param_compare(
+    foldername_1: str,
+    folderpath_1: str,
+    foldername_2: str,
+    folderpath_2: str,
+    val_name_1: str,
+    val_name_2: str,
+    val_unit: Optional[str] = None,
+    rtol: float = 0.0001,
+):
+    val_range_1 = []
+    tests_1 = []
+    convtemps_1 = []
+    data_1 = read_single_folder(foldername_1, folderpath_1)
+    for i, datum in enumerate(data_1):
+        val_1, (times, temps, degs) = datum
+        dt = (times[1] - times[0]) * 365
+        t, temp = convergence_test(temps, rtol, year_avg=1, dt=dt)
+        if (q := float(val_1)) not in val_range_1:
+            val_range_1.append(q)
+        tests_1.append(t)
+        convtemps_1.append(temp)
+
+    val_range_2 = []
+    tests_2 = []
+    convtemps_2 = []
+    data_2 = read_single_folder(foldername_2, folderpath_2)
+    for i, datum in enumerate(data_2):
+        val_2, (times, temps, degs) = datum
+        dt = (times[1] - times[0]) * 365
+        t, temp = convergence_test(temps, rtol, year_avg=1, dt=dt)
+        if (q := float(val_2)) not in val_range_2:
+            val_range_2.append(q)
+        tests_2.append(t)
+        convtemps_2.append(temp)
+
+    convergence_plot_single_compare(
+        tests_1,
+        convtemps_1,
+        val_name_1,
+        val_range_1,
+        tests_2,
+        convtemps_2,
+        val_name_2,
+        val_range_2,
+        val_unit,
+    )
+
+
 def reprocess_paramspace(
     foldername: str,
     folderpath: str,
@@ -371,7 +433,7 @@ def reset_conf(conf):
 
 
 if __name__ == "__main__":
-    conf = load_config()
+    conf = load_config("config.ini")
     reset_conf(conf)
 
     # print(test_a_convergence(conf, 0.5, 2.05, 0.1, rtol=0.0001))
@@ -414,7 +476,20 @@ if __name__ == "__main__":
     # reset_conf(conf)
 
     # reprocess_single_param("single_e", os.path.curdir, "e", e_unit, 0.0001)
-    reprocess_single_param("single_a", os.path.curdir, "a", a_unit, 0.0001)
+    reprocess_single_param_compare(
+        "single_a",
+        os.path.curdir,
+        "single_gassemimajoraxis",
+        os.path.curdir,
+        "a",
+        "a$_{gas}$",
+        "au",
+    )
+    # reprocess_single_param(
+    #     "single_gassemimajoraxis", os.path.curdir, "a gas", a_unit, 0.0001
+    # )
+    # reprocess_single_param("single_a", os.path.curdir, "a", a_unit, 0.0001)
+    # plt.show()
     # reprocess_paramspace("dual_a_e", os.path.curdir, "a", "e", "au", None, 0.0001)
     # reprocess_paramspace(
     #     "dual_a_obliquity",

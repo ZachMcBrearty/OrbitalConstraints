@@ -3,7 +3,7 @@ from typing import Optional
 import matplotlib.pyplot as plt
 import numpy as np
 
-from Constants import yeartosecond
+from Constants import YEARTOSECOND
 
 
 def complexplotdata(degs, Temp, dt, Ir_emission, Source, Albedo, Capacity):
@@ -11,7 +11,7 @@ def complexplotdata(degs, Temp, dt, Ir_emission, Source, Albedo, Capacity):
 
     q1 = 0
     q2 = len(degs)
-    for n in range(0, 20, 2):
+    for n in range(0, 50, 5):
         ax1.plot(
             degs[q1:q2],
             Temp[q1:q2, n],
@@ -25,7 +25,7 @@ def complexplotdata(degs, Temp, dt, Ir_emission, Source, Albedo, Capacity):
             degs[q1:q2],
             (Temp[q1:q2, n + 1] - Temp[q1:q2, n])
             * Capacity[q1:q2, n]
-            / (yeartosecond * dt)
+            / (YEARTOSECOND * dt)
             - (-Ir_emission[q1:q2, n] + Source[q1:q2, n] * (1 - Albedo[q1:q2, n])),
         )
         ax4.plot(degs[q1:q2], -Ir_emission[q1:q2, n])
@@ -37,7 +37,7 @@ def complexplotdata(degs, Temp, dt, Ir_emission, Source, Albedo, Capacity):
     ax3.set_ylabel("Diff_elem")
     ax4.set_ylabel("-I")
     ax5.set_ylabel("S(1-A)")
-    ax6.set_ylabel("1/Capacity")
+    ax6.set_ylabel("S")
     plt.show()
 
 
@@ -118,7 +118,7 @@ def colourplot(
 
     ax.set_xlabel("time, yr")
     ax.set_ylabel("latitude, degrees")
-    ax.set_yticks(np.linspace(degs[lat_start], degs[lat_end - 1], 12, endpoint=True))
+    ax.set_yticks(np.linspace(degs[lat_start], degs[lat_end - 1], 13, endpoint=True))
     fig.colorbar(pcm, ax=ax)
     plt.tight_layout()
     plt.show()
@@ -194,6 +194,41 @@ def convergence_plot_single(
     ax2.set_xticks(np.linspace(min(val_range), max(val_range), 11))
     ax1.set_ylabel("Time to converge, years")
     ax2.set_ylabel("Global convergent temperature, K")
+    plt.show()
+
+
+def convergence_plot_single_compare(
+    tests_1,
+    convtemps_1,
+    val_name_1: str,
+    val_range_1,
+    tests_2,
+    convtemps_2,
+    val_name_2: str,
+    val_range_2,
+    val_unit: Optional[str] = None,
+):
+    if val_unit is None:
+        val_unit = ""
+    else:
+        val_unit = ", " + val_unit
+    # val_range = np.arange(val_min, val_max, val_step)
+    # fit_range = np.linspace(min(val_range), max(val_range), 100, endpoint=True)
+    # fit_vals = convtemps[0] * (1 - fit_range**2) ** (-1 / 4)
+    fig, (ax1, ax2) = plt.subplots(2, 1)
+    ax1.scatter(val_range_1, tests_1, label=f"{val_name_1}")
+    ax2.scatter(val_range_1, convtemps_1, label=f"{val_name_1}")
+
+    ax1.scatter(val_range_2, tests_2, label=f"{val_name_2}")
+    ax2.scatter(val_range_2, convtemps_2, label=f"{val_name_2}")
+    # ax2.plot(fit_range, fit_vals, label="(1-e^2)^{-1/4} fit")
+    ax2.set_xlabel(f"{val_name_1} and {val_name_2} {val_unit}")
+    # ax1.set_xticks(np.linspace(min(val_range), max(val_range), 11))
+    # ax2.set_xticks(np.linspace(min(val_range), max(val_range), 11))
+    ax1.set_ylabel("Time to converge, years")
+    ax2.set_ylabel("Global convergent temperature, K")
+    ax1.legend()
+    ax2.legend()
     plt.show()
 
 
@@ -379,21 +414,21 @@ def orbital_animation():
 
 
 if __name__ == "__main__":
-    orbital_animation()
-    # from filemanagement import load_config, read_file
-    # from convergence import convergence_test
+    # orbital_animation()
+    from filemanagement import load_config, read_file
+    from convergence import convergence_test
 
-    # conf = load_config()
+    conf = load_config()
     # # q0 = read_file("single_omega/single_omega_2.41.npz")
     # # q1 = read_file("single_omega/single_omega_2.415.npz")
     # # q2 = read_file("single_omega/single_omega_2.42.npz")
     # # threecolourplot(q0, q1, q2, None, None, 1)
 
-    # times, temps, degs = read_file("omega.npz")
-    # dt = times[1] - times[0]
-    # colourplot(degs, temps, times, None, None, 1)
-    # plotdata(degs, temps, dt, 0, 365 * 1, 10)
-    # print(convergence_test(temps, rtol=0.0001))
+    times, temps, degs = read_file("omega.npz")
+    dt = times[1] - times[0]
+    # colourplot(degs, temps, times, 90, None, 1)
+    plotdata(degs, temps, dt, int(365 * 90.5), int(365 * 91.5), 12)
+    print(convergence_test(temps, rtol=0.0001))
     # yearavgplot(degs, temps, dt, 90, 120, 1)
 
     # colourplot(degs, temps, times, None, None, 1, None, None)

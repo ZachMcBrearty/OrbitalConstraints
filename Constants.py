@@ -3,7 +3,7 @@ from numpy.typing import NDArray
 
 floatarr = NDArray[floating]
 
-yeartosecond = 365.25 * 24 * 3600  # s / yr
+YEARTOSECOND = 365.25 * 24 * 3600  # s / yr
 
 spacedim_unit = None
 timestep_unit = "days"
@@ -12,3 +12,22 @@ omega_unit = "days$^{-1}$"
 obliquity_unit = r"$^{\circ}$"
 a_unit = "au"
 e_unit = None
+
+STEPH_BOLTZ = 5.670_374_419e-8  # W m^-2 K^-4
+G = 6.67e11  # N m^2 kg^-2 = m^3 s^-2 kg^-1
+
+MASS = {  # kg
+    "solar": 1.988e30,
+    "jupiter": 1.89819e27,
+    "earth": 5.9723e24,
+    "luna": 7.346e22,
+}
+
+AU = 1.5e11  # m
+
+RADIUS = {  # m
+    "solar": 6.957e8,
+    "jupiter": 6.9911e7,
+    "earth": 6.371e6,
+    "luna": 1.7374e6,
+}
