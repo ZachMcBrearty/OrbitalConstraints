@@ -106,6 +106,7 @@ if __name__ == "__main__":
 
     F_i = f_i(temp)
     fig, (ax1, ax2, ax3) = plt.subplots(3, 1)
+    C = get_C_func(len(lats))
     ax1.plot(lats, 1 / C(F_o, F_i, temp))
     ax1.set_ylabel(r"1/Heat capacity, J m$^{-2}$ K$^{-1}$")
     ax2.plot(lats, temp)

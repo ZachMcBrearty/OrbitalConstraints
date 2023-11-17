@@ -57,6 +57,9 @@ def S(
     t: float | floatarr,
     delta_0: float,
     e: float,
+    A_gas: float,
+    rad_gas: float,
+    r_moon_to_gas: float,
     offset: float = 0,
 ) -> float | floatarr:
     """implements equation A8 from appendix A of WK97
@@ -64,11 +67,14 @@ def S(
     theta: planetary latitude, radians
     t: float: years
     delta_0: obliquity, radians
+    A_gas: albedo of the gas giant
+    rad_gas: radius of gas giant, R_J
+    r_moon_to_gas: distance from gas giant to the moon, AU
 
     returns: S, solar insolation, J s^-1 m^-2"""
-    q_0 = 1360  # Wm^-2
+    q_0 = 1360 * (1 + (1 - A_gas) * rad_gas**2 / (4 * r_moon_to_gas**2))  # Wm^-2
     delta_ = delta(a, t, delta_0)
-    cosdelta = np.cos(delta_)  #
+    cosdelta = np.cos(delta_)
     sindelta = np.sin(delta_)
     costheta = np.cos(theta)
     sintheta = np.sin(theta)

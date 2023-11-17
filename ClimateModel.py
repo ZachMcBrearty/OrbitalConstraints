@@ -331,6 +331,7 @@ def climate_model_in_lat(
 
     orbits = orbital_model(config, 24)
     M_gas = config.getfloat("ORBIT", "gasgiantmass") * MASS["jupiter"]
+    gas_rad = config.getfloat("ORBIT", "gasgiantradius") * RADIUS["jupiter"]
     M_moon = config.getfloat("ORBIT", "moonmass") * MASS["luna"]
     moon_rad = config.getfloat("ORBIT", "moonradius") * RADIUS["luna"]
     moon_a = config.getfloat("ORBIT", "moonsemimajoraxis") * AU
@@ -338,6 +339,7 @@ def climate_model_in_lat(
 
     shearmod = config.getfloat("TIDALHEATING", "shearmod") * 2e10  # Nm^-2
     Q = config.getfloat("TIDALHEATING", "Q")
+    gas_albedo = config.getfloat("TIDALHEATING", "gasalbedo")
 
     moon_density = M_moon / (4 / 3 * np.pi * moon_rad**3)
     tidal_heating_value = fixed_Q_tidal_heating(
@@ -394,7 +396,9 @@ def climate_model_in_lat(
         # if eclip < 1:
         #     print(f"Eclipsed at {dt*n}")
 
-        Source[:, n] = S(a, lats, dt * n, axtilt, e)  # * eclip
+        Source[:, n] = S(
+            a, lats, dt * n, axtilt, e, gas_albedo, gas_rad, moon_a
+        )  # * eclip
         Albedo[:, n] = A_2(Temp[:, n])
         # if 100 * 365 <= n < 101 * 365:
         #     diff_elem += 25
