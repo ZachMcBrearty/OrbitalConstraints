@@ -36,10 +36,11 @@ import numpy.typing as npt
 
 from Constants import *
 from InsolationFunction import S
-from HeatCapacity import C, f_o, f_i
+from HeatCapacity import get_C_func, f_o, f_i
 from IRandAlbedo import A_1, A_2, A_3, I_1, I_2, I_3
 from plotting import colourplot, complexplotdata
 from filemanagement import write_to_file, load_config
+from tidalheating import tidal_heating, fixed_Q_tidal_heating
 
 
 ## derivatives ##
@@ -329,7 +330,23 @@ def climate_model_in_lat(
         raise ValueError(f"Unknown land-ocean fraction type, got: {frac}")
 
     orbits = orbital_model(config, 24)
+    M_gas = config.getfloat("ORBIT", "gasgiantmass") * MASS["jupiter"]
+    M_moon = config.getfloat("ORBIT", "moonmass") * MASS["luna"]
+    moon_rad = config.getfloat("ORBIT", "moonradius") * RADIUS["luna"]
+    moon_a = config.getfloat("ORBIT", "moonsemimajoraxis") * AU
+    moon_ecc = config.getfloat("ORBIT", "mooneccentricity")
 
+    shearmod = config.getfloat("TIDALHEATING", "shearmod") * 2e10  # Nm^-2
+    Q = config.getfloat("TIDALHEATING", "Q")
+
+    moon_density = M_moon / (4 / 3 * np.pi * moon_rad**3)
+    tidal_heating_value = fixed_Q_tidal_heating(
+        moon_density, M_moon, moon_rad, shearmod, Q, M_gas, moon_ecc, moon_a
+    )
+    # heat flux proportional to area
+    heatings = tidal_heating_value * ((dlam / (2 * moon_rad)) * np.cos(lats))
+
+    C = get_C_func(spacedim)
     for n in range(timedim):
         for m in range(spacedim):
             if m == 0:
@@ -367,29 +384,31 @@ def climate_model_in_lat(
         Capacity[:, n] = C(F_o, f_i(Temp[:, n]), Temp[:, n])
         Ir_emission[:, n] = I_2(Temp[:, n])
         # r = dist(a, e, dt * n)
-        eclip = 0
-        star, gas, moon, eclipsed = next(orbits)
-        eclip += eclipsed
-        for _ in range(12 - 1):
-            star, gas, moon, eclipsed = next(orbits)
-            eclip += eclipsed
-        eclip /= 12
+        # eclip = 0
+        # star, gas, moon, eclipsed = next(orbits)
+        # eclip += eclipsed
+        # for _ in range(12 - 1):
+        #     star, gas, moon, eclipsed = next(orbits)
+        #     eclip += eclipsed
+        # eclip /= 12
         # if eclip < 1:
         #     print(f"Eclipsed at {dt*n}")
 
-        Source[:, n] = S(a, lats, dt * n, axtilt, e) * eclip
+        Source[:, n] = S(a, lats, dt * n, axtilt, e)  # * eclip
         Albedo[:, n] = A_2(Temp[:, n])
         # if 100 * 365 <= n < 101 * 365:
         #     diff_elem += 25
-
         Temp[:, n + 1] = Temp[:, n] + YEARTOSECOND * dt / Capacity[:, n] * (
-            diff_elem - Ir_emission[:, n] + Source[:, n] * (1 - Albedo[:, n])
+            diff_elem - Ir_emission[:, n] + Source[:, n] * (1 - Albedo[:, n]) + heatings
         )
         # if 100 * 365 <= n < 101 * 365:
-        #     Temp[len(Temp) // 2, n + 1] = 200
+        #     Temp[len(Temp) // 2 + 0, n + 1] = 200
         #     Temp[len(Temp) // 2 - 1, n + 1] = 200
         #     Temp[len(Temp) // 2 + 1, n + 1] = 200
         #     Temp[len(Temp) // 2 - 2, n + 1] = 200
+    print(Source[spacedim // 2, -2])
+    print(Ir_emission[spacedim // 2, -2])
+    print(heatings[spacedim // 2])
     times = np.linspace(0, time, timedim)
 
     if config.getboolean("FILEMANAGEMENT", "save"):
@@ -406,13 +425,11 @@ if __name__ == "__main__":
     # import cProfile
     # from pstats import SortKey, Stats
 
-    # # with cProfile.Profile() as p:
     config = load_config("config.ini", "OrbitalConstraints")
+    # with cProfile.Profile() as p:
     climate_model_in_lat(config)
-    # Stats(p).strip_dirs().sort_stats(SortKey.CUMULATIVE).print_stats()
-    # times, temps, degs = read_file(
-    #     config.get("FILEMANAGEMENT", "save_name") + ".npz"
-    # )
+    # Stats(p).strip_dirs().sort_stats(SortKey.CUMULATIVE).print_stats(100)
+    # times, temps, degs = read_file(config.get("FILEMANAGEMENT", "save_name") + ".npz")
     # dt = times[1] - times[0]
 
     # plotdata(degs, temps, dt, 0, 365 * 1, 10)

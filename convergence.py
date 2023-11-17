@@ -315,13 +315,14 @@ def reprocess_single_param(
             val_1_range.append(q)
         tests.append(t)
         convtemps.append(temp)
-    ecc_fit_plot(
-        tests,
-        convtemps,
-        val_1_name,
-        val_1_range,
-        val_1_unit,
-    )
+    convergence_plot_single(tests, convtemps, val_1_name, val_1_range, val_1_unit)
+    # ecc_fit_plot(
+    #     tests,
+    #     convtemps,
+    #     val_1_name,
+    #     val_1_range,
+    #     val_1_unit,
+    # )
 
 
 def reprocess_single_param_compare(
@@ -436,7 +437,7 @@ if __name__ == "__main__":
     conf = load_config("config.ini")
     reset_conf(conf)
 
-    # print(test_a_convergence(conf, 0.5, 2.05, 0.1, rtol=0.0001))
+    # print(test_a_convergence(conf, 2, 10, 0.5, rtol=0.0001))
     # reset_conf(conf)
     # print(test_e_convergence(conf, 0, 0.91, 0.1, rtol=0.0001))
     # reset_conf(conf)
@@ -476,18 +477,18 @@ if __name__ == "__main__":
     # reset_conf(conf)
 
     # reprocess_single_param("single_e", os.path.curdir, "e", e_unit, 0.0001)
-    reprocess_single_param_compare(
-        "single_a",
-        os.path.curdir,
-        "single_gassemimajoraxis",
-        os.path.curdir,
-        "a",
-        "a$_{gas}$",
-        "au",
-    )
-    # reprocess_single_param(
-    #     "single_gassemimajoraxis", os.path.curdir, "a gas", a_unit, 0.0001
+    # reprocess_single_param_compare(
+    #     "single_a",
+    #     os.path.curdir,
+    #     "single_gassemimajoraxis",
+    #     os.path.curdir,
+    #     "a",
+    #     "a$_{gas}$",
+    #     "au",
     # )
+    reprocess_single_param(
+        "single_gassemimajoraxis", os.path.curdir, "a gas", a_unit, 0.0001
+    )
     # reprocess_single_param("single_a", os.path.curdir, "a", a_unit, 0.0001)
     # plt.show()
     # reprocess_paramspace("dual_a_e", os.path.curdir, "a", "e", "au", None, 0.0001)

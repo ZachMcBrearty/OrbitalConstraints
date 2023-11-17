@@ -17,33 +17,37 @@ def ThermalTimeScale(
     return Capacity * Temp / Ir_emission
 
 
-def C(f_o: floatarr, f_i: floatarr, temp: floatarr) -> floatarr:
-    """Calculate heat capacity from ocean and ice fractions
-    f_o: fraction of planet which is ocean
-    f_i: fraction of ocean which is ice
-
-    returns: heat capacity, J m^-2 K^-1
-    """
-    # C = ρ c_p Δl
-    # ρ - density
-    # c_p - heat capacity
-    # Δl - depth of atmosphere
+def get_C_func(spacedim):
     C_ref = 5.25 * 10**6
-    C_l: floatarr = np.ones_like(temp) * C_ref  # J m^-2 K^-1 # heat capacity over land
-    ## WK97 ##
-    # 263 K < T < 273 K
-    C_i: floatarr = np.ones_like(temp) * 9.2 * C_ref
-    # T < 263 K
-    C_i[temp < 263] = 2.0 * C_ref
-    # Δl = 50m -> 40 * C_l
-    # Δl = 75m -> 60 * C_l
-    C_o: floatarr = np.ones_like(temp) * 40 * C_ref
-
+    C_l = C_ref
     # ## North et al 1983 ##
     # # Δl = 75m
     # C_o = 60 * C_l  # heat capacity over ocean
     # C_i = 9.2 * C_l  # heat capacity over ice
-    return (1 - f_o) * C_l + f_o * ((1 - f_i) * C_o + f_i * C_i)
+    C_i: floatarr = np.ones(spacedim) * 9.2 * C_ref
+    # Δl = 50m -> 40 * C_l
+    # Δl = 75m -> 60 * C_l
+    C_o = 40 * C_ref
+
+    def C(f_o: floatarr, f_i: floatarr, temp: floatarr) -> floatarr:
+        """Calculate heat capacity from ocean and ice fractions
+        f_o: fraction of planet which is ocean
+        f_i: fraction of ocean which is ice
+
+        returns: heat capacity, J m^-2 K^-1
+        """
+        # C = ρ c_p Δl
+        # ρ - density
+        # c_p - heat capacity
+        # Δl - depth of atmosphere
+        ## WK97 ##
+        # 263 K < T < 273 K
+        C_i[temp >= 263] = 9.2 * C_ref
+        # T < 263 K
+        C_i[temp < 263] = 2.0 * C_ref
+        return (1 - f_o) * C_l + f_o * ((1 - f_i) * C_o + f_i * C_i)
+
+    return C
 
 
 f_earth_10deg = np.array(

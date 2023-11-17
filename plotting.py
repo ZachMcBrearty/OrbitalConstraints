@@ -426,9 +426,9 @@ if __name__ == "__main__":
 
     times, temps, degs = read_file("omega.npz")
     dt = times[1] - times[0]
-    # colourplot(degs, temps, times, 90, None, 1)
-    plotdata(degs, temps, dt, int(365 * 90.5), int(365 * 91.5), 12)
-    print(convergence_test(temps, rtol=0.0001))
+    colourplot(degs, temps, times, 90, None, 1)
+    # plotdata(degs, temps, dt, int(365 * 90.5), int(365 * 91.5), 12)
+    # print(convergence_test(temps, rtol=0.0001))
     # yearavgplot(degs, temps, dt, 90, 120, 1)
 
     # colourplot(degs, temps, times, None, None, 1, None, None)

@@ -3,9 +3,9 @@ from typing import Optional
 import numpy as np
 import numpy.typing as npt
 
-floatarr = npt.NDArray[np.float64]
+from Constants import STEPH_BOLTZ
 
-stef_boltz = 5.670367 * 10**-8  # W m^-2 K^-4
+floatarr = npt.NDArray[np.float64]
 
 
 def I_1(T: float | floatarr, opt_thick: float = 1.0) -> float | floatarr:
@@ -15,7 +15,7 @@ def I_1(T: float | floatarr, opt_thick: float = 1.0) -> float | floatarr:
 
     return: simple IR emission, W m^-2"""
 
-    return stef_boltz * T**4 / (1 + (3 * opt_thick / 4))
+    return STEPH_BOLTZ * T**4 / (1 + (3 * opt_thick / 4))
 
 
 def opt_thick(T: float | floatarr) -> float | floatarr:
@@ -42,7 +42,7 @@ def I_2(T):
     T: temperature, K
 
     return: variable IR emission with temperature, W m^-2"""
-    return stef_boltz * T**4 / (1 + (3 * opt_thick(T) / 4))
+    return STEPH_BOLTZ * T**4 / (1 + (3 * opt_thick(T) / 4))
 
 
 def I_3(T: float | floatarr, A=2.033 * 10**5, B=2.094 * 10**3) -> float | floatarr:
