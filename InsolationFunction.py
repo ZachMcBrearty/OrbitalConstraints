@@ -156,13 +156,13 @@ if __name__ == "__main__":
     e = 0.0167
     delta_0 = np.deg2rad(23.5)
     off = 0.0
-    insols = S(a, np.pi / 2, time, delta_0, e)
+    # insols = S(a, np.pi / 2, time, delta_0, e)
     # insols = []
     # for t in range(0, 100):
     #     insol = np.average()
     #     insols.append(insol)
 
-    plt.plot(time, insols)
+    # plt.plot(time, insols)
 
     # r = dist(1, e, time, offset=off)
     # for lat in range(0, 91, 15):

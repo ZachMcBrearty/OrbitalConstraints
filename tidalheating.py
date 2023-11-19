@@ -79,7 +79,16 @@ def tidal_heating(T, M_p, M_m, a_m, e_m, R_m, dens_m):
     return 21 / 2 * minus_Im_k_2 * (R_m * n_m) ** 5 * e_m**2 / G
 
 
-def fixed_Q_tidal_heating(dens_m, M_m, R_m, shearmod, Q, M_p, e, a_m):
+def fixed_Q_tidal_heating(
+    dens_m: float,
+    M_m: float,
+    R_m: float,
+    shearmod: float,
+    Q: float,
+    M_p: float,
+    e: float,
+    a_m: float,
+) -> float:
     dens_m_times_grav_m_times_R_m = dens_m * G * M_m / R_m
     k_2 = 3 / (2 + 19 * shearmod / dens_m_times_grav_m_times_R_m)
     return (
@@ -99,7 +108,14 @@ if __name__ == "__main__":
     import matplotlib.pyplot as plt
     from filemanagement import load_config
 
-    semi = np.logspace(-3, 0, 50, True, 10) * AU
+    #
+    spacedim = 60
+
+    dlam = np.pi / (spacedim - 1)  # spacial separation in -pi/2 to pi/2
+    lats = np.linspace(-1, 1, spacedim) * (np.pi / 2)
+    degs = np.rad2deg(lats)
+
+    # semi = np.logspace(-3, 0, 50, True, 10) * AU
     config = load_config("config.ini", "OrbitalConstraints")
     M_gas = config.getfloat("ORBIT", "gasgiantmass") * MASS["jupiter"]
     M_moon = config.getfloat("ORBIT", "moonmass") * MASS["luna"]
@@ -111,14 +127,17 @@ if __name__ == "__main__":
     Q = config.getfloat("TIDALHEATING", "Q")
 
     moon_density = M_moon / (4 / 3 * np.pi * moon_rad**3)
+    # fixQvals = fixed_Q_tidal_heating(
+    #     moon_density, M_moon, moon_rad, shearmod, Q, M_gas, moon_ecc, semi
+    # )
     fixQvals = fixed_Q_tidal_heating(
-        moon_density, M_moon, moon_rad, shearmod, Q, M_gas, moon_ecc, semi
+        moon_density, M_moon, moon_rad, shearmod, Q, M_gas, moon_ecc, moon_a
     )
-    plt.plot(semi / AU, fixQvals, label="fixed-Q values")
-    plt.vlines(moon_a / AU, 0, 1e18, colors=["r"], label="moon_a")
+    heatings = fixQvals * ((dlam / (2 * moon_rad)) * np.cos(lats))
+    plt.plot(degs, heatings, label="fixed-Q values")
     plt.title(f"Eccentricity: {moon_ecc}")
-    plt.yscale("log")
-    plt.xscale("log")
+    # plt.yscale("log")
+    # plt.xscale("log")
     plt.legend()
-    plt.xlabel("Semimajor axis, au")
+    # plt.xlabel("Semimajor axis, au")
     plt.show()
