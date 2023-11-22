@@ -41,7 +41,7 @@ from HeatCapacity import get_C_func, f_o, f_i
 from IRandAlbedo import A_1, A_2, A_3, I_1, I_2, I_3
 from plotting import colourplot, complexplotdata
 from filemanagement import write_to_file, load_config
-from tidalheating import tidal_heating, fixed_Q_tidal_heating
+from tidalheating import get_viscoheating, fixed_Q_tidal_heating
 
 
 ## derivatives ##
@@ -555,16 +555,18 @@ def climate_model_in_lat(
     moon_a = config.getfloat("ORBIT", "moonsemimajoraxis") * AU
     moon_ecc = config.getfloat("ORBIT", "mooneccentricity")
 
-    shearmod = config.getfloat("TIDALHEATING", "shearmod") * 2e10  # Nm^-2
-    Q = config.getfloat("TIDALHEATING", "Q")
+    widths = 2 * np.pi * moon_rad * np.cos(lats) * dlam
+
+    # shearmod = config.getfloat("TIDALHEATING", "shearmod") * 2e10  # Nm^-2
+    # Q = config.getfloat("TIDALHEATING", "Q")
     gas_albedo = config.getfloat("TIDALHEATING", "gasalbedo")
 
     moon_density = M_moon / (4 / 3 * np.pi * moon_rad**3)
-    tidal_heating_value = fixed_Q_tidal_heating(
-        moon_density, M_moon, moon_rad, shearmod, Q, M_gas, moon_ecc, moon_a
-    )
+    # tidal_heating_value = fixed_Q_tidal_heating(
+    #     moon_density, M_moon, moon_rad, shearmod, Q, M_gas, moon_ecc, moon_a
+    # )
     # heat flux proportional to area
-    heatings = tidal_heating_value * ((dlam / (2 * moon_rad)) * np.cos(lats))
+    # heatings = tidal_heating_value * ((dlam / (2 * moon_rad)) * np.cos(lats))
 
     C = get_C_func(spacedim)
     for n in range(timedim):
@@ -618,6 +620,9 @@ def climate_model_in_lat(
             a, lats, dt * n, axtilt, e, gas_albedo, gas_rad, moon_a
         )  # * eclip
         Albedo[:, n] = A_2(Temp[:, n])
+        T_surf = np.sum(Temp[:, n] * widths) / spacedim
+        tidal_heating_value = get_viscoheating(config, T_surf)
+        heatings = tidal_heating_value * widths
         # if 100 * 365 <= n < 101 * 365:
         #     diff_elem += 25
         Temp[:, n + 1] = Temp[:, n] + YEARTOSECOND * dt / Capacity[:, n] * (
