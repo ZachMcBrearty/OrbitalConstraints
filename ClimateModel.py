@@ -561,7 +561,7 @@ def climate_model_in_lat(
     # Q = config.getfloat("TIDALHEATING", "Q")
     gas_albedo = config.getfloat("TIDALHEATING", "gasalbedo")
 
-    moon_density = M_moon / (4 / 3 * np.pi * moon_rad**3)
+    # moon_density = M_moon / (4 / 3 * np.pi * moon_rad**3)
     # tidal_heating_value = fixed_Q_tidal_heating(
     #     moon_density, M_moon, moon_rad, shearmod, Q, M_gas, moon_ecc, moon_a
     # )
@@ -569,6 +569,13 @@ def climate_model_in_lat(
     # heatings = tidal_heating_value * ((dlam / (2 * moon_rad)) * np.cos(lats))
 
     C = get_C_func(spacedim)
+
+    T_surf = np.sum(Temp[:, 0] * widths) / np.sum(widths)  # type: float
+    print(T_surf)
+    tidal_heating_value = get_viscoheating(config, T_surf)
+    print(tidal_heating_value)
+    heatings = tidal_heating_value * widths
+    print(heatings)
     for n in range(timedim):
         for m in range(spacedim):
             if m == 0:
@@ -620,7 +627,8 @@ def climate_model_in_lat(
             a, lats, dt * n, axtilt, e, gas_albedo, gas_rad, moon_a
         )  # * eclip
         Albedo[:, n] = A_2(Temp[:, n])
-        T_surf = np.sum(Temp[:, n] * widths) / spacedim
+        # if n % 10 == 0:
+        T_surf = np.sum(Temp[:, n] * widths) / np.sum(widths)  # type: float
         tidal_heating_value = get_viscoheating(config, T_surf)
         heatings = tidal_heating_value * widths
         # if 100 * 365 <= n < 101 * 365:

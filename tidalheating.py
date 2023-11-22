@@ -174,7 +174,7 @@ def get_viscoheating(config, T_surf: float, B: float = 25, rtol: float = 0.1) ->
     moon_ecc = config.getfloat("ORBIT", "mooneccentricity")
     moon_density = M_moon / (4 / 3 * np.pi * moon_rad**3)
 
-    temps = np.linspace(1400, 2000, 600, endpoint=False)
+    temps = np.arange(1400, 2500, 1)
     visco_fluxes = np.array(
         [
             viscoelastic_tidal_heating(
@@ -196,11 +196,25 @@ if __name__ == "__main__":
     from filemanagement import load_config
 
     config = load_config("config.ini", "OrbitalConstraints")
+    M_gas = config.getfloat("ORBIT", "gasgiantmass") * MASS["jupiter"]  # kg
+    M_moon = config.getfloat("ORBIT", "moonmass") * MASS["luna"]  # kg
+    moon_rad = config.getfloat("ORBIT", "moonradius") * RADIUS["luna"]  # m
+    moon_a = config.getfloat("ORBIT", "moonsemimajoraxis") * AU  # m
+    moon_ecc = config.getfloat("ORBIT", "mooneccentricity")
+
+    shearmod = config.getfloat("TIDALHEATING", "shearmod") * 2e10  # Nm^-2
+    Q = config.getfloat("TIDALHEATING", "Q")
+    moon_density = M_moon / (4 / 3 * np.pi * moon_rad**3)  # kg.m^-3
+    fixed_Q = fixed_Q_tidal_heating(
+        moon_density, M_moon, moon_rad, shearmod, Q, M_gas, moon_ecc, moon_a
+    ) / (4 * np.pi * moon_rad**2)
     temps = np.linspace(100, 500, 401)
     visc_heat = [get_viscoheating(config, T_surf) for T_surf in temps]
     plt.plot(temps, visc_heat)
+    plt.axhline(fixed_Q, 0, 1)
     plt.xlabel("Surface Temperature")
     plt.ylabel("Surface flux, W m$^{-2}$")
+    plt.yscale("log")
     plt.show()
 
     # M_gas = config.getfloat("ORBIT", "gasgiantmass") * MASS["jupiter"]  # kg
