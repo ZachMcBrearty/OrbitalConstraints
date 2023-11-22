@@ -185,8 +185,8 @@ def get_viscoheating(config, T_surf: float, B: float = 25, rtol: float = 0.1) ->
     )
     conv_cool_fluxes = np.array([conv_cooling(t, T_surf, B) for t in temps])
     comp = np.isclose(visco_fluxes, conv_cool_fluxes, rtol=rtol)
-    if len(comp) > 0:
-        return visco_fluxes[comp][-1]
+    if len(q := visco_fluxes[comp]) > 0:
+        return q[-1]
     else:
         return 0.0
 
