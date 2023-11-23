@@ -1,7 +1,11 @@
+from configparser import ConfigParser
+from typing import TypeAlias
+
 from numpy import floating
 from numpy.typing import NDArray
 
 floatarr = NDArray[floating]
+CONF_PARSER_TYPE: TypeAlias = ConfigParser
 
 YEARTOSECOND = 365.25 * 24 * 3600  # s / yr
 

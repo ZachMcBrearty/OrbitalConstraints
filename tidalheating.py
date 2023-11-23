@@ -55,7 +55,7 @@ def Ra(
     C_p: float = 1260,
     rho: float = 5e3,
     d: float = 3e6,
-    alpha: float = 1e-4,
+    alpha: float = 1e-5,
     k_therm: float = 2,
 ) -> float:
     """R: radius of the moon, m
@@ -64,7 +64,7 @@ def Ra(
     C_p: heat capacity, J kg^-1 K^-1
     rho: density of moon, kg m^-3
     d: mantle thickness, m
-    alpha: thermal expansivity,
+    alpha: thermal expansivity, K^-1
     k_therm: thermal conductivity, W m^-1 K^-1
 
     returns: Ra, Rayleigh Number"""
@@ -83,21 +83,22 @@ def q_BL(T_mantle: float, T_surf: float, delta_: float, k_therm: float = 2) -> f
 
     returns: heat conduction through surface, W m^-2"""
     # W m^-1 K^-1 * K / m = W m^-2
-    return k_therm * (T_mantle - T_surf) / delta_
+    return k_therm * (T_mantle - T_surf) / (delta_)
 
 
-def conv_cooling(T_man: float, T_surf: float = 300, B_: float = 10) -> float:
-    k_therm = 2.0  # W m^-1 K^-1
+def conv_cooling(
+    T_man: float, T_surf: float = 300, B_: float = 10, R_m=RADIUS["earth"], dens_m=5000
+) -> float:
     delt = 30e3  # m
     q_BL_ = 0.0
     q_BL_n = 0.0
     while True:
-        q_BL_n = q_BL(T_man, T_surf, delt, k_therm=k_therm)
+        q_BL_n = q_BL(T_man, T_surf, delt)
         if (q_BL_n - q_BL_) < 1e-10:
             break
         else:
             q_BL_ = q_BL_n
-        Ra_ = Ra(RADIUS["earth"], q_BL_, visc(T_man, B_), k_therm=k_therm)
+        Ra_ = Ra(R_m, q_BL_, visc(T_man, B_), rho=dens_m)
         delt = delta(Ra_)
     return q_BL_n
 
@@ -112,7 +113,7 @@ def viscoelastic_tidal_heating(
     e: moon eccentricity,
     a: moon semimajor axis, m
 
-    returns: viscoelastic tidal heating rate, W m^-2
+    returns: viscoelastic tidal heating rate, W
     """
     shearmod_ = shear_mod(T)  # Pa
     rho_g_Rm = dens_m**2 * G * 4 / 3 * np.pi * R_m**2
@@ -131,11 +132,11 @@ def viscoelastic_tidal_heating(
     minus_im_k_2 = minus_im_k_2_num / minus_im_k_2_denom
     return (
         21
-        / (8 * np.pi)
+        / (2)
         * minus_im_k_2
         * G ** (3 / 2)
         * M_p ** (5 / 2)
-        * R_m**3
+        * R_m**5
         * e**2
         / a ** (15 / 2)
     )
@@ -174,7 +175,7 @@ def get_viscoheating(config, T_surf: float, B: float = 25, rtol: float = 0.1) ->
     moon_ecc = config.getfloat("ORBIT", "mooneccentricity")
     moon_density = M_moon / (4 / 3 * np.pi * moon_rad**3)
 
-    temps = np.arange(1400, 2500, 1)
+    temps = np.arange(1600, 1900, 1)
     visco_fluxes = np.array(
         [
             viscoelastic_tidal_heating(
@@ -183,7 +184,12 @@ def get_viscoheating(config, T_surf: float, B: float = 25, rtol: float = 0.1) ->
             for t in temps
         ]
     )
-    conv_cool_fluxes = np.array([conv_cooling(t, T_surf, B) for t in temps])
+    conv_cool_fluxes = (
+        np.array([conv_cooling(t, T_surf, B, moon_rad) for t in temps])
+        * 4
+        * np.pi
+        * moon_rad**2
+    )
     comp = np.isclose(visco_fluxes, conv_cool_fluxes, rtol=rtol)
     if len(q := visco_fluxes[comp]) > 0:
         return q[-1]
@@ -207,7 +213,7 @@ if __name__ == "__main__":
     moon_density = M_moon / (4 / 3 * np.pi * moon_rad**3)  # kg.m^-3
     fixed_Q = fixed_Q_tidal_heating(
         moon_density, M_moon, moon_rad, shearmod, Q, M_gas, moon_ecc, moon_a
-    ) / (4 * np.pi * moon_rad**2)
+    )
     temps = np.linspace(100, 500, 401)
     visc_heat = [get_viscoheating(config, T_surf) for T_surf in temps]
     plt.plot(temps, visc_heat)

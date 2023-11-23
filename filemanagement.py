@@ -5,9 +5,6 @@ import os
 
 import numpy as np
 from numpy.typing import NDArray
-from netCDF4 import Dataset  # type: ignore
-
-CONF_PARSER_TYPE = configparser.ConfigParser
 
 
 def write_to_file(
@@ -30,21 +27,6 @@ def read_file(filename: str) -> tuple[NDArray, NDArray, NDArray]:
         degs = a["degs"]
         temps = a["temps"]
     return times, temps, degs
-
-
-def load_temps_dataset():
-    import matplotlib.pyplot as plt
-
-    with Dataset("NOAATemps_v5.1.0.nc", "r") as data:
-        print(data.climatology[:])
-        # print(data.variables)
-        # print(data["anom"])
-        # t = data.variables["time"][124 : 124 + 12 + 36]
-        # q = np.average(data.variables["anom"][124 : 124 + 12 + 36, 0, :, :], axis=2)
-        # print(q)
-        # print(q.shape)
-        # plt.plot(t, q[:, ::4])
-        # plt.show()
 
 
 def load_config(filename="DEFAULT.ini", path="OrbitalConstraints"):
