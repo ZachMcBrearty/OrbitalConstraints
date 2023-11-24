@@ -132,6 +132,7 @@ def climate_model_in_lat(
 
     dlam = np.pi / (spacedim - 1)  # spacial separation in -pi/2 to pi/2
     lats = np.linspace(-1, 1, spacedim) * (np.pi / 2)
+    coslats = np.cos(lats)
     degs = np.rad2deg(lats)
 
     # simulation length in years
@@ -192,13 +193,7 @@ def climate_model_in_lat(
     moon_a = config.getfloat("ORBIT", "moonsemimajoraxis") * AU
     moon_ecc = config.getfloat("ORBIT", "mooneccentricity")
 
-    widths = 2 * np.pi * moon_rad**2 * np.cos(lats) * dlam
-    one_over_widths = 1 / widths
-    one_over_widths[0] = 0
-    one_over_widths[-1] = 0
-    print(widths)
-    print(one_over_widths)
-
+    heating_dist = coslats * dlam / (8 * np.pi * moon_rad**2)
     shearmod = config.getfloat("TIDALHEATING", "shearmod") * 2e10  # Nm^-2
     Q = config.getfloat("TIDALHEATING", "Q")
     gas_albedo = config.getfloat("TIDALHEATING", "gasalbedo")
@@ -207,14 +202,11 @@ def climate_model_in_lat(
     tidal_heating_value = fixed_Q_tidal_heating(
         moon_density, M_moon, moon_rad, shearmod, Q, M_gas, moon_ecc, moon_a
     )
-    # heat flux proportional to area
-    heatings_fixedQ = tidal_heating_value * ((dlam / (2 * moon_rad)) * np.cos(lats))
-
     C = get_C_func(spacedim)
 
-    T_surf = np.sum(Temp[:, 0] * widths) / np.sum(widths)  # type: float
+    T_surf = np.sum(Temp[:, 0] * coslats * dlam) / 2  # type: float
     tidal_heating_value = get_viscoheating(config, T_surf)
-    heatings = tidal_heating_value * one_over_widths
+    heatings = tidal_heating_value * heating_dist
     for n in range(timedim):
         for m in range(spacedim):
             if m == 0:
@@ -267,9 +259,9 @@ def climate_model_in_lat(
         )  # * eclip
         Albedo[:, n] = A_2(Temp[:, n])
         if n % 30 == 0:
-            T_surf = np.sum(Temp[:, n] * widths) / np.sum(widths)  # type: float
+            T_surf = np.sum(Temp[:, 0] * coslats * dlam) / 2  # type: float
             tidal_heating_value = get_viscoheating(config, T_surf)
-            heatings = tidal_heating_value * one_over_widths
+            heatings = tidal_heating_value * heating_dist
         # if 100 * 365 <= n < 101 * 365:
         #     diff_elem += 25
         Temp[:, n + 1] = Temp[:, n] + YEARTOSECOND * dt / Capacity[:, n] * (
