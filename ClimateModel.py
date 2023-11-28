@@ -41,6 +41,8 @@ from filemanagement import write_to_file, load_config
 from tidalheating import get_viscoheating, fixed_Q_tidal_heating
 from orbital_model import orbital_model_explicit as orbital_model
 
+skip = 60
+
 
 ## derivatives ##
 def forwarddifference(x: list[float] | floatarr, i: int, dx: float) -> float:
@@ -199,14 +201,17 @@ def climate_model_in_lat(
     gas_albedo = config.getfloat("TIDALHEATING", "gasalbedo")
 
     moon_density = M_moon / (4 / 3 * np.pi * moon_rad**3)
-    tidal_heating_value = fixed_Q_tidal_heating(
+    tidal_heating_value_fixed = fixed_Q_tidal_heating(
         moon_density, M_moon, moon_rad, shearmod, Q, M_gas, moon_ecc, moon_a
     )
+
     C = get_C_func(spacedim)
 
     T_surf = np.sum(Temp[:, 0] * coslats * dlam) / 2  # type: float
     tidal_heating_value = get_viscoheating(config, T_surf)
+    # print(tidal_heating_value, tidal_heating_value_fixed)
     heatings = tidal_heating_value * heating_dist
+    # print(heatings, tidal_heating_value_fixed * heating_dist)
     for n in range(timedim):
         for m in range(spacedim):
             if m == 0:
@@ -258,15 +263,25 @@ def climate_model_in_lat(
             a, lats, dt * n, axtilt, e, gas_albedo, gas_rad, moon_a
         )  # * eclip
         Albedo[:, n] = A_2(Temp[:, n])
-        if n % 30 == 0:
-            T_surf = np.sum(Temp[:, 0] * coslats * dlam) / 2  # type: float
+
+        if n != 0 and n % skip == 0:
+            T_surf = np.sum(np.sum(Temp[:, n - skip : n]) * coslats * dlam) / 2 / skip
             tidal_heating_value = get_viscoheating(config, T_surf)
             heatings = tidal_heating_value * heating_dist
+            # print(diff_elem[spacedim // 2])
+            # print(Ir_emission[spacedim // 2, n])
+            # print(Albedo[spacedim // 2, n])
+            # print(Source[spacedim // 2, n] * (1 - Albedo[spacedim // 2, n]))
+            # print(heatings[spacedim // 2])
+            # print()
         # if 100 * 365 <= n < 101 * 365:
         #     diff_elem += 25
         Temp[:, n + 1] = Temp[:, n] + YEARTOSECOND * dt / Capacity[:, n] * (
             diff_elem - Ir_emission[:, n] + Source[:, n] * (1 - Albedo[:, n]) + heatings
         )
+        if np.any(Temp[:, n + 1] > 1000):
+            Temp[:, n + 2 :] = -1
+            break
         # if 100 * 365 <= n < 101 * 365:
         #     Temp[len(Temp) // 2 + 0, n + 1] = 200
         #     Temp[len(Temp) // 2 - 1, n + 1] = 200

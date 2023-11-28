@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, Literal
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -177,6 +177,7 @@ def convergence_plot_single(
     val_name: str,
     val_range,
     val_unit: Optional[str] = None,
+    x_axis_scale: Literal["linear", "log"] = "linear",
 ):
     if val_unit is None:
         val_unit = ""
@@ -186,14 +187,23 @@ def convergence_plot_single(
     # fit_range = np.linspace(min(val_range), max(val_range), 100, endpoint=True)
     # fit_vals = convtemps[0] * (1 - fit_range**2) ** (-1 / 4)
     fig, (ax1, ax2) = plt.subplots(2, 1)
+    ax1: plt.Axes
+    ax2: plt.Axes
     ax1.scatter(val_range, tests)
     ax2.scatter(val_range, convtemps)
+    if min(convtemps) < 273:
+        ax2.axhline(273, 0, 1, ls="-.", label="273$^{\circ}$")
+    if max(convtemps) > 373:
+        ax2.axhline(373, 0, 1, ls="-.", label="373$^{\circ}$")
     # ax2.plot(fit_range, fit_vals, label="(1-e^2)^{-1/4} fit")
     ax2.set_xlabel(f"{val_name} {val_unit}")
     ax1.set_xticks(np.linspace(min(val_range), max(val_range), 11))
     ax2.set_xticks(np.linspace(min(val_range), max(val_range), 11))
+    ax1.set_xscale(x_axis_scale)
+    ax2.set_xscale(x_axis_scale)
     ax1.set_ylabel("Time to converge, years")
     ax2.set_ylabel("Global convergent temperature, K")
+    ax2.legend()
     plt.show()
 
 
@@ -288,6 +298,8 @@ def convergence_plot_dual(
     rtol=0.0001,
     val_unit_1=None,
     val_unit_2=None,
+    x_axis_scale: Literal["linear", "log"] = "linear",
+    y_axis_scale: Literal["linear", "log"] = "linear",
 ):
     if val_unit_1 is None:
         val_unit_1 = ""
@@ -313,6 +325,10 @@ def convergence_plot_dual(
     ax1.set_xlabel(f"{val_name_1} {val_unit_1}")
     ax2.set_ylabel(f"{val_name_2} {val_unit_2}")
     ax2.set_xlabel(f"{val_name_1} {val_unit_1}")
+    ax1.set_xscale(x_axis_scale)
+    ax1.set_yscale(y_axis_scale)
+    ax2.set_xscale(x_axis_scale)
+    ax2.set_yscale(y_axis_scale)
     plt.show()
 
 

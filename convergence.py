@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, Literal
 import os
 
 import numpy as np
@@ -12,12 +12,10 @@ from filemanagement import (
     write_to_file,
     read_dual_folder,
     read_single_folder,
-    CONF_PARSER_TYPE,
 )
 from plotting import (
     convergence_plot_single,
     convergence_plot_dual,
-    ecc_fit_plot,
     convergence_plot_single_compare,
 )
 
@@ -68,18 +66,16 @@ def gen_convergence_test(
 
     def t(
         conf: CONF_PARSER_TYPE,
-        val_min: float,
-        val_max: float,
-        val_step: float,
+        val_range: list | NDArray,
         rtol=0.0001,
-    ) -> tuple[NDArray[np.floating], list[float], list[float]]:
+    ) -> tuple[list | NDArray, list[float], list[float]]:
         if not conf.has_option(val_section, val_name):
             raise ValueError(
                 f"Supplied config file has no section {val_section} or option {val_name}"
             )
         tests = []
         convtemps = []
-        val_range = np.arange(val_min, val_max, val_step)
+        # val_range = np.arange(val_min, val_max, val_step)
         for val in val_range:
             if verbose:
                 print(f"Running {val_name}={val}")
@@ -93,7 +89,7 @@ def gen_convergence_test(
             if save:
                 if not os.path.exists(f"./single_{val_name}/"):
                     os.mkdir(f"./single_{val_name}/")
-                filename = f"./single_{val_name}/single_{val_name}_{round(val,3)}.npz"
+                filename = f"./single_{val_name}/single_{val_name}_{round(val,5)}.npz"
                 write_to_file(
                     times,
                     temps,
@@ -106,7 +102,7 @@ def gen_convergence_test(
                 tests,
                 convtemps,
                 val_name,
-                np.arange(val_min, val_max, val_step),
+                val_range,
                 val_unit,
             )
 
@@ -138,6 +134,12 @@ test_a_convergence = gen_convergence_test(
 test_e_convergence = gen_convergence_test(
     "ORBIT", "gasgianteccentricity", True, False, True, e_unit
 )
+test_moon_a_convergence = gen_convergence_test(
+    "ORBIT", "moonsemimajoraxis", True, False, True, a_unit
+)
+test_moon_e_convergence = gen_convergence_test(
+    "ORBIT", "mooneccentricity", True, False, True, a_unit
+)
 
 
 def gen_paramspace(
@@ -153,14 +155,10 @@ def gen_paramspace(
 ):
     def t(
         conf: CONF_PARSER_TYPE,
-        val_min_1: float,
-        val_max_1: float,
-        val_step_1: float,
-        val_min_2: float,
-        val_max_2: float,
-        val_step_2: float,
+        val_1_range: list | NDArray,
+        val_2_range: list | NDArray,
         rtol=0.0001,
-    ) -> tuple[NDArray, NDArray, NDArray, NDArray]:
+    ) -> tuple[list | NDArray, list | NDArray, NDArray, NDArray]:
         if not conf.has_option(val_sec_1, val_name_1):
             raise ValueError(
                 f"Supplied config file has no section {val_sec_1} or option {val_name_1}"
@@ -169,8 +167,8 @@ def gen_paramspace(
             raise ValueError(
                 f"Supplied config file has no section {val_sec_2} or option {val_name_2}"
             )
-        val_1_range = np.arange(val_min_1, val_max_1, val_step_1)
-        val_2_range = np.arange(val_min_2, val_max_2, val_step_2)
+        # val_1_range = np.arange(val_min_1, val_max_1, val_step_1)
+        # val_2_range = np.arange(val_min_2, val_max_2, val_step_2)
         tests = np.zeros((len(val_1_range), len(val_2_range)))
         convtemps = np.zeros_like(tests)
         for i, val_1 in enumerate(val_1_range):
@@ -188,7 +186,7 @@ def gen_paramspace(
                 if save:
                     if not os.path.exists(f"./dual_{val_name_1}_{val_name_2}/"):
                         os.mkdir(f"./dual_{val_name_1}_{val_name_2}/")
-                    filename = f"./dual_{val_name_1}_{val_name_2}/dual_{val_name_1}_{round(val_1,3)}_{val_name_2}_{round(val_2, 3)}.npz"
+                    filename = f"./dual_{val_name_1}_{val_name_2}/dual_{val_name_1}_{round(val_1,5)}_{val_name_2}_{round(val_2, 5)}.npz"
                     write_to_file(times, temps, degs, filename)
         if plot:
             convergence_plot_dual(
@@ -295,6 +293,18 @@ dual_omega_starttemp_convergence = gen_paramspace(
     "PLANET", "omega", "PDE", "starttemp", True, False, omega_unit, temp_unit, True
 )
 
+dual_moon_a_e_convergence = gen_paramspace(
+    "ORBIT",
+    "moonsemimajoraxis",
+    "ORBIT",
+    "mooneccentricity",
+    True,
+    False,
+    a_unit,
+    e_unit,
+    True,
+)
+
 
 def reprocess_single_param(
     foldername: str,
@@ -302,6 +312,7 @@ def reprocess_single_param(
     val_1_name: str,
     val_1_unit: Optional[str] = None,
     rtol: float = 0.0001,
+    x_axis_scale: Literal["linear", "log"] = "linear",
 ):
     val_1_range = []
     tests = []
@@ -315,7 +326,9 @@ def reprocess_single_param(
             val_1_range.append(q)
         tests.append(t)
         convtemps.append(temp)
-    convergence_plot_single(tests, convtemps, val_1_name, val_1_range, val_1_unit)
+    convergence_plot_single(
+        tests, convtemps, val_1_name, val_1_range, val_1_unit, x_axis_scale=x_axis_scale
+    )
     # ecc_fit_plot(
     #     tests,
     #     convtemps,
@@ -434,11 +447,13 @@ def reset_conf(conf):
 
 
 if __name__ == "__main__":
-    conf = load_config("config.ini")
-    reset_conf(conf)
-
+    # conf = load_config("config.ini")
+    # print(test_a_convergence(conf, 0.5, 2, 0.1, rtol=0.0001))
+    # conf = load_config("config.ini")
+    # print(test_moon_a_convergence(conf, np.arange(0.001, 0.01, 0.001)))
+    # conf = load_config("config.ini")
+    # print(test_moon_e_convergence(conf, np.logspace(-3, -1, 20)))
     # print(test_a_convergence(conf, 2, 10, 0.5, rtol=0.0001))
-    # reset_conf(conf)
     # print(test_e_convergence(conf, 0, 0.91, 0.1, rtol=0.0001))
     # reset_conf(conf)
     # print(test_delta_convergence(conf, 0, 181, 10, rtol=0.0001))
@@ -476,7 +491,29 @@ if __name__ == "__main__":
     # print(dual_omega_starttemp_convergence(conf, 0.25, 3.1, 0.25, 150, 500, 50, 0.001))
     # reset_conf(conf)
 
+    conf = load_config("config.ini")
+    print(
+        dual_moon_a_e_convergence(
+            conf, np.arange(0.001, 0.01, 0.001), np.logspace(-3, -1, 10)
+        )
+    )
+    reprocess_paramspace(
+        "dual_moonsemimajoraxis_mooneccentricity",
+        os.path.curdir,
+        "a$_{moon}$",
+        "e$_{moon}$",
+        a_unit,
+        e_unit,
+        0.0001,
+    )
+
     # reprocess_single_param("single_e", os.path.curdir, "e", e_unit, 0.0001)
+    # reprocess_single_param(
+    #     "single_moonsemimajoraxis", os.path.curdir, "a$_{moon}$", a_unit, 0.0001
+    # )
+    # reprocess_single_param(
+    #     "single_mooneccentricity", os.path.curdir, "e$_{moon}$", e_unit, 0.0001, "log"
+    # )
     # reprocess_single_param_compare(
     #     "single_a",
     #     os.path.curdir,
@@ -486,9 +523,9 @@ if __name__ == "__main__":
     #     "a$_{gas}$",
     #     "au",
     # )
-    reprocess_single_param(
-        "single_gassemimajoraxis", os.path.curdir, "a gas", a_unit, 0.0001
-    )
+    # reprocess_single_param(
+    #     "single_gassemimajoraxis", os.path.curdir, "a gas", a_unit, 0.0001
+    # )
     # reprocess_single_param("single_a", os.path.curdir, "a", a_unit, 0.0001)
     # plt.show()
     # reprocess_paramspace("dual_a_e", os.path.curdir, "a", "e", "au", None, 0.0001)
