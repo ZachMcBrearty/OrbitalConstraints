@@ -183,10 +183,10 @@ def habitability_paramspace(
             times_red,
             dt,
         )
-        if val_1 not in val_1_range:
-            val_1_range.append(val_1)
-        if val_2 not in val_2_range:
-            val_2_range.append(val_2)
+        if (q := float(val_1)) not in val_1_range:
+            val_1_range.append(q)
+        if (q := float(val_2)) not in val_2_range:
+            val_2_range.append(q)
         total_habitability.append(tot_hab)
     xl = len(val_1_range)
     yl = len(val_2_range)
@@ -207,8 +207,33 @@ def habitability_paramspace(
         val_1_range, val_2_range, total_habitability.T, cmap="RdBu_r", shading="nearest"
     )
     fig.colorbar(tot_hab_map, ax=ax1, label="Total Habitability")
+
+    # x = 2
+    # xs = 0.658
+    # y = 12
+    # ys = 0.568
+    # T = 373.19809023566785
+    xs = np.linspace(0.5, 1, 100)
+    k = 1 / ((1 - 0.568**2) * 0.658**4)
+    fit = lambda x: (1 - 1 / (k * x**4)) ** (1 / 2)
+    ys = fit(xs)
+    ax1.plot(xs, ys, c="m", label=r"$a \propto (1-e^2)^{-1/4}, T \approx 373$K")
+
+    # x = 11
+    # xs = 1.368
+    # y = 18
+    # ys = 0.853
+    # T = 274.12797490217696
+    xs = np.linspace(0.9, 2, 100)
+    k = 1 / ((1 - 0.853**2) * 1.368**4)
+    fit = lambda x: (1 - 1 / (k * x**4)) ** (1 / 2)
+    ys = fit(xs)
+    ax1.plot(xs, ys, c="m", label=r"$a \propto (1-e^2)^{-1/4}, T \approx 273$K")
+
     ax1.set_ylabel(f"{val_2_name} {val_2_unit}")
     ax1.set_xlabel(f"{val_1_name} {val_1_unit}")
+
+    ax1.legend(loc="lower right")
     plt.show()
 
 
@@ -220,7 +245,7 @@ if __name__ == "__main__":
     # time_habitability_paramspace(
     #     "single_obliquity", os.path.curdir, "obliquity", obliquity_unit
     # )
-    time_habitability_paramspace("single_omega", os.path.curdir, "omega", omega_unit)
+    # time_habitability_paramspace("single_omega", os.path.curdir, "omega", omega_unit)
     # time_habitability_paramspace(
     #     "single_starttemp", os.path.curdir, "starttemp", temp_unit
     # )
@@ -233,7 +258,7 @@ if __name__ == "__main__":
     # area_habitability_paramspace(
     #     "single_obliquity", os.path.curdir, "obliquity", obliquity_unit
     # )
-    area_habitability_paramspace("single_omega", os.path.curdir, "omega", omega_unit)
+    # area_habitability_paramspace("single_omega", os.path.curdir, "omega", omega_unit)
     # area_habitability_paramspace(
     #     "single_starttemp", os.path.curdir, "starttemp", temp_unit
     # )
@@ -242,6 +267,24 @@ if __name__ == "__main__":
     # )
 
     # habitability_paramspace("dual_a_e", os.path.curdir, "a", "e", a_unit, e_unit)
+    habitability_paramspace(
+        "dual_gassemimajoraxis_gaseccentricity",
+        os.path.curdir,
+        "a$_{gas}$",
+        "e$_{gas}$",
+        a_unit,
+        e_unit,
+        year=90,
+    )
+    # habitability_paramspace(
+    #     "dual_moonsemimajoraxis_mooneccentricity",
+    #     os.path.curdir,
+    #     "a$_{moon}$",
+    #     "e$_{moon}$",
+    #     a_unit,
+    #     e_unit,
+    #     year=90,
+    # )
     # habitability_paramspace(
     #     "dual_a_obliquity", os.path.curdir, "a", "obliquity", a_unit, obliquity_unit
     # )

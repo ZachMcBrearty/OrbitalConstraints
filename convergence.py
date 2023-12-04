@@ -1,5 +1,6 @@
 from typing import Optional, Literal
 import os
+import multiprocessing as mp
 
 import numpy as np
 from numpy.typing import NDArray
@@ -14,9 +15,12 @@ from filemanagement import (
     read_single_folder,
 )
 from plotting import (
+    convergence_plot_dual_with_fits,
     convergence_plot_single,
     convergence_plot_dual,
     convergence_plot_single_compare,
+    ecc_fit_plot,
+    semimajor_fit_plot,
 )
 
 
@@ -132,7 +136,7 @@ test_a_convergence = gen_convergence_test(
     "ORBIT", "gassemimajoraxis", True, False, True, a_unit
 )
 test_e_convergence = gen_convergence_test(
-    "ORBIT", "gasgianteccentricity", True, False, True, e_unit
+    "ORBIT", "gaseccentricity", True, False, True, e_unit
 )
 test_moon_a_convergence = gen_convergence_test(
     "ORBIT", "moonsemimajoraxis", True, False, True, a_unit
@@ -140,6 +144,79 @@ test_moon_a_convergence = gen_convergence_test(
 test_moon_e_convergence = gen_convergence_test(
     "ORBIT", "mooneccentricity", True, False, True, a_unit
 )
+
+
+def _do_test(
+    conf_name: str,
+    val_1_sec,
+    val_1_name,
+    val_1,
+    val_2_sec,
+    val_2_name,
+    val_2,
+    rounding_dp=3,
+    verbose=True,
+) -> None:
+    conf = load_config(conf_name)
+    if not conf.has_option(val_1_sec, val_1_name):
+        raise ValueError(
+            f"Supplied config file has no section {val_1_sec} or option {val_1_name}"
+        )
+    if not conf.has_option(val_2_sec, val_2_name):
+        raise ValueError(
+            f"Supplied config file has no section {val_2_sec} or option {val_2_name}"
+        )
+    if verbose:
+        print(f"Running {val_1_name}={val_1}, {val_2_name}={val_2}")
+    conf.set(val_1_sec, val_1_name, str(val_1))
+    conf.set(val_2_sec, val_2_name, str(val_2))
+    degs, temps, times = climate_model_in_lat(conf)
+    filename = f"./dual_{val_1_name}_{val_2_name}/dual_{val_1_name}_{round(val_1,rounding_dp)}_{val_2_name}_{round(val_2, rounding_dp)}.npz"
+    write_to_file(times, temps, degs, filename)
+
+
+def parallel_gen_paramspace(
+    val_1_sec: str,
+    val_1_name: str,
+    val_2_sec: str,
+    val_2_name: str,
+    verbose=False,
+):
+    def t(
+        conf_name: str,
+        val_1_range: list | NDArray,
+        val_2_range: list | NDArray,
+        rounding_dp=3,
+    ) -> None:
+        if not os.path.exists(f"./dual_{val_1_name}_{val_2_name}/"):
+            os.mkdir(f"./dual_{val_1_name}_{val_2_name}/")
+        if verbose:
+            print(f"Starting {val_1_name} {val_2_name}")
+        pairs = []
+        for val_1 in val_1_range:
+            for val_2 in val_2_range:
+                pairs.append(
+                    (
+                        conf_name,
+                        val_1_sec,
+                        val_1_name,
+                        val_1,
+                        val_2_sec,
+                        val_2_name,
+                        val_2,
+                        rounding_dp,
+                        verbose,
+                    )
+                )
+        with mp.Pool() as p:
+            p.starmap(
+                _do_test,
+                pairs,
+            )
+        if verbose:
+            print(f"Finished {val_1_name} {val_2_name}")
+
+    return t
 
 
 def gen_paramspace(
@@ -158,6 +235,7 @@ def gen_paramspace(
         val_1_range: list | NDArray,
         val_2_range: list | NDArray,
         rtol=0.0001,
+        rounding_dp=3,
     ) -> tuple[list | NDArray, list | NDArray, NDArray, NDArray]:
         if not conf.has_option(val_sec_1, val_name_1):
             raise ValueError(
@@ -174,7 +252,9 @@ def gen_paramspace(
         for i, val_1 in enumerate(val_1_range):
             for j, val_2 in enumerate(val_2_range):
                 if verbose:
-                    print(f"Running {val_name_1}={val_1}, {val_name_2}={val_2}")
+                    print(
+                        f"Running {val_name_1}[{i}]={val_1}, {val_name_2}[{j}]={val_2}"
+                    )
                 conf.set(val_sec_1, val_name_1, str(val_1))
                 conf.set(val_sec_2, val_name_2, str(val_2))
                 degs, temps, times = climate_model_in_lat(conf)
@@ -186,7 +266,7 @@ def gen_paramspace(
                 if save:
                     if not os.path.exists(f"./dual_{val_name_1}_{val_name_2}/"):
                         os.mkdir(f"./dual_{val_name_1}_{val_name_2}/")
-                    filename = f"./dual_{val_name_1}_{val_name_2}/dual_{val_name_1}_{round(val_1,5)}_{val_name_2}_{round(val_2, 5)}.npz"
+                    filename = f"./dual_{val_name_1}_{val_name_2}/dual_{val_name_1}_{round(val_1,rounding_dp)}_{val_name_2}_{round(val_2, rounding_dp)}.npz"
                     write_to_file(times, temps, degs, filename)
         if plot:
             convergence_plot_dual(
@@ -216,6 +296,9 @@ dual_a_e_convergence = gen_paramspace(
     val_unit_1=a_unit,
     val_unit_2=e_unit,
     save=True,
+)
+dual_a_e_convergence_parallel = parallel_gen_paramspace(
+    "ORBIT", "gassemimajoraxis", "ORBIT", "gaseccentricity", verbose=True
 )
 dual_a_delta_convergence = gen_paramspace(
     "ORBIT",
@@ -329,13 +412,64 @@ def reprocess_single_param(
     convergence_plot_single(
         tests, convtemps, val_1_name, val_1_range, val_1_unit, x_axis_scale=x_axis_scale
     )
-    # ecc_fit_plot(
-    #     tests,
-    #     convtemps,
-    #     val_1_name,
-    #     val_1_range,
-    #     val_1_unit,
-    # )
+
+
+def reprocess_ecc_fit(
+    foldername: str,
+    folderpath: str,
+    val_1_name: str,
+    val_1_unit: Optional[str] = None,
+    rtol: float = 0.0001,
+    x_axis_scale: Literal["linear", "log"] = "linear",
+):
+    val_1_range = []
+    tests = []
+    convtemps = []
+    data = read_single_folder(foldername, folderpath)
+    for i, datum in enumerate(data):
+        val_1, (times, temps, degs) = datum
+        dt = (times[1] - times[0]) * 365
+        t, temp = convergence_test(temps, rtol, year_avg=1, dt=dt)
+        if (q := float(val_1)) not in val_1_range:
+            val_1_range.append(q)
+        tests.append(t)
+        convtemps.append(temp)
+    ecc_fit_plot(
+        tests,
+        convtemps,
+        val_1_name,
+        val_1_range,
+        val_1_unit,
+    )
+
+
+def reprocess_semimajor_fit(
+    foldername: str,
+    folderpath: str,
+    val_1_name: str,
+    val_1_unit: Optional[str] = None,
+    rtol: float = 0.0001,
+    x_axis_scale: Literal["linear", "log"] = "linear",
+):
+    val_1_range = []
+    tests = []
+    convtemps = []
+    data = read_single_folder(foldername, folderpath)
+    for i, datum in enumerate(data):
+        val_1, (times, temps, degs) = datum
+        dt = (times[1] - times[0]) * 365
+        t, temp = convergence_test(temps, rtol, year_avg=1, dt=dt)
+        if (q := float(val_1)) not in val_1_range:
+            val_1_range.append(q)
+        tests.append(t)
+        convtemps.append(temp)
+    semimajor_fit_plot(
+        tests,
+        convtemps,
+        val_1_name,
+        val_1_range,
+        val_1_unit,
+    )
 
 
 def reprocess_single_param_compare(
@@ -395,6 +529,8 @@ def reprocess_paramspace(
     val_1_unit: Optional[str] = None,
     val_2_unit: Optional[str] = None,
     rtol: float = 0.0001,
+    x_axis_scale: Literal["linear", "log"] = "linear",
+    y_axis_scale: Literal["linear", "log"] = "linear",
 ):
     val_1_range = []
     val_2_range = []
@@ -405,26 +541,28 @@ def reprocess_paramspace(
         val_1, val_2, (times, temps, degs) = datum
         dt = (times[1] - times[0]) * 365
         t, temp = convergence_test(temps, rtol, year_avg=1, dt=dt)
-        if val_1 not in val_1_range:
-            val_1_range.append(val_1)
-        if val_2 not in val_2_range:
-            val_2_range.append(val_2)
+        if (q := float(val_1)) not in val_1_range:
+            val_1_range.append(q)
+        if (q := float(val_2)) not in val_2_range:
+            val_2_range.append(q)
         tests.append(t)
         convtemps.append(temp)
     xl = len(val_1_range)
     yl = len(val_2_range)
     tests = np.array(tests).reshape(xl, yl)
     convtemps = np.array(convtemps).reshape(xl, yl)
-    convergence_plot_dual(
+    convergence_plot_dual_with_fits(
+        # convergence_plot_dual(
         tests,
         convtemps,
         val_1_name,
-        val_1_range,
+        np.array(val_1_range),
         val_2_name,
-        val_2_range,
-        rtol,
+        np.array(val_2_range),
         val_1_unit,
         val_2_unit,
+        x_axis_scale,
+        y_axis_scale,
     )
 
 
@@ -447,7 +585,6 @@ def reset_conf(conf):
 
 
 if __name__ == "__main__":
-    # conf = load_config("config.ini")
     # print(test_a_convergence(conf, 0.5, 2, 0.1, rtol=0.0001))
     # conf = load_config("config.ini")
     # print(test_moon_a_convergence(conf, np.arange(0.001, 0.01, 0.001)))
@@ -467,6 +604,10 @@ if __name__ == "__main__":
     # print(test_timestep_convergence(conf, 0.25, 3.1, 0.25, rtol=0.0001))
 
     # reset_conf(conf)
+    # conf = load_config("config.ini")
+    # dual_a_e_convergence_parallel(
+    #     "config.ini", np.linspace(0.5, 2, 20), np.linspace(0, 0.9, 20), 3
+    # )
     # print(dual_a_e_convergence(conf, 0.5, 2.05, 0.1, 0, 0.91, 0.1, 0.001))
     # reset_conf(conf)
     # print(dual_a_delta_convergence(conf, 0.5, 2.05, 0.1, 0, 91, 10, 0.001))
@@ -491,25 +632,32 @@ if __name__ == "__main__":
     # print(dual_omega_starttemp_convergence(conf, 0.25, 3.1, 0.25, 150, 500, 50, 0.001))
     # reset_conf(conf)
 
-    conf = load_config("config.ini")
-    print(
-        dual_moon_a_e_convergence(
-            conf, np.arange(0.001, 0.01, 0.001), np.logspace(-3, -1, 10)
-        )
-    )
-    reprocess_paramspace(
-        "dual_moonsemimajoraxis_mooneccentricity",
-        os.path.curdir,
-        "a$_{moon}$",
-        "e$_{moon}$",
-        a_unit,
-        e_unit,
-        0.0001,
-    )
-
-    # reprocess_single_param("single_e", os.path.curdir, "e", e_unit, 0.0001)
-    # reprocess_single_param(
+    # conf = load_config("config.ini")
+    # print(
+    #     dual_moon_a_e_convergence(
+    #         conf,
+    #         np.linspace(0.001, 0.005, 20),
+    #         np.logspace(-4, -1, 20),
+    #         rounding_dp=10,
+    #     )
+    # )
+    # reprocess_paramspace(
+    #     "dual_moonsemimajoraxis_mooneccentricity",
+    #     os.path.curdir,
+    #     "a$_{moon}$",
+    #     "e$_{moon}$",
+    #     a_unit,
+    #     e_unit,
+    #     0.0001,
+    #     "linear",
+    #     "log",
+    # )
+    # reprocess_ecc_fit("single_e", os.path.curdir, "e", e_unit, 0.0001)
+    # reprocess_semimajor_fit(
     #     "single_moonsemimajoraxis", os.path.curdir, "a$_{moon}$", a_unit, 0.0001
+    # )
+    # reprocess_semimajor_fit(
+    #     "single_gassemimajoraxis", os.path.curdir, "a$_{gas}$", a_unit, 0.0001
     # )
     # reprocess_single_param(
     #     "single_mooneccentricity", os.path.curdir, "e$_{moon}$", e_unit, 0.0001, "log"
@@ -528,7 +676,15 @@ if __name__ == "__main__":
     # )
     # reprocess_single_param("single_a", os.path.curdir, "a", a_unit, 0.0001)
     # plt.show()
-    # reprocess_paramspace("dual_a_e", os.path.curdir, "a", "e", "au", None, 0.0001)
+    reprocess_paramspace(
+        "dual_gassemimajoraxis_gaseccentricity",
+        os.path.curdir,
+        "a",
+        "e",
+        "au",
+        None,
+        0.005,
+    )
     # reprocess_paramspace(
     #     "dual_a_obliquity",
     #     os.path.curdir,

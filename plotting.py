@@ -2,6 +2,7 @@ from typing import Optional, Literal
 
 import matplotlib.pyplot as plt
 import numpy as np
+from scipy.optimize import curve_fit
 
 from Constants import YEARTOSECOND
 
@@ -254,6 +255,48 @@ def ecc_fit_plot(
         val_unit = ""
     else:
         val_unit = ", " + val_unit
+    fit_range_1 = np.linspace(val_range[0], val_range[-1], 100, endpoint=True)
+    fit_vals_1 = convtemps[0] * ((1 - fit_range_1**2) / (1 - val_range[0] ** 2)) ** (
+        -1 / 8
+    )
+
+    fig, (ax1, ax2) = plt.subplots(2, 1)
+    ax1: plt.Axes
+    ax2: plt.Axes
+    ax1.scatter(val_range, convtemps, label="Model data")
+    ax1.plot(fit_range_1, fit_vals_1, label="$(1-e^2)^{-1/8}$ fit")
+    ax2.scatter(
+        val_range,
+        (
+            convtemps
+            - convtemps[0]
+            * ((1 - val_range**2) / (1 - val_range[0] ** 2)) ** (-1 / 8)
+        )
+        / convtemps,
+        label="$(1-e^2)^{-1/2}$ residuals",
+    )
+    ax2.set_xlabel(f"{val_name} {val_unit}")
+    ax1.set_xticks(val_range)
+    ax2.set_xticks(val_range)
+    ax2.set_ylabel("Residual")
+    ax1.set_ylabel("Global convergent temperature, K")
+    ax1.legend()
+    # ax2.legend()
+    plt.show()
+
+
+def semimajor_fit_plot(
+    tests,
+    convtemps,
+    val_name: str,
+    val_range,
+    val_unit: Optional[str] = None,
+):
+    val_range = np.array(val_range)
+    if val_unit is None:
+        val_unit = ""
+    else:
+        val_unit = ", " + val_unit
     fit_range_1 = np.linspace(val_range[0], val_range[5], 100, endpoint=True)
     fit_vals_1 = convtemps[0] * (fit_range_1 / val_range[0]) ** (-1 / 2)
 
@@ -295,7 +338,6 @@ def convergence_plot_dual(
     val_1_range,
     val_name_2,
     val_2_range,
-    rtol=0.0001,
     val_unit_1=None,
     val_unit_2=None,
     x_axis_scale: Literal["linear", "log"] = "linear",
@@ -319,16 +361,112 @@ def convergence_plot_dual(
     converge_temp_map = ax2.pcolormesh(
         val_1_range, val_2_range, convtemps.T, cmap="RdBu_r", shading="nearest"
     )
+
     fig.colorbar(converge_time_map, ax=ax1, label="Time to converge, years")
     fig.colorbar(converge_temp_map, ax=ax2, label="Convergent Temperature, K")
     ax1.set_ylabel(f"{val_name_2} {val_unit_2}")
     ax1.set_xlabel(f"{val_name_1} {val_unit_1}")
     ax2.set_ylabel(f"{val_name_2} {val_unit_2}")
     ax2.set_xlabel(f"{val_name_1} {val_unit_1}")
+
+    ax1.set_xticks(val_1_range)
+    ax1.set_yticks(val_2_range)
+    ax2.set_xticks(val_1_range)
+    ax2.set_yticks(val_2_range)
     ax1.set_xscale(x_axis_scale)
     ax1.set_yscale(y_axis_scale)
     ax2.set_xscale(x_axis_scale)
     ax2.set_yscale(y_axis_scale)
+
+    plt.show()
+
+
+def convergence_plot_dual_with_fits(
+    tests: np.ndarray,
+    convtemps: np.ndarray,
+    val_name_1,
+    val_1_range,
+    val_name_2,
+    val_2_range,
+    val_unit_1=None,
+    val_unit_2=None,
+    x_axis_scale: Literal["linear", "log"] = "linear",
+    y_axis_scale: Literal["linear", "log"] = "linear",
+):
+    if val_unit_1 is None:
+        val_unit_1 = ""
+    else:
+        val_unit_1 = ", " + val_unit_1
+    if val_unit_2 is None:
+        val_unit_2 = ""
+    else:
+        val_unit_2 = ", " + val_unit_2
+
+    # fig, (ax1, ax2) = plt.subplots(2, 1)
+    fig, ax2 = plt.subplots(1, 1)
+    # ax1: plt.Axes
+    ax2: plt.Axes
+    # converge_time_map = ax1.pcolormesh(
+    #     val_1_range, val_2_range, tests.T, cmap="RdBu_r", shading="nearest"
+    # )
+    converge_temp_map = ax2.pcolormesh(
+        val_1_range, val_2_range, convtemps.T, cmap="RdBu_r", shading="nearest"
+    )
+
+    # fig.colorbar(converge_time_map, ax=ax1, label="Time to converge, years")
+    fig.colorbar(converge_temp_map, ax=ax2, label="Convergent Temperature, K")
+
+    fit_xs = []
+    fit_ys = []
+    q = 25
+    for x, tx in enumerate(convtemps):
+        for y, t in enumerate(tx):
+            if 273 - q < t < 273 + q:
+                print("First", x, val_1_range[x], y, val_2_range[y], t)
+                fit_xs.append(val_1_range[x])
+                fit_ys.append(val_2_range[y])
+    xs = np.linspace(fit_xs[0], fit_xs[-1], 100)
+    k = 1 / ((1 - fit_ys[0] ** 2) * fit_xs[0] ** 4)
+    fit = lambda x: (1 - 1 / (k * x**4)) ** (1 / 2)
+
+    ys = fit(xs)
+    ax2.scatter(fit_xs, fit_ys, c="r", label=f"{273-q} K $ < T < $ {273+q} K")
+    ax2.plot(xs, ys, c="r", label=r"$a \propto (1-e^2)^{-1/4}, T \approx 273$K")
+
+    fit_xs = []
+    fit_ys = []
+    q = 12
+    for x, tx in enumerate(convtemps):
+        for y, t in enumerate(tx):
+            if 373 - q < t < 373 + q:
+                print("Second", x, val_1_range[x], y, val_2_range[y], t)
+                fit_xs.append(val_1_range[x])
+                fit_ys.append(val_2_range[y])
+    # fitter = lambda x, a: a * x**(15/4)
+    xs = np.linspace(fit_xs[0], fit_xs[-1], 100)
+    k = 1 / ((1 - fit_ys[0] ** 2) * fit_xs[0] ** 4)
+    fit = lambda x: (1 - 1 / (k * x**4)) ** (1 / 2)
+    ys = fit(xs)
+    ax2.scatter(fit_xs, fit_ys, c="b", label=f"{373-q} K $ < T < $ {373+q} K")
+    ax2.plot(xs, ys, c="b", label=r"$a \propto (1-e^2)^{-1/4}, T \approx 373$K")
+    # ax2.plot(xs, ys_prime)
+    # ax2.scatter(fit_val_1_max, fit_val_2_max, label="max")
+
+    # ax1.set_ylabel(f"{val_name_2} {val_unit_2}")
+    # ax1.set_xlabel(f"{val_name_1} {val_unit_1}")
+    ax2.set_ylabel(f"{val_name_2} {val_unit_2}")
+    ax2.set_xlabel(f"{val_name_1} {val_unit_1}")
+
+    # ax1.set_xticks(val_1_range)
+    # ax1.set_yticks(val_2_range)
+    ax2.set_xticks(val_1_range)
+    ax2.set_yticks(val_2_range)
+    # ax1.set_xscale(x_axis_scale)
+    # ax1.set_yscale(y_axis_scale)
+    ax2.set_xscale(x_axis_scale)
+    ax2.set_yscale(y_axis_scale)
+
+    ax2.legend(loc="lower right")
     plt.show()
 
 
