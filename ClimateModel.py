@@ -169,7 +169,7 @@ def climate_model_in_lat(
     firstD = np.zeros(spacedim)
 
     a = config.getfloat("ORBIT", "gassemimajoraxis")  # semimajoraxis
-    e = config.getfloat("ORBIT", "gasgianteccentricity")  # eccentricity
+    e = config.getfloat("ORBIT", "gaseccentricity")  # eccentricity
     axtilt = np.deg2rad(config.getfloat("PLANET", "obliquity"))  # obliquity
 
     if (frac := config.get("PLANET", "landfractype")) in [
