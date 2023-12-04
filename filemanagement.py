@@ -56,6 +56,8 @@ def read_dual_folder(
     dual, first_name, second_name = foldername.split("_")
     assert dual == "dual"  # must be a "dual..." folder
     files = os.listdir(folderpath + os.sep + foldername)
+    files = sorted(files, key=lambda x: float(x.strip(".npz").split("_")[4]))
+    files = sorted(files, key=lambda x: float(x.strip(".npz").split("_")[2]))
     for file in files:
         data = read_file(folderpath + os.sep + foldername + os.sep + file)
         dual, first_name_file, first_val, second_name_file, second_val = file.strip(
