@@ -190,20 +190,16 @@ def climate_model_in_lat(
     orbits = orbital_model(config, 24)
     M_gas = config.getfloat("ORBIT", "gasgiantmass") * MASS["jupiter"]
     gas_rad = config.getfloat("ORBIT", "gasgiantradius") * RADIUS["jupiter"]
-    M_moon = config.getfloat("ORBIT", "moonmass") * MASS["luna"]
     moon_rad = config.getfloat("ORBIT", "moonradius") * RADIUS["luna"]
     moon_a = config.getfloat("ORBIT", "moonsemimajoraxis") * AU
     moon_ecc = config.getfloat("ORBIT", "mooneccentricity")
 
     heating_dist = coslats * dlam / (8 * np.pi * moon_rad**2)
-    shearmod = config.getfloat("TIDALHEATING", "shearmod") * 2e10  # Nm^-2
-    Q = config.getfloat("TIDALHEATING", "Q")
+    # shearmod = config.getfloat("TIDALHEATING", "shearmod") * 2e10  # Nm^-2
+    # Q = config.getfloat("TIDALHEATING", "Q")
     gas_albedo = config.getfloat("TIDALHEATING", "gasalbedo")
 
-    moon_density = M_moon / (4 / 3 * np.pi * moon_rad**3)
-    tidal_heating_value_fixed = fixed_Q_tidal_heating(
-        moon_density, M_moon, moon_rad, shearmod, Q, M_gas, moon_ecc, moon_a
-    )
+    # moon_density = M_moon / (4 / 3 * np.pi * moon_rad**3)
 
     C = get_C_func(spacedim)
 

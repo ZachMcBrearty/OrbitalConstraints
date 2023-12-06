@@ -172,11 +172,10 @@ def fixed_Q_tidal_heating(
 
 def get_viscoheating(config, T_surf: float, B: float = 25, rtol: float = 0.1) -> float:
     M_gas = config.getfloat("ORBIT", "gasgiantmass") * MASS["jupiter"]  # kg
-    M_moon = config.getfloat("ORBIT", "moonmass") * MASS["luna"]  # kg
     moon_rad = config.getfloat("ORBIT", "moonradius") * RADIUS["luna"]  # m
     moon_a = config.getfloat("ORBIT", "moonsemimajoraxis") * AU  # m
     moon_ecc = config.getfloat("ORBIT", "mooneccentricity")
-    moon_density = M_moon / (4 / 3 * np.pi * moon_rad**3)
+    moon_density = config.getfloat("ORBIT", "moondensity")  # kg m^-3
 
     temps = np.arange(1400, 2200, 1)
     visco_fluxes = np.array(
@@ -206,7 +205,6 @@ def get_viscoheating(config, T_surf: float, B: float = 25, rtol: float = 0.1) ->
                 and visco_fluxes[i] > conv_cool_fluxes[i]
             ):
                 return visco_fluxes[i + 1]
-        return None
 
 
 def plot_vary_eccentricity(conf: CONF_PARSER_TYPE, T_surf, e_range: Iterable[float]):

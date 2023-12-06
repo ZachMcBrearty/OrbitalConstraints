@@ -1,6 +1,7 @@
 from typing import Optional, Literal
 import os
 import multiprocessing as mp
+from time import time
 
 import numpy as np
 from numpy.typing import NDArray
@@ -28,9 +29,9 @@ def convergence_test(
     temps: NDArray,
     rtol: float = 0.001,
     atol: float = 0,
-    year_avg: int = 1,
+    year_avg: float = 1,
     dt: float = 1,
-) -> tuple[int, float]:
+) -> tuple[float, float]:
     """returns: how long the data set took to converge in years, -1 if never"""
     # data should be in year-long chunks,
     # find the length of extra data which doesnt fit into a year,
@@ -39,7 +40,7 @@ def convergence_test(
     # -> i.e. each timestep is dt, so a year is 365 / dt datapoints long
     spacedim = temps.shape[0]
     a = int(temps.size % (year_len * spacedim * year_avg) / spacedim)
-    tq = temps[:, a:].reshape(spacedim, -1, year_len * year_avg)
+    tq = temps[:, a:].reshape(spacedim, -1, int(year_len * year_avg))
     tqa = np.average(tq, axis=2)  # average over time
     tqaa = np.average(
         tqa, axis=0, weights=np.cos(np.linspace(-np.pi / 2, np.pi / 2, temps.shape[0]))
@@ -49,10 +50,65 @@ def convergence_test(
     imax = len(tqaa) - 2
     while not np.isclose(tqaa[i], tqaa[i + 1], rtol=rtol, atol=atol) and i != imax:
         i += 1
-    if i == imax:
-        return -1, 0
+    if i == imax or (tqaa[i] < 0):
+        return -1.0, -1.0
     else:
         return i * year_avg, tqaa[i]
+
+
+def _do_single_test(
+    conf_name: str,
+    val_sec: str,
+    val_name: str,
+    val: float,
+    rounding_dp=3,
+    verbose=True,
+):
+    conf = load_config(conf_name)
+    if not conf.has_option(val_sec, val_name):
+        raise ValueError(
+            f"Supplied config file either has no section {val_sec} or option {val_name}"
+        )
+    if verbose:
+        print(f"Running {val_name}={val}")
+    conf.set(val_sec, val_name, str(val))
+    degs, temps, times = climate_model_in_lat(conf)
+    filename = f"./single_{val_name}/single_{val_name}_{round(val,rounding_dp)}.npz"
+    write_to_file(times, temps, degs, filename)
+
+
+def parallel_convergence_test(
+    val_sec: str,
+    val_name: str,
+    verbose=True,
+):
+    def t(conf_name, val_range, rounding_dp=3):
+        if not os.path.exists(f"./single_{val_name}/"):
+            os.mkdir(f"./single_{val_name}/")
+        if verbose:
+            t0 = time()
+            print(f"Starting {val_name}")
+        with mp.Pool() as p:
+            p.starmap(
+                _do_single_test,
+                [
+                    (conf_name, val_sec, val_name, val, rounding_dp, verbose)
+                    for val in val_range
+                ],
+            )
+        if verbose:
+            tf = time()
+            dt = tf - t0
+            if dt > 3600:
+                print(
+                    f"Finished {val_name} in {dt//3600} hours {(dt %3600)//60} min {(dt %3600)%60} secs"
+                )
+            elif dt > 60:
+                print(f"Finished {val_name} in {dt // 60} min {dt%60} secs")
+            else:
+                print(f"Finished {val_name} in {dt} seconds")
+
+    return t
 
 
 def gen_convergence_test(
@@ -145,8 +201,12 @@ test_moon_e_convergence = gen_convergence_test(
     "ORBIT", "mooneccentricity", True, False, True, a_unit
 )
 
+test_moonrad_convergence = parallel_convergence_test("ORBIT", "moonradius", True)
+test_moondensity_convergence = parallel_convergence_test("ORBIT", "moondensity", True)
+test_gasmass_convergence = parallel_convergence_test("ORBIT", "gasgiantmass", True)
 
-def _do_test(
+
+def _do_dual_test(
     conf_name: str,
     val_1_sec,
     val_1_name,
@@ -210,7 +270,7 @@ def parallel_gen_paramspace(
                 )
         with mp.Pool() as p:
             p.starmap(
-                _do_test,
+                _do_dual_test,
                 pairs,
             )
         if verbose:
@@ -396,6 +456,7 @@ def reprocess_single_param(
     val_1_unit: Optional[str] = None,
     rtol: float = 0.0001,
     x_axis_scale: Literal["linear", "log"] = "linear",
+    y_axis_scale: Literal["linear", "log"] = "linear",
 ):
     val_1_range = []
     tests = []
@@ -410,7 +471,13 @@ def reprocess_single_param(
         tests.append(t)
         convtemps.append(temp)
     convergence_plot_single(
-        tests, convtemps, val_1_name, val_1_range, val_1_unit, x_axis_scale=x_axis_scale
+        np.array(tests, dtype=float),
+        np.array(convtemps, dtype=float),
+        val_1_name,
+        val_1_range,
+        val_1_unit,
+        x_axis_scale=x_axis_scale,
+        y_axis_scale=y_axis_scale,
     )
 
 
@@ -585,6 +652,27 @@ def reset_conf(conf):
 
 
 if __name__ == "__main__":
+    here = os.path.curdir
+    conf = "config.ini"
+    # print(test_moonrad_convergence(conf, np.linspace(1, 10, 40)))
+    # print(test_moondensity_convergence(conf, np.linspace(3000, 6000, 20)))
+    # print(test_gasmass_convergence(conf, np.linspace(0.1, 5, 20)))
+
+    reprocess_single_param(
+        "single_moonradius",
+        here,
+        "moon radius",
+        moon_rad_unit,
+        0.0001,
+        # x_axis_scale="log",
+        # y_axis_scale="log",
+    )
+    # reprocess_single_param(
+    #     "single_moondensity", here, "moon density", moon_density_unit, 0.0001
+    # )
+    # reprocess_single_param(
+    #     "single_gasgiantmass", here, "gas mass", gas_mass_unit, 0.0001
+    # )
     # print(test_a_convergence(conf, 0.5, 2, 0.1, rtol=0.0001))
     # conf = load_config("config.ini")
     # print(test_moon_a_convergence(conf, np.arange(0.001, 0.01, 0.001)))
@@ -676,15 +764,15 @@ if __name__ == "__main__":
     # )
     # reprocess_single_param("single_a", os.path.curdir, "a", a_unit, 0.0001)
     # plt.show()
-    reprocess_paramspace(
-        "dual_gassemimajoraxis_gaseccentricity",
-        os.path.curdir,
-        "a",
-        "e",
-        "au",
-        None,
-        0.005,
-    )
+    # reprocess_paramspace(
+    #     "dual_gassemimajoraxis_gaseccentricity",
+    #     os.path.curdir,
+    #     "a",
+    #     "e",
+    #     "au",
+    #     None,
+    #     0.005,
+    # )
     # reprocess_paramspace(
     #     "dual_a_obliquity",
     #     os.path.curdir,

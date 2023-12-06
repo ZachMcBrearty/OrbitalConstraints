@@ -173,12 +173,13 @@ def threecolourplot(
 
 
 def convergence_plot_single(
-    tests,
-    convtemps,
+    tests: np.ndarray,
+    convtemps: np.ndarray,
     val_name: str,
     val_range,
     val_unit: Optional[str] = None,
     x_axis_scale: Literal["linear", "log"] = "linear",
+    y_axis_scale: Literal["linear", "log"] = "linear",
 ):
     if val_unit is None:
         val_unit = ""
@@ -187,22 +188,35 @@ def convergence_plot_single(
     # val_range = np.arange(val_min, val_max, val_step)
     # fit_range = np.linspace(min(val_range), max(val_range), 100, endpoint=True)
     # fit_vals = convtemps[0] * (1 - fit_range**2) ** (-1 / 4)
-    fig, (ax1, ax2) = plt.subplots(2, 1)
-    ax1: plt.Axes
+    # fig, (ax1, ax2) = plt.subplots(2, 1)
+    fig, ax2 = plt.subplots(1, 1)
+    # ax1: plt.Axes
     ax2: plt.Axes
-    ax1.scatter(val_range, tests)
-    ax2.scatter(val_range, convtemps)
     if min(convtemps) < 273:
         ax2.axhline(273, 0, 1, ls="-.", label="273$^{\circ}$")
     if max(convtemps) > 373:
         ax2.axhline(373, 0, 1, ls="-.", label="373$^{\circ}$")
-    # ax2.plot(fit_range, fit_vals, label="(1-e^2)^{-1/4} fit")
+    tests[convtemps < 0] = np.nan
+    convtemps[convtemps < 0] = np.nan
+    # ax1.scatter(val_range, tests)
+    ax2.scatter(val_range, convtemps)
+    fit_xs = val_range[:]
+    fit_ys = convtemps[:]
+    xs = np.linspace(fit_xs[0], fit_xs[-1], 100)
+    fitter = lambda x, a, b: a * x ** (3 / 4) + b
+    (a, b), pcov = curve_fit(fitter, fit_xs, fit_ys)
+    print(a, b, np.sqrt(np.diag(pcov)))
+    ys = fitter(xs, a, b)
+    ax2.plot(xs, ys, label="T $\propto$ R$^{3/4}$")
+
     ax2.set_xlabel(f"{val_name} {val_unit}")
-    ax1.set_xticks(np.linspace(min(val_range), max(val_range), 11))
-    ax2.set_xticks(np.linspace(min(val_range), max(val_range), 11))
-    ax1.set_xscale(x_axis_scale)
+    # ax1.set_xticks(np.linspace(min(val_range), max(val_range), 11))
+    # ax2.set_xticks(np.linspace(min(val_range), max(val_range), 11))
+    # ax1.set_xscale(x_axis_scale)
+    # ax1.set_yscale(y_axis_scale)
     ax2.set_xscale(x_axis_scale)
-    ax1.set_ylabel("Time to converge, years")
+    ax2.set_yscale(y_axis_scale)
+    # ax1.set_ylabel("Time to converge, years")
     ax2.set_ylabel("Global convergent temperature, K")
     ax2.legend()
     plt.show()

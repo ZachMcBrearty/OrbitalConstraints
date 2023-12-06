@@ -17,6 +17,11 @@ obliquity_unit = r"$^{\circ}$"
 a_unit = "au"
 e_unit = None
 
+gas_mass_unit = r"M$_{Jupiter}$"
+
+moon_density_unit = r"kg m$^{-3}$"
+moon_rad_unit = r"R$_{moon}$"
+
 GAS_CONST = 8.314_462_618  # J mol^-1 K^-1
 STEPH_BOLTZ = 5.670_374_419e-8  # W m^-2 K^-4
 G = 6.67e-11  # N m^2 kg^-2 = m^3 s^-2 kg^-1
