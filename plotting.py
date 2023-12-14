@@ -193,21 +193,21 @@ def convergence_plot_single(
     # ax1: plt.Axes
     ax2: plt.Axes
     if min(convtemps) < 273:
-        ax2.axhline(273, 0, 1, ls="-.", label="273$^{\circ}$")
+        ax2.axhline(273, 0, 1, ls="-.", label="273 K")
     if max(convtemps) > 373:
-        ax2.axhline(373, 0, 1, ls="-.", label="373$^{\circ}$")
+        ax2.axhline(373, 0, 1, ls="-.", label="373 K")
     tests[convtemps < 0] = np.nan
     convtemps[convtemps < 0] = np.nan
     # ax1.scatter(val_range, tests)
     ax2.scatter(val_range, convtemps)
-    fit_xs = val_range[:]
-    fit_ys = convtemps[:]
-    xs = np.linspace(fit_xs[0], fit_xs[-1], 100)
-    fitter = lambda x, a, b: a * x ** (3 / 4) + b
-    (a, b), pcov = curve_fit(fitter, fit_xs, fit_ys)
-    print(a, b, np.sqrt(np.diag(pcov)))
-    ys = fitter(xs, a, b)
-    ax2.plot(xs, ys, label="T $\propto$ R$^{3/4}$")
+    # fit_xs = val_range[:]
+    # fit_ys = convtemps[:]
+    # xs = np.linspace(fit_xs[0], fit_xs[-1], 100)
+    # fitter = lambda x, a, b: a * x ** (3 / 4) + b
+    # (a, b), pcov = curve_fit(fitter, fit_xs, fit_ys)
+    # print(a, b, np.sqrt(np.diag(pcov)))
+    # ys = fitter(xs, a, b)
+    # ax2.plot(xs, ys, label="T $\propto$ R$^{3/4}$")
 
     ax2.set_xlabel(f"{val_name} {val_unit}")
     # ax1.set_xticks(np.linspace(min(val_range), max(val_range), 11))
@@ -218,6 +218,76 @@ def convergence_plot_single(
     ax2.set_yscale(y_axis_scale)
     # ax1.set_ylabel("Time to converge, years")
     ax2.set_ylabel("Global convergent temperature, K")
+    ax2.legend()
+    plt.show()
+
+
+def semimajor_fit_plot(
+    tests: np.ndarray,
+    convtemps: np.ndarray,
+    val_name: str,
+    val_range,
+    val_unit: Optional[str] = None,
+    x_axis_scale: Literal["linear", "log"] = "linear",
+    y_axis_scale: Literal["linear", "log"] = "linear",
+):
+    if val_unit is None:
+        val_unit = ""
+    else:
+        val_unit = ", " + val_unit
+    # val_range = np.arange(val_min, val_max, val_step)
+    # fit_range = np.linspace(min(val_range), max(val_range), 100, endpoint=True)
+    # fit_vals = convtemps[0] * (1 - fit_range**2) ** (-1 / 4)
+    # fig, (ax1, ax2) = plt.subplots(2, 1)
+    fig, (ax2, ax3) = plt.subplots(2, 1)
+    # ax1: plt.Axes
+    ax2: plt.Axes
+    ax3: plt.Axes
+    if min(convtemps) < 273:
+        ax2.axhline(273, 0, 1, ls="-.", label="273 K")
+    if max(convtemps) > 373:
+        ax2.axhline(373, 0, 1, ls="-.", label="373 K")
+    tests[convtemps < 0] = np.nan
+    convtemps[convtemps < 0] = np.nan
+    # ax1.scatter(val_range, tests)
+    ax2.scatter(val_range, convtemps, c="b", marker="x")
+    q = 51
+    fit_xs = val_range[:q]
+    fit_ys = convtemps[:q]
+    xs = np.linspace(fit_xs[0], fit_xs[-1], 100)
+    fitter = lambda x, a, b: a * x ** (-1 / 2) + b
+    (a, b), pcov = curve_fit(fitter, fit_xs, fit_ys)
+    print(a, b, np.sqrt(np.diag(pcov)))
+    ys = fitter(xs, a, b)
+    ax2.plot(xs, ys, c="r", label="T = $p_1$ a$^{-1/2} + q_1$")
+    ax3.scatter(
+        fit_xs, fit_ys - fitter(fit_xs, a, b), label="T = $p_1$ a$^{-1/2} + q_1$"
+    )
+
+    fit_xs = val_range[q:]
+    fit_ys = convtemps[q:]
+    xs = np.linspace(fit_xs[0], fit_xs[-1], 100)
+    fitter = lambda x, a, b: a * x ** (-1 / 2) + b
+    (a, b), pcov = curve_fit(fitter, fit_xs, fit_ys)
+    print(a, b, np.sqrt(np.diag(pcov)))
+    ys = fitter(xs, a, b)
+    ax2.plot(xs, ys, c="g", label="T = $p_2$ a$^{-1/2} + q_2$")
+    ax3.scatter(
+        fit_xs, fit_ys - fitter(fit_xs, a, b), label="T = $p_2$ a$^{-1/2} + q_2$"
+    )
+
+    ax2.set_xlabel(f"{val_name} {val_unit}")
+    ax3.set_xlabel(f"{val_name} {val_unit}")
+    # ax1.set_xticks(np.linspace(min(val_range), max(val_range), 11))
+    # ax2.set_xticks(np.linspace(min(val_range), max(val_range), 11))
+    # ax1.set_xscale(x_axis_scale)
+    # ax1.set_yscale(y_axis_scale)
+    ax2.set_xscale(x_axis_scale)
+    ax3.set_xscale(x_axis_scale)
+    ax2.set_yscale(y_axis_scale)
+    # ax1.set_ylabel("Time to converge, years")
+    ax2.set_ylabel("Global convergent temperature, K")
+    ax3.set_ylabel("Residual, K")
     ax2.legend()
     plt.show()
 
@@ -269,75 +339,32 @@ def ecc_fit_plot(
         val_unit = ""
     else:
         val_unit = ", " + val_unit
-    fit_range_1 = np.linspace(val_range[0], val_range[-1], 100, endpoint=True)
-    fit_vals_1 = convtemps[0] * ((1 - fit_range_1**2) / (1 - val_range[0] ** 2)) ** (
-        -1 / 8
-    )
+    
+
+    fit_xs = val_range
+    fit_ys = convtemps
+    xs = np.linspace(fit_xs[0], fit_xs[-1], 100)
+    fitter = lambda x, a, b: a * (1 - x**2) ** (-1 / 8) + b
+    (a, b), pcov = curve_fit(fitter, fit_xs, fit_ys)
+    print(a, b, np.sqrt(np.diag(pcov)))
+    ys = fitter(xs, a, b)
 
     fig, (ax1, ax2) = plt.subplots(2, 1)
     ax1: plt.Axes
     ax2: plt.Axes
+    if min(convtemps) < 273:
+        ax1.axhline(273, 0, 1, ls="-.", label="273 K")
+    if max(convtemps) > 373:
+        ax1.axhline(373, 0, 1, ls="-.", label="373 K")
     ax1.scatter(val_range, convtemps, label="Model data")
-    ax1.plot(fit_range_1, fit_vals_1, label="$(1-e^2)^{-1/8}$ fit")
+    ax1.plot(xs, ys, label="$T = p *(1-e^2)^{-1/8} + q$ fit")
     ax2.scatter(
         val_range,
-        (
-            convtemps
-            - convtemps[0]
-            * ((1 - val_range**2) / (1 - val_range[0] ** 2)) ** (-1 / 8)
-        )
-        / convtemps,
-        label="$(1-e^2)^{-1/2}$ residuals",
+        (convtemps - fitter(val_range, a, b)),
     )
     ax2.set_xlabel(f"{val_name} {val_unit}")
-    ax1.set_xticks(val_range)
-    ax2.set_xticks(val_range)
-    ax2.set_ylabel("Residual")
-    ax1.set_ylabel("Global convergent temperature, K")
-    ax1.legend()
-    # ax2.legend()
-    plt.show()
-
-
-def semimajor_fit_plot(
-    tests,
-    convtemps,
-    val_name: str,
-    val_range,
-    val_unit: Optional[str] = None,
-):
-    val_range = np.array(val_range)
-    if val_unit is None:
-        val_unit = ""
-    else:
-        val_unit = ", " + val_unit
-    fit_range_1 = np.linspace(val_range[0], val_range[5], 100, endpoint=True)
-    fit_vals_1 = convtemps[0] * (fit_range_1 / val_range[0]) ** (-1 / 2)
-
-    fit_range_2 = np.linspace(val_range[6], val_range[-1], endpoint=True)
-    fit_vals_2 = convtemps[6] * (fit_range_2 / val_range[6]) ** (-1 / 4)
-
-    fig, (ax1, ax2) = plt.subplots(2, 1)
-    ax1: plt.Axes
-    ax2: plt.Axes
-    ax1.scatter(val_range, convtemps, label="Model data")
-    ax1.plot(fit_range_1, fit_vals_1, label="$a^{-1/2}$ fit on temperate")
-    ax1.plot(fit_range_2, fit_vals_2, label="$a^{-1/4}$ fit on snowball")
-    ax2.scatter(
-        val_range[0:6],
-        (convtemps[0:6] - convtemps[0] * (val_range[0:6] / val_range[0]) ** (-1 / 2))
-        / convtemps[0:6],
-        label="$a^{-1/2}$ residuals temperate",
-    )
-    ax2.scatter(
-        val_range[6:],
-        (convtemps[6:] - convtemps[6] * (val_range[6:] / val_range[6]) ** (-1 / 4))
-        / convtemps[6:],
-        label="$a^{-1/4}$ residuals snowball",
-    )
-    ax2.set_xlabel(f"{val_name} {val_unit}")
-    ax1.set_xticks(val_range)
-    ax2.set_xticks(val_range)
+    # ax1.set_xticks(val_range)
+    # ax2.set_xticks(val_range)
     ax2.set_ylabel("Residual")
     ax1.set_ylabel("Global convergent temperature, K")
     ax1.legend()
@@ -487,7 +514,7 @@ def convergence_plot_dual_with_fits(
 def orbital_animation():
     import matplotlib.pyplot as plt
     from matplotlib.animation import FuncAnimation
-    from ClimateModel import orbital_model, line, r
+    from orbital_model import orbital_model, line, r
     from filemanagement import load_config
 
     config = load_config("config.ini", "OrbitalConstraints")

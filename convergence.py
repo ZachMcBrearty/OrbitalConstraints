@@ -15,14 +15,7 @@ from filemanagement import (
     read_dual_folder,
     read_single_folder,
 )
-from plotting import (
-    convergence_plot_dual_with_fits,
-    convergence_plot_single,
-    convergence_plot_dual,
-    convergence_plot_single_compare,
-    ecc_fit_plot,
-    semimajor_fit_plot,
-)
+from plotting import *
 
 
 def convergence_test(
@@ -184,16 +177,10 @@ test_temp_convergence = gen_convergence_test(
 test_omega_convergence = gen_convergence_test(
     "PLANET", "omega", True, False, True, omega_unit
 )
-test_delta_convergence = gen_convergence_test(
-    "PLANET", "obliquity", True, False, True, obliquity_unit
-)
+test_delta_convergence = parallel_convergence_test("PLANET", "obliquity", True)
 
-test_a_convergence = gen_convergence_test(
-    "ORBIT", "gassemimajoraxis", True, False, True, a_unit
-)
-test_e_convergence = gen_convergence_test(
-    "ORBIT", "gaseccentricity", True, False, True, e_unit
-)
+test_a_convergence = parallel_convergence_test("ORBIT", "gassemimajoraxis", True)
+test_e_convergence = parallel_convergence_test("ORBIT", "gaseccentricity", True)
 test_moon_a_convergence = gen_convergence_test(
     "ORBIT", "moonsemimajoraxis", True, False, True, a_unit
 )
@@ -455,6 +442,7 @@ def reprocess_single_param(
     val_1_name: str,
     val_1_unit: Optional[str] = None,
     rtol: float = 0.0001,
+    yravg=1,
     x_axis_scale: Literal["linear", "log"] = "linear",
     y_axis_scale: Literal["linear", "log"] = "linear",
 ):
@@ -465,16 +453,17 @@ def reprocess_single_param(
     for i, datum in enumerate(data):
         val_1, (times, temps, degs) = datum
         dt = (times[1] - times[0]) * 365
-        t, temp = convergence_test(temps, rtol, year_avg=1, dt=dt)
+        t, temp = convergence_test(temps, rtol, year_avg=yravg, dt=dt)
         if (q := float(val_1)) not in val_1_range:
             val_1_range.append(q)
         tests.append(t)
         convtemps.append(temp)
     convergence_plot_single(
+        # convergence_plot_single_split_semi_fit(
         np.array(tests, dtype=float),
         np.array(convtemps, dtype=float),
         val_1_name,
-        val_1_range,
+        np.array(val_1_range),
         val_1_unit,
         x_axis_scale=x_axis_scale,
         y_axis_scale=y_axis_scale,
@@ -517,6 +506,7 @@ def reprocess_semimajor_fit(
     val_1_unit: Optional[str] = None,
     rtol: float = 0.0001,
     x_axis_scale: Literal["linear", "log"] = "linear",
+    y_axis_scale: Literal["linear", "log"] = "linear",
 ):
     val_1_range = []
     tests = []
@@ -531,11 +521,13 @@ def reprocess_semimajor_fit(
         tests.append(t)
         convtemps.append(temp)
     semimajor_fit_plot(
-        tests,
-        convtemps,
+        np.array(tests),
+        np.array(convtemps),
         val_1_name,
-        val_1_range,
+        np.array(val_1_range),
         val_1_unit,
+        x_axis_scale,
+        y_axis_scale,
     )
 
 
@@ -654,182 +646,12 @@ def reset_conf(conf):
 if __name__ == "__main__":
     here = os.path.curdir
     conf = "config.ini"
-    # print(test_moonrad_convergence(conf, np.linspace(1, 10, 40)))
-    # print(test_moondensity_convergence(conf, np.linspace(3000, 6000, 20)))
-    # print(test_gasmass_convergence(conf, np.linspace(0.1, 5, 20)))
-
+    # test_a_convergence(conf, np.linspace(0.5, 1.5, 101))
+    # reprocess_single_param("single_gassemimajoraxis", here, "a", a_unit, 1e-3)
+    # test_e_convergence(conf, np.linspace(0, 0.9, 51), 3)
+    # reprocess_single_param("single_gaseccentricity", here, "e", e_unit, 1e-3)
+    # reprocess_ecc_fit("single_gaseccentricity", here, "e", e_unit, 1e-3)
+    # test_delta_convergence(conf, np.linspace(0, 180, 101))
     reprocess_single_param(
-        "single_moonradius",
-        here,
-        "moon radius",
-        moon_rad_unit,
-        0.0001,
-        # x_axis_scale="log",
-        # y_axis_scale="log",
+        "single_obliquity", here, "obliquity", obliquity_unit, rtol=1e-5, yravg=1
     )
-    # reprocess_single_param(
-    #     "single_moondensity", here, "moon density", moon_density_unit, 0.0001
-    # )
-    # reprocess_single_param(
-    #     "single_gasgiantmass", here, "gas mass", gas_mass_unit, 0.0001
-    # )
-    # print(test_a_convergence(conf, 0.5, 2, 0.1, rtol=0.0001))
-    # conf = load_config("config.ini")
-    # print(test_moon_a_convergence(conf, np.arange(0.001, 0.01, 0.001)))
-    # conf = load_config("config.ini")
-    # print(test_moon_e_convergence(conf, np.logspace(-3, -1, 20)))
-    # print(test_a_convergence(conf, 2, 10, 0.5, rtol=0.0001))
-    # print(test_e_convergence(conf, 0, 0.91, 0.1, rtol=0.0001))
-    # reset_conf(conf)
-    # print(test_delta_convergence(conf, 0, 181, 10, rtol=0.0001))
-    # reset_conf(conf)
-    # print(test_omega_convergence(conf, 2.4, 2.45, 0.005, rtol=0.0001))
-    # reset_conf(conf)
-    # print(test_temp_convergence(conf, 100, 501, 50, rtol=0.0001))
-    # reset_conf(conf)
-    # print(test_spacedim_convergence(conf, 30, 180, 15, rtol=0.0001))
-    # conf.set("PDE", "time", "300")
-    # print(test_timestep_convergence(conf, 0.25, 3.1, 0.25, rtol=0.0001))
-
-    # reset_conf(conf)
-    # conf = load_config("config.ini")
-    # dual_a_e_convergence_parallel(
-    #     "config.ini", np.linspace(0.5, 2, 20), np.linspace(0, 0.9, 20), 3
-    # )
-    # print(dual_a_e_convergence(conf, 0.5, 2.05, 0.1, 0, 0.91, 0.1, 0.001))
-    # reset_conf(conf)
-    # print(dual_a_delta_convergence(conf, 0.5, 2.05, 0.1, 0, 91, 10, 0.001))
-    # reset_conf(conf)
-    # print(dual_a_omega_convergence(conf, 0.5, 2.05, 0.1, 0.25, 3.1, 0.25, 0.001))
-    # reset_conf(conf)
-    # print(dual_a_temp_convergence(conf, 0.5, 2.05, 0.1, 150, 500, 50, 0.001))
-    # reset_conf(conf)
-
-    # print(dual_e_delta_convergence(conf, 0, 0.91, 0.1, 0, 91, 10, 0.001))
-    # reset_conf(conf)
-    # print(dual_e_omega_convergence(conf, 0, 0.91, 0.1, 0.25, 3.1, 0.25, 0.001))
-    # reset_conf(conf)
-    # print(dual_e_starttemp_convergence(conf, 0, 0.91, 0.1, 150, 500, 50, 0.001))
-    # reset_conf(conf)
-
-    # print(dual_delta_omega_convergence(conf, 70, 91, 10, 0.25, 3.1, 0.25, 0.001))
-    # reset_conf(conf)
-    # print(dual_delta_starttemp_convergence(conf, 0, 91, 10, 150, 500, 50, 0.001))
-    # reset_conf(conf)
-
-    # print(dual_omega_starttemp_convergence(conf, 0.25, 3.1, 0.25, 150, 500, 50, 0.001))
-    # reset_conf(conf)
-
-    # conf = load_config("config.ini")
-    # print(
-    #     dual_moon_a_e_convergence(
-    #         conf,
-    #         np.linspace(0.001, 0.005, 20),
-    #         np.logspace(-4, -1, 20),
-    #         rounding_dp=10,
-    #     )
-    # )
-    # reprocess_paramspace(
-    #     "dual_moonsemimajoraxis_mooneccentricity",
-    #     os.path.curdir,
-    #     "a$_{moon}$",
-    #     "e$_{moon}$",
-    #     a_unit,
-    #     e_unit,
-    #     0.0001,
-    #     "linear",
-    #     "log",
-    # )
-    # reprocess_ecc_fit("single_e", os.path.curdir, "e", e_unit, 0.0001)
-    # reprocess_semimajor_fit(
-    #     "single_moonsemimajoraxis", os.path.curdir, "a$_{moon}$", a_unit, 0.0001
-    # )
-    # reprocess_semimajor_fit(
-    #     "single_gassemimajoraxis", os.path.curdir, "a$_{gas}$", a_unit, 0.0001
-    # )
-    # reprocess_single_param(
-    #     "single_mooneccentricity", os.path.curdir, "e$_{moon}$", e_unit, 0.0001, "log"
-    # )
-    # reprocess_single_param_compare(
-    #     "single_a",
-    #     os.path.curdir,
-    #     "single_gassemimajoraxis",
-    #     os.path.curdir,
-    #     "a",
-    #     "a$_{gas}$",
-    #     "au",
-    # )
-    # reprocess_single_param(
-    #     "single_gassemimajoraxis", os.path.curdir, "a gas", a_unit, 0.0001
-    # )
-    # reprocess_single_param("single_a", os.path.curdir, "a", a_unit, 0.0001)
-    # plt.show()
-    # reprocess_paramspace(
-    #     "dual_gassemimajoraxis_gaseccentricity",
-    #     os.path.curdir,
-    #     "a",
-    #     "e",
-    #     "au",
-    #     None,
-    #     0.005,
-    # )
-    # reprocess_paramspace(
-    #     "dual_a_obliquity",
-    #     os.path.curdir,
-    #     "a",
-    #     "obliquity",
-    #     "au",
-    #     r"$^{\circ}$",
-    #     0.0001,
-    # )
-    # reprocess_paramspace(
-    #     "dual_a_omega", os.path.curdir, "a", "omega", "au", "days$^{-1}$", 0.0001
-    # )
-    # reprocess_paramspace(
-    #     "dual_a_starttemp", os.path.curdir, "a", "starttemp", "au", "K", 0.0001
-    # )
-
-    # reprocess_paramspace(
-    #     "dual_e_obliquity",
-    #     os.path.curdir,
-    #     "e",
-    #     "obliquity",
-    #     None,
-    #     r"$^{\circ}$",
-    #     0.0001,
-    # )
-    # reprocess_paramspace(
-    #     "dual_e_omega", os.path.curdir, "e", "omega", None, "days$^{-1}$", 0.0001
-    # )
-    # reprocess_paramspace(
-    #     "dual_e_starttemp", os.path.curdir, "e", "starttemp", None, "K", 0.0001
-    # )
-
-    # reprocess_paramspace(
-    #     "dual_obliquity_omega",
-    #     os.path.curdir,
-    #     "obliquity",
-    #     "omega",
-    #     r"$^{\circ}$",
-    #     "days$^{-1}$",
-    #     0.0001,
-    # )
-    # reprocess_paramspace(
-    #     "dual_obliquity_starttemp",
-    #     os.path.curdir,
-    #     "obliquity",
-    #     "starttemp",
-    #     r"$^{\circ}$",
-    #     "K",
-    #     0.0001,
-    # )
-
-    # reprocess_paramspace(
-    #     "dual_omega_starttemp",
-    #     os.path.curdir,
-    #     "omega",
-    #     "starttemp",
-    #     "days$^{-1}$",
-    #     "K",
-    #     0.0001,
-    # )

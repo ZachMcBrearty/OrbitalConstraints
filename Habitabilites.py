@@ -58,8 +58,8 @@ def time_habitability_paramspace(
     folderpath: str,
     val_name: str,
     val_unit: Optional[str] = None,
-    min_year=190,
-    max_year=200,
+    min_year=90,
+    max_year=100,
 ):
     """Latitude band habitability, averaged over a number of years
     min_year to max_year: years to average over"""
@@ -107,8 +107,8 @@ def area_habitability_paramspace(
     folderpath: str,
     val_name: str,
     val_unit: Optional[str] = None,
-    min_year=190,
-    max_year=195,
+    min_year=90,
+    max_year=95,
 ):
     """yearly habitability averaged over all latitudes
     min year to max_year: years to show"""
@@ -163,7 +163,7 @@ def habitability_paramspace(
     val_2_name: str,
     val_1_unit: Optional[str] = None,
     val_2_unit: Optional[str] = None,
-    year=190,
+    year=90,
 ):
     val_1_range = []
     val_2_range = []
@@ -241,10 +241,15 @@ if __name__ == "__main__":
     import os
 
     # time_habitability_paramspace("single_a", os.path.curdir, "a", a_unit)
+    # time_habitability_paramspace("single_gassemimajoraxis", os.path.curdir, "a", a_unit)
     # time_habitability_paramspace("single_e", os.path.curdir, "e", e_unit)
-    # time_habitability_paramspace(
-    #     "single_obliquity", os.path.curdir, "obliquity", obliquity_unit
-    # )
+    # time_habitability_paramspace("single_gaseccentricity", os.path.curdir, "e", e_unit)
+    time_habitability_paramspace(
+        "single_obliquity", os.path.curdir, "obliquity", obliquity_unit
+    )
+    area_habitability_paramspace(
+        "single_obliquity", os.path.curdir, "obliquity", obliquity_unit
+    )
     # time_habitability_paramspace("single_omega", os.path.curdir, "omega", omega_unit)
     # time_habitability_paramspace(
     #     "single_starttemp", os.path.curdir, "starttemp", temp_unit
@@ -254,10 +259,10 @@ if __name__ == "__main__":
     # )
 
     # area_habitability_paramspace("single_a", os.path.curdir, "a", a_unit)
+    # area_habitability_paramspace("single_gassemimajoraxis", os.path.curdir, "a", a_unit)
     # area_habitability_paramspace("single_e", os.path.curdir, "e", e_unit)
-    # area_habitability_paramspace(
-    #     "single_obliquity", os.path.curdir, "obliquity", obliquity_unit
-    # )
+    # area_habitability_paramspace("single_gaseccentricity", os.path.curdir, "e", e_unit)
+
     # area_habitability_paramspace("single_omega", os.path.curdir, "omega", omega_unit)
     # area_habitability_paramspace(
     #     "single_starttemp", os.path.curdir, "starttemp", temp_unit
@@ -267,15 +272,15 @@ if __name__ == "__main__":
     # )
 
     # habitability_paramspace("dual_a_e", os.path.curdir, "a", "e", a_unit, e_unit)
-    habitability_paramspace(
-        "dual_gassemimajoraxis_gaseccentricity",
-        os.path.curdir,
-        "a$_{gas}$",
-        "e$_{gas}$",
-        a_unit,
-        e_unit,
-        year=90,
-    )
+    # habitability_paramspace(
+    #     "dual_gassemimajoraxis_gaseccentricity",
+    #     os.path.curdir,
+    #     "a$_{gas}$",
+    #     "e$_{gas}$",
+    #     a_unit,
+    #     e_unit,
+    #     year=90,
+    # )
     # habitability_paramspace(
     #     "dual_moonsemimajoraxis_mooneccentricity",
     #     os.path.curdir,
