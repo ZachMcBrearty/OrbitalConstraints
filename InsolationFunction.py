@@ -25,9 +25,9 @@ def delta(a: float | floatarr, t: float | floatarr, delta_0: float) -> float | f
     """
     # T^2 = a^3, ω = 2π/T -> ω = 2π / a^(3/2)
     omega = 2 * np.pi * a ** (-3 / 2)
-    L_s = omega * t
+    L_s = (omega * t + np.pi / 2) % (2 * np.pi)
     # sinδ = -sin(δ_0) cos(L_s + π/2)
-    return np.arcsin(-np.sin(delta_0) * np.cos(L_s + np.pi / 2))
+    return np.arcsin(-np.sin(delta_0) * np.cos(L_s))
 
 
 def H(theta: float | floatarr, delta_: float | floatarr) -> float | floatarr:
@@ -67,6 +67,7 @@ def S(
     theta: planetary latitude, radians
     t: float: years
     delta_0: obliquity, radians
+    e: eccentricity
     A_gas: albedo of the gas giant
     rad_gas: radius of gas giant, R_J
     r_moon_to_gas: distance from gas giant to the moon, AU
@@ -79,7 +80,7 @@ def S(
     costheta = np.cos(theta)
     sintheta = np.sin(theta)
     H_ = H(theta, delta_)
-    r = dist(a, e, t, offset)
+    r = dist(a, e, t, offset, 5)
     # S = q_0 / π * a^-2 * (H sinθ sinδ + cosθ cosδ sinH)
     return (
         q_0
@@ -131,7 +132,7 @@ def dist_basic(
 
 
 def dist(
-    a: float, e: float, t: float | floatarr, offset: float = 0, iter_num: int = 3
+    a: float, e: float, t: float | floatarr, offset: float = 0, iter_num: int = 4
 ) -> float | floatarr:
     """Chooses dist_basic (e <= 0.5) or dist_adv (e > 0.5)
 
@@ -142,7 +143,7 @@ def dist(
     iter_num: number of iterations of newton's method if e > 0.5
 
     returns: distance to star, AU"""
-    if e > 0.5:
+    if e >= 0:
         return dist_adv(a, e, t, offset, iter_num)
     else:
         return dist_basic(a, e, t, offset)
@@ -151,17 +152,17 @@ def dist(
 if __name__ == "__main__":
     import matplotlib.pyplot as plt
 
-    time = np.linspace(0, 20, 20 * 365)
+    time = np.linspace(0, 1, 10)
     a = 1
-    e = 0.0167
+    e = 0  # 0.0167
     delta_0 = np.deg2rad(23.5)
+    delta_0s = np.deg2rad(np.linspace(0, 90, 361))
     off = 0.0
-    # insols = S(a, np.pi / 2, time, delta_0, e)
-    # insols = []
-    # for t in range(0, 100):
-    #     insol = np.average()
-    #     insols.append(insol)
-
+    for t in time:
+        insols = []
+        for delta_0 in delta_0s:
+            insols.append(S(a, -np.pi / 2, t, delta_0, e, 0, 0, 0.01))
+        plt.plot(np.rad2deg(delta_0s), insols, label=f"t={round(t, 2)}")
     # plt.plot(time, insols)
 
     # r = dist(1, e, time, offset=off)
@@ -170,7 +171,7 @@ if __name__ == "__main__":
     #     a = plt.plot(time, eq, label=f"{lat} deg")
     #     plt.axhline(np.average(eq), color=a[0].get_c(), label=f"{lat} deg avg")  # type: ignore
     # plt.title(rf"offset = {off}yr, eccentricity = {e}, $\delta$ = {delta_0}")
-    plt.xlabel("time, yrs")
+    plt.xlabel("delta_0, degs")
     plt.ylabel("Insolation, W m$^{-2}$")
 
     plt.legend()
