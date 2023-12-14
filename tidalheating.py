@@ -171,6 +171,7 @@ def fixed_Q_tidal_heating(
 
 
 def get_viscoheating(config, T_surf: float, B: float = 25, rtol: float = 0.1) -> float:
+    """returns: heating, W"""
     M_gas = config.getfloat("ORBIT", "gasgiantmass") * MASS["jupiter"]  # kg
     moon_rad = config.getfloat("ORBIT", "moonradius") * RADIUS["luna"]  # m
     moon_a = config.getfloat("ORBIT", "moonsemimajoraxis") * AU  # m
@@ -275,6 +276,12 @@ def plot_vary_semimajoraxis(conf: CONF_PARSER_TYPE, T_surf, a_range: Iterable[fl
     plt.legend()
     plt.yscale("log")
     plt.show()
+
+
+def roche_limit(R_m, rho_m, M_p):
+    """returns: Roche limit, AU"""
+    M_m = 4 * np.pi / 3 * R_m**3 * rho_m
+    return R_m * (2 * M_p / M_m) ** (1 / 3) / AU
 
 
 if __name__ == "__main__":
