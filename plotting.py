@@ -255,26 +255,32 @@ def semimajor_fit_plot(
     fit_xs = val_range[:q]
     fit_ys = convtemps[:q]
     xs = np.linspace(fit_xs[0], fit_xs[-1], 100)
-    fitter = lambda x, a, b: a * x ** (-1 / 2) + b
+
+    fitter = lambda x, a, b: a * x ** (-b)
     (a, b), pcov = curve_fit(fitter, fit_xs, fit_ys)
     print(a, b, np.sqrt(np.diag(pcov)))
     ys = fitter(xs, a, b)
-    ax2.plot(xs, ys, c="r", label="T = $p_1$ a$^{-1/2} + q_1$")
-    ax3.scatter(
-        fit_xs, fit_ys - fitter(fit_xs, a, b), label="T = $p_1$ a$^{-1/2} + q_1$"
-    )
+    # fitter = lambda x, a: a * x ** (-1 / 2)
+    # a, pcov = curve_fit(fitter, fit_xs, fit_ys)
+    # print(a, np.sqrt(np.diag(pcov)))
+    # ys = fitter(xs, a)
+
+    ax2.plot(xs, ys, c="r", label="T = $p_1$ a$^{-q_1}$")
+    ax3.scatter(fit_xs, fit_ys - fitter(fit_xs, a, b), label="T = $p_1$ a$^{-q_1}$")
 
     fit_xs = val_range[q:]
     fit_ys = convtemps[q:]
     xs = np.linspace(fit_xs[0], fit_xs[-1], 100)
-    fitter = lambda x, a, b: a * x ** (-1 / 2) + b
+    # fitter = lambda x, a: a * x ** (-1 / 4)
+    # a, pcov = curve_fit(fitter, fit_xs, fit_ys)
+    # print(a, np.sqrt(np.diag(pcov)))
+    # ys = fitter(xs, a)
+    fitter = lambda x, a, b: a * x ** (-b)
     (a, b), pcov = curve_fit(fitter, fit_xs, fit_ys)
     print(a, b, np.sqrt(np.diag(pcov)))
     ys = fitter(xs, a, b)
-    ax2.plot(xs, ys, c="g", label="T = $p_2$ a$^{-1/2} + q_2$")
-    ax3.scatter(
-        fit_xs, fit_ys - fitter(fit_xs, a, b), label="T = $p_2$ a$^{-1/2} + q_2$"
-    )
+    ax2.plot(xs, ys, c="g", label="T = $p_2$ a$^{-q_2}$")
+    ax3.scatter(fit_xs, fit_ys - fitter(fit_xs, a, b), label="T = $p_2$ a$^{-q_2}$")
 
     ax2.set_xlabel(f"{val_name} {val_unit}")
     ax3.set_xlabel(f"{val_name} {val_unit}")
@@ -339,15 +345,14 @@ def ecc_fit_plot(
         val_unit = ""
     else:
         val_unit = ", " + val_unit
-    
 
     fit_xs = val_range
     fit_ys = convtemps
     xs = np.linspace(fit_xs[0], fit_xs[-1], 100)
-    fitter = lambda x, a, b: a * (1 - x**2) ** (-1 / 8) + b
-    (a, b), pcov = curve_fit(fitter, fit_xs, fit_ys)
-    print(a, b, np.sqrt(np.diag(pcov)))
-    ys = fitter(xs, a, b)
+    fitter = lambda x, a: a * (1 - x**2) ** (-1 / 8)
+    a, pcov = curve_fit(fitter, fit_xs, fit_ys)
+    print(a, np.sqrt(np.diag(pcov)))
+    ys = fitter(xs, a)
 
     fig, (ax1, ax2) = plt.subplots(2, 1)
     ax1: plt.Axes
@@ -357,10 +362,10 @@ def ecc_fit_plot(
     if max(convtemps) > 373:
         ax1.axhline(373, 0, 1, ls="-.", label="373 K")
     ax1.scatter(val_range, convtemps, label="Model data")
-    ax1.plot(xs, ys, label="$T = p *(1-e^2)^{-1/8} + q$ fit")
+    ax1.plot(xs, ys, label="$T = p *(1-e^2)^{-1/8}$ fit")
     ax2.scatter(
         val_range,
-        (convtemps - fitter(val_range, a, b)),
+        (convtemps - fitter(val_range, a)),
     )
     ax2.set_xlabel(f"{val_name} {val_unit}")
     # ax1.set_xticks(val_range)

@@ -521,8 +521,8 @@ def reprocess_semimajor_fit(
         tests.append(t)
         convtemps.append(temp)
     semimajor_fit_plot(
-        np.array(tests),
-        np.array(convtemps),
+        np.array(tests, dtype=float),
+        np.array(convtemps, dtype=float),
         val_1_name,
         np.array(val_1_range),
         val_1_unit,
@@ -644,10 +644,11 @@ def reset_conf(conf):
 
 
 if __name__ == "__main__":
-    here = os.path.curdir
+    # here = os.path.curdir
+    here = "D:/"
     conf = "config.ini"
     # test_a_convergence(conf, np.linspace(0.5, 1.5, 101))
-    # reprocess_single_param("single_gassemimajoraxis", here, "a", a_unit, 1e-3)
+    # reprocess_semimajor_fit("single_gassemimajoraxis", here, "a", a_unit, 1e-3)
     # test_e_convergence(conf, np.linspace(0, 0.9, 51), 3)
     # reprocess_single_param("single_gaseccentricity", here, "e", e_unit, 1e-3)
     # reprocess_ecc_fit("single_gaseccentricity", here, "e", e_unit, 1e-3)

@@ -159,10 +159,13 @@ def orbital_model(conf: CONF_PARSER_TYPE, dt_steps=10):
     r_star = conf.getfloat("ORBIT", "starradius") * RADIUS["solar"]
     M_gas = conf.getfloat("ORBIT", "gasgiantmass") * MASS["jupiter"]
     r_gas = conf.getfloat("ORBIT", "gasgiantradius") * RADIUS["jupiter"]
-    M_moon = conf.getfloat("ORBIT", "moonmass") * MASS["luna"]
+
+    dens_moon = conf.getfloat("ORBIT", "moondensity")
+    r_moon = conf.getfloat("ORBIT", "moonradius") * RADIUS["luna"]
+    M_moon = 4 * np.pi / 3 * r_moon**3 * dens_moon
 
     gas_a = conf.getfloat("ORBIT", "gassemimajoraxis") * AU
-    gas_ecc = conf.getfloat("ORBIT", "gasgianteccentricity")
+    gas_ecc = conf.getfloat("ORBIT", "gaseccentricity")
     moon_a = conf.getfloat("ORBIT", "moonsemimajoraxis") * AU
     moon_ecc = conf.getfloat("ORBIT", "mooneccentricity")
 
@@ -243,10 +246,13 @@ def orbital_model_explicit(conf: CONF_PARSER_TYPE, dt_steps=10):
     r_star = conf.getfloat("ORBIT", "starradius") * RADIUS["solar"]
     M_gas = conf.getfloat("ORBIT", "gasgiantmass") * MASS["jupiter"]
     r_gas = conf.getfloat("ORBIT", "gasgiantradius") * RADIUS["jupiter"]
-    M_moon = conf.getfloat("ORBIT", "moonmass") * MASS["luna"]
+
+    dens_moon = conf.getfloat("ORBIT", "moondensity")
+    r_moon = conf.getfloat("ORBIT", "moonradius") * RADIUS["luna"]
+    M_moon = 4 * np.pi / 3 * r_moon**3 * dens_moon
 
     gas_a = conf.getfloat("ORBIT", "gassemimajoraxis") * AU
-    gas_ecc = conf.getfloat("ORBIT", "gasgianteccentricity")
+    gas_ecc = conf.getfloat("ORBIT", "gaseccentricity")
     moon_a = conf.getfloat("ORBIT", "moonsemimajoraxis") * AU
     moon_ecc = conf.getfloat("ORBIT", "mooneccentricity")
 
