@@ -21,8 +21,9 @@ from Constants import *
 from filemanagement import read_dual_folder, read_single_folder, read_file
 
 
-def H(temps: NDArray) -> NDArray:
-    """temps: numpy array of temperatures.
+def Habitable(temps: NDArray) -> NDArray:
+    """aka BioCompatible
+    temps: numpy array of temperatures.
     returns: 1 if 273 < temp < 373 ; 0 otherwise, for each temp in temps"""
     ret = np.ones_like(temps)
     ret[temps >= 373] = 0
@@ -30,13 +31,37 @@ def H(temps: NDArray) -> NDArray:
     return ret
 
 
-def f_time(temps: floatarr, times: floatarr, dt: float) -> floatarr:
+def HumanCompatible(temps: NDArray) -> NDArray:
+    """temps: numpy array of temperatures
+    returns 0 if ANY T > 313K or ANY T < 263K; 1 if 273K < T < 303K; 0 otherwise, for each T in temps
+    """
+    ret = np.ones_like(temps)
+    ret[temps >= 303] = 0  # 30 deg C
+    ret[temps <= 273] = 0  # 0 deg C
+    zeroes = np.zeros_like(temps[:, 0])
+    for lat in range(temps.shape[1]):
+        if np.any(temps[:, lat] >= 313) or np.any(temps[:, lat] <= 263):
+            temps[:, lat] = zeroes
+    return ret
+
+
+def f_time(temps: floatarr, times: floatarr, dt: float, H=Habitable) -> floatarr:
+    """temps: array of temperatures in space and time
+    times: times corresponding to the temperatures
+    dt: timestep
+    H: habitability function; Habitable, HumanCompatible or user defined
+    returns: time averaged habitablility for each latitude band"""
     H_temps = H(temps) * dt
     H_temps_sum = np.sum(H_temps, axis=0) / (times[-1] - times[0])
     return H_temps_sum
 
 
-def f_area(temps: floatarr, lats: floatarr, dlat: float) -> floatarr:
+def f_area(temps: floatarr, lats: floatarr, dlat: float, H=Habitable) -> floatarr:
+    """temps: array of temperatures in space and time
+    lats: latitude bands corresponding to the temperatures
+    dlat: latitude step size
+    H: habitability function; Habitable, HumanCompatible or user defined
+    returns: latitude averaged habitability for each time"""
     dx = np.cos(lats) * dlat
     H_temps = H(temps) * dx
     H_temps_sum = np.sum(H_temps, axis=1) / np.sum(dx)
@@ -44,8 +69,20 @@ def f_area(temps: floatarr, lats: floatarr, dlat: float) -> floatarr:
 
 
 def f_hab(
-    temps: floatarr, lats: floatarr, dlat: float, times: floatarr, dt: float
+    temps: floatarr,
+    lats: floatarr,
+    dlat: float,
+    times: floatarr,
+    dt: float,
+    H=Habitable,
 ) -> float:
+    """temps: array of temperatures in space and time
+    lats: latitude bands corresponding to the temperatures
+    dlat: latitude step size
+    times: times corresponding to the temperatures
+    dt: timestep
+    H: habitability function; Habitable, HumanCompatible or user defined
+    returns: latitude and time averaged habitability"""
     dx = np.cos(lats) * dlat
     H_temps = H(temps) * dt * dx
     H_temps_sum = np.sum(H_temps, axis=1) / np.sum(dx)
@@ -60,6 +97,7 @@ def time_habitability_paramspace(
     val_unit: Optional[str] = None,
     min_year=90,
     max_year=100,
+    H=Habitable,
 ):
     """Latitude band habitability, averaged over a number of years
     min_year to max_year: years to average over"""
@@ -79,7 +117,7 @@ def time_habitability_paramspace(
         temps_red = temps.T[slice_min:slice_max]
         times_red = times[slice_min:slice_max]
 
-        time_hab = f_time(temps_red, times_red, dt)
+        time_hab = f_time(temps_red, times_red, dt, H=H)
         if (float_val := float(val)) not in val_range:
             val_range.append(float_val)
         habitability_time.append(time_hab)
@@ -109,6 +147,7 @@ def area_habitability_paramspace(
     val_unit: Optional[str] = None,
     min_year=90,
     max_year=95,
+    H=Habitable,
 ):
     """yearly habitability averaged over all latitudes
     min year to max_year: years to show"""
@@ -129,7 +168,7 @@ def area_habitability_paramspace(
         slice_max = int((max_year) / dt) + 1
         temps_red = temps.T[slice_min:slice_max]
         times_red = times[slice_min:slice_max]
-        lat_hab = f_area(temps_red, lats, dlat)
+        lat_hab = f_area(temps_red, lats, dlat, H=H)
         if (float_val := float(val)) not in val_range:
             val_range.append(float_val)
         habitability_lat.append(lat_hab)
@@ -164,6 +203,7 @@ def habitability_paramspace(
     val_1_unit: Optional[str] = None,
     val_2_unit: Optional[str] = None,
     year=90,
+    H=Habitable,
 ):
     val_1_range = []
     val_2_range = []
@@ -176,13 +216,7 @@ def habitability_paramspace(
         dlat = abs(lats[1] - lats[0])
         temps_red = temps.T[int(year / dt) : int((year + 1) / dt)]
         times_red = times[int(year / dt) : int((year + 1) / dt)]
-        tot_hab = f_hab(
-            temps_red,
-            lats,
-            dlat,
-            times_red,
-            dt,
-        )
+        tot_hab = f_hab(temps_red, lats, dlat, times_red, dt, H=H)
         if (q := float(val_1)) not in val_1_range:
             val_1_range.append(q)
         if (q := float(val_2)) not in val_2_range:
@@ -213,43 +247,58 @@ def habitability_paramspace(
     # y = 12
     # ys = 0.568
     # T = 373.19809023566785
-    xs = np.linspace(0.5, 1, 100)
-    k = 1 / ((1 - 0.568**2) * 0.658**4)
-    fit = lambda x: (1 - 1 / (k * x**4)) ** (1 / 2)
-    ys = fit(xs)
-    ax1.plot(xs, ys, c="m", label=r"$a \propto (1-e^2)^{-1/4}, T \approx 373$K")
+    # xs = np.linspace(0.5, 1, 100)
+    # k = 1 / ((1 - 0.568**2) * 0.658**4)
+    # fit = lambda x: (1 - 1 / (k * x**4)) ** (1 / 2)
+    # ys = fit(xs)
+    # ax1.plot(xs, ys, c="m", label=r"$a \propto (1-e^2)^{-1/4}, T \approx 373$K")
 
     # x = 11
     # xs = 1.368
     # y = 18
     # ys = 0.853
     # T = 274.12797490217696
-    xs = np.linspace(0.9, 2, 100)
-    k = 1 / ((1 - 0.853**2) * 1.368**4)
-    fit = lambda x: (1 - 1 / (k * x**4)) ** (1 / 2)
-    ys = fit(xs)
-    ax1.plot(xs, ys, c="m", label=r"$a \propto (1-e^2)^{-1/4}, T \approx 273$K")
+    # xs = np.linspace(0.9, 2, 100)
+    # k = 1 / ((1 - 0.853**2) * 1.368**4)
+    # fit = lambda x: (1 - 1 / (k * x**4)) ** (1 / 2)
+    # ys = fit(xs)
+    # ax1.plot(xs, ys, c="m", label=r"$a \propto (1-e^2)^{-1/4}, T \approx 273$K")
 
     ax1.set_ylabel(f"{val_2_name} {val_2_unit}")
     ax1.set_xlabel(f"{val_1_name} {val_1_unit}")
 
-    ax1.legend(loc="lower right")
+    # ax1.legend(loc="lower right")
     plt.show()
 
 
 if __name__ == "__main__":
     import os
 
+    habitability_paramspace(
+        "dual_moonsemimajoraxis_mooneccentricity",
+        os.path.curdir,
+        "a$_{moon}$",
+        "e$_{moon}$",
+        a_unit,
+        e_unit,
+        H=Habitable,
+    )
     # time_habitability_paramspace("single_a", os.path.curdir, "a", a_unit)
     # time_habitability_paramspace("single_gassemimajoraxis", os.path.curdir, "a", a_unit)
+    # time_habitability_paramspace(
+    #     "single_moonsemimajoraxis", os.path.curdir, "a", a_unit, H=BioCompatible
+    # )
     # time_habitability_paramspace("single_e", os.path.curdir, "e", e_unit)
     # time_habitability_paramspace("single_gaseccentricity", os.path.curdir, "e", e_unit)
-    time_habitability_paramspace(
-        "single_obliquity", os.path.curdir, "obliquity", obliquity_unit
-    )
-    area_habitability_paramspace(
-        "single_obliquity", os.path.curdir, "obliquity", obliquity_unit
-    )
+    # time_habitability_paramspace(
+    #     "single_mooneccentricity", os.path.curdir, "e", e_unit, H=BioCompatible
+    # )
+    # time_habitability_paramspace(
+    #     "single_obliquity", os.path.curdir, "obliquity", obliquity_unit
+    # )
+    # area_habitability_paramspace(
+    #     "single_obliquity", os.path.curdir, "obliquity", obliquity_unit
+    # )
     # time_habitability_paramspace("single_omega", os.path.curdir, "omega", omega_unit)
     # time_habitability_paramspace(
     #     "single_starttemp", os.path.curdir, "starttemp", temp_unit
