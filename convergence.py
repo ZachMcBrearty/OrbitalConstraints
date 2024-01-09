@@ -181,12 +181,8 @@ test_delta_convergence = parallel_convergence_test("PLANET", "obliquity", True)
 
 test_a_convergence = parallel_convergence_test("ORBIT", "gassemimajoraxis", True)
 test_e_convergence = parallel_convergence_test("ORBIT", "gaseccentricity", True)
-test_moon_a_convergence = gen_convergence_test(
-    "ORBIT", "moonsemimajoraxis", True, False, True, a_unit
-)
-test_moon_e_convergence = gen_convergence_test(
-    "ORBIT", "mooneccentricity", True, False, True, a_unit
-)
+test_moon_a_convergence = parallel_convergence_test("ORBIT", "moonsemimajoraxis", True)
+test_moon_e_convergence = parallel_convergence_test("ORBIT", "mooneccentricity", True)
 
 test_moonrad_convergence = parallel_convergence_test("ORBIT", "moonradius", True)
 test_moondensity_convergence = parallel_convergence_test("ORBIT", "moondensity", True)
@@ -214,7 +210,9 @@ def _do_dual_test(
             f"Supplied config file has no section {val_2_sec} or option {val_2_name}"
         )
     if verbose:
-        print(f"Running {val_1_name}={val_1}, {val_2_name}={val_2}")
+        print(
+            f"Running {val_1_name}={round(val_1, rounding_dp)}, {val_2_name}={round(val_2, rounding_dp)}"
+        )
     conf.set(val_1_sec, val_1_name, str(val_1))
     conf.set(val_2_sec, val_2_name, str(val_2))
     degs, temps, times = climate_model_in_lat(conf)
@@ -423,16 +421,8 @@ dual_omega_starttemp_convergence = gen_paramspace(
     "PLANET", "omega", "PDE", "starttemp", True, False, omega_unit, temp_unit, True
 )
 
-dual_moon_a_e_convergence = gen_paramspace(
-    "ORBIT",
-    "moonsemimajoraxis",
-    "ORBIT",
-    "mooneccentricity",
-    True,
-    False,
-    a_unit,
-    e_unit,
-    True,
+dual_moon_a_e_convergence = parallel_gen_paramspace(
+    "ORBIT", "moonsemimajoraxis", "ORBIT", "mooneccentricity", True
 )
 
 
@@ -531,6 +521,67 @@ def reprocess_semimajor_fit(
     )
 
 
+def reprocess_moon_ecc_fit(
+    foldername: str,
+    folderpath: str,
+    val_1_name: str,
+    val_1_unit: Optional[str] = None,
+    rtol: float = 0.0001,
+    x_axis_scale: Literal["linear", "log"] = "linear",
+):
+    val_1_range = []
+    tests = []
+    convtemps = []
+    data = read_single_folder(foldername, folderpath)
+    for i, datum in enumerate(data):
+        val_1, (times, temps, degs) = datum
+        dt = (times[1] - times[0]) * 365
+        t, temp = convergence_test(temps, rtol, year_avg=1, dt=dt)
+        if (q := float(val_1)) not in val_1_range:
+            val_1_range.append(q)
+        tests.append(t)
+        convtemps.append(temp)
+    moon_ecc_fit_plot(
+        np.array(tests, dtype=float),
+        np.array(convtemps, dtype=float),
+        val_1_name,
+        val_1_range,
+        val_1_unit,
+    )
+
+
+def reprocess_moon_semimajor_fit(
+    foldername: str,
+    folderpath: str,
+    val_1_name: str,
+    val_1_unit: Optional[str] = None,
+    rtol: float = 0.0001,
+    x_axis_scale: Literal["linear", "log"] = "linear",
+    y_axis_scale: Literal["linear", "log"] = "linear",
+):
+    val_1_range = []
+    tests = []
+    convtemps = []
+    data = read_single_folder(foldername, folderpath)
+    for i, datum in enumerate(data):
+        val_1, (times, temps, degs) = datum
+        dt = (times[1] - times[0]) * 365
+        t, temp = convergence_test(temps, rtol, year_avg=1, dt=dt)
+        if (q := float(val_1)) not in val_1_range:
+            val_1_range.append(q)
+        tests.append(t)
+        convtemps.append(temp)
+    moon_semimajor_fit_plot(
+        np.array(tests, dtype=float),
+        np.array(convtemps, dtype=float),
+        val_1_name,
+        np.array(val_1_range),
+        val_1_unit,
+        x_axis_scale,
+        y_axis_scale,
+    )
+
+
 def reprocess_single_param_compare(
     foldername_1: str,
     folderpath_1: str,
@@ -610,8 +661,8 @@ def reprocess_paramspace(
     yl = len(val_2_range)
     tests = np.array(tests).reshape(xl, yl)
     convtemps = np.array(convtemps).reshape(xl, yl)
-    convergence_plot_dual_with_fits(
-        # convergence_plot_dual(
+    # convergence_plot_dual_with_fits(
+    convergence_plot_dual(
         tests,
         convtemps,
         val_1_name,
@@ -644,15 +695,36 @@ def reset_conf(conf):
 
 
 if __name__ == "__main__":
-    # here = os.path.curdir
-    here = "D:/"
+    here = os.path.curdir
+    # here = "D:/"
     conf = "config.ini"
+    # test_moon_a_convergence(conf, np.linspace(0.001, 0.008, 21), 5)
+    # test_moon_e_convergence(conf, np.linspace(0.000, 0.015, 21), 5)
+    # reprocess_moon_semimajor_fit("single_moonsemimajoraxis", here, "a$_{moon}$", a_unit)
+    # reprocess_moon_ecc_fit("single_mooneccentricity", here, "e$_{moon}$", e_unit)
+    # print(np.linspace(0.001, 0.008, 21)[13])
+    # print(np.linspace(0.000, 0.015, 21)[1:5])
+    # dual_moon_a_e_convergence(
+    #     conf,
+    #     np.linspace(0.001, 0.008, 21),
+    #     np.linspace(0.000, 0.015, 21),
+    #     rounding_dp=5,
+    # )
+    reprocess_paramspace(
+        "dual_moonsemimajoraxis_mooneccentricity",
+        here,
+        "a$_{moon}$",
+        "e$_{moon}$",
+        a_unit,
+        e_unit,
+    )
+    # reprocess_single_param("single_mooneccentricity", here, "e$_{moon}$", e_unit)
     # test_a_convergence(conf, np.linspace(0.5, 1.5, 101))
     # reprocess_semimajor_fit("single_gassemimajoraxis", here, "a", a_unit, 1e-3)
     # test_e_convergence(conf, np.linspace(0, 0.9, 51), 3)
     # reprocess_single_param("single_gaseccentricity", here, "e", e_unit, 1e-3)
     # reprocess_ecc_fit("single_gaseccentricity", here, "e", e_unit, 1e-3)
     # test_delta_convergence(conf, np.linspace(0, 180, 101))
-    reprocess_single_param(
-        "single_obliquity", here, "obliquity", obliquity_unit, rtol=1e-5, yravg=1
-    )
+    # reprocess_single_param(
+    #     "single_obliquity", here, "obliquity", obliquity_unit, rtol=1e-5, yravg=1
+    # )
