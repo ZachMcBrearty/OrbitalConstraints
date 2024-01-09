@@ -76,7 +76,7 @@ def plotdata(degs, temp, dt, start=0, end=None, numplot=10):
     plt.axhline(273, ls="--", label=r"0$^\circ$C")
     plt.ylabel("Temperature, K")
     plt.xlabel(r"$\lambda$, degrees")
-    plt.xticks(range(-90, 91, 15))
+    plt.xticks(list(range(-90, 91, 15)))
     plt.legend()
     plt.show()
 
@@ -250,7 +250,7 @@ def semimajor_fit_plot(
     tests[convtemps < 0] = np.nan
     convtemps[convtemps < 0] = np.nan
     # ax1.scatter(val_range, tests)
-    ax2.scatter(val_range, convtemps, c="b", marker="x")
+    ax2.scatter(val_range, convtemps, c="b", marker="x")  # type: ignore
     q = 51
     fit_xs = val_range[:q]
     fit_ys = convtemps[:q]
@@ -328,7 +328,7 @@ def moon_semimajor_fit_plot(
     tests[convtemps < 0] = np.nan
     convtemps[convtemps < 0] = np.nan
     # ax1.scatter(val_range, tests)
-    ax2.scatter(fit_xs, fit_ys, c="b", marker="x")
+    ax2.scatter(fit_xs, fit_ys, c="b", marker="x")  # type: ignore
 
     xs = np.linspace(fit_xs[0], fit_xs[-1], 100)
 
@@ -343,7 +343,7 @@ def moon_semimajor_fit_plot(
     # print(a, np.sqrt(np.diag(pcov)))
     # ys = fitter(xs, a)
 
-    ax2.plot(xs, ys, c="r", label="T = $(p + q\ a^{-15/2})^{1/4}$")
+    ax2.plot(xs, ys, c="r", label="T = $(p + q\ a^{-15/2})^{1/4}$")  # type: ignore
     ax3.scatter(
         fit_xs, fit_ys - fitter(fit_xs, *fits), label="T = $p_1$ a$^{-q_1}$ + r$_1$"
     )
@@ -475,7 +475,7 @@ def moon_ecc_fit_plot(
     if max(convtemps) > 373:
         ax1.axhline(373, 0, 1, ls="-.", label="373 K")
     ax1.scatter(fit_xs, fit_ys, label="Model data")
-    ax1.plot(xs, ys, label="$T = (p + q\ e^2)^{1/4}$ fit")
+    ax1.plot(xs, ys, label="$T = (p + q\ e^2)^{1/4}$ fit")  # type: ignore
     ax2.scatter(
         fit_xs,
         (fit_ys - fitter(fit_xs, *fits)),

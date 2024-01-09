@@ -78,6 +78,7 @@ def parallel_convergence_test(
     def t(conf_name, val_range, rounding_dp=3):
         if not os.path.exists(f"./single_{val_name}/"):
             os.mkdir(f"./single_{val_name}/")
+        t0 = 0
         if verbose:
             t0 = time()
             print(f"Starting {val_name}")
@@ -152,8 +153,8 @@ def gen_convergence_test(
 
         if plot:
             convergence_plot_single(
-                tests,
-                convtemps,
+                np.ndarray(tests, dtype=float),
+                np.ndarray(convtemps, dtype=float),
                 val_name,
                 val_range,
                 val_unit,
@@ -321,7 +322,6 @@ def gen_paramspace(
                 val_1_range,
                 val_name_2,
                 val_2_range,
-                rtol,
                 val_unit_1,
                 val_unit_2,
             )
