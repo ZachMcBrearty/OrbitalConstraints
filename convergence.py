@@ -63,7 +63,7 @@ def _do_single_test(
             f"Supplied config file either has no section {val_sec} or option {val_name}"
         )
     if verbose:
-        print(f"Running {val_name}={val}")
+        print(f"Running {val_name}={round(val, rounding_dp)}")
     conf.set(val_sec, val_name, str(val))
     degs, temps, times = climate_model_in_lat(conf)
     filename = f"./single_{val_name}/single_{val_name}_{round(val,rounding_dp)}.npz"
@@ -254,13 +254,26 @@ def parallel_gen_paramspace(
                         verbose,
                     )
                 )
+        t0 = time()
         with mp.Pool() as p:
             p.starmap(
                 _do_dual_test,
                 pairs,
             )
         if verbose:
-            print(f"Finished {val_1_name} {val_2_name}")
+            tf = time()
+            dt = tf - t0
+            if dt > 3600:
+                print(
+                    f"Finished {val_1_name} {val_2_name} in {dt//3600} hours {(dt %3600)//60} min {(dt %3600)%60} secs"
+                )
+            elif dt > 60:
+                print(
+                    f"Finished {val_1_name} {val_2_name} in {dt // 60} min {dt%60} secs"
+                )
+            else:
+                print(f"Finished {val_1_name} {val_2_name} in {dt} seconds")
+            # print(f"Finished {val_1_name} {val_2_name}")
 
     return t
 
@@ -710,19 +723,32 @@ if __name__ == "__main__":
     #     np.linspace(0.000, 0.015, 21),
     #     rounding_dp=5,
     # )
+    # reprocess_paramspace(
+    #     "dual_moonsemimajoraxis_mooneccentricity",
+    #     here,
+    #     "a$_{moon}$",
+    #     "e$_{moon}$",
+    #     a_unit,
+    #     e_unit,
+    # )
+    # reprocess_single_param("single_mooneccentricity", here, "e$_{moon}$", e_unit)
+    # test_a_convergence(conf, np.linspace(0.5, 2.5, 51), 5)
+    # test_e_convergence(conf, np.linspace(0, 0.9, 51), 5)
+    dual_a_e_convergence_parallel(
+        conf, np.linspace(0.5, 3, 11), np.linspace(0, 0.9, 11), 5
+    )
+    # reprocess_semimajor_fit
+    # reprocess_single_param("single_gassemimajoraxis", here, "a$_{gas}$", a_unit, 1e-3)
+    # reprocess_single_param("single_gaseccentricity", here, "e$_{gas}$", e_unit, 1e-3)
     reprocess_paramspace(
-        "dual_moonsemimajoraxis_mooneccentricity",
+        "dual_gassemimajoraxis_gaseccentricity",
         here,
-        "a$_{moon}$",
-        "e$_{moon}$",
+        "a$_{gas}$",
+        "e$_{gas}$",
         a_unit,
         e_unit,
+        rtol=1e-3,
     )
-    # reprocess_single_param("single_mooneccentricity", here, "e$_{moon}$", e_unit)
-    # test_a_convergence(conf, np.linspace(0.5, 1.5, 101))
-    # reprocess_semimajor_fit("single_gassemimajoraxis", here, "a", a_unit, 1e-3)
-    # test_e_convergence(conf, np.linspace(0, 0.9, 51), 3)
-    # reprocess_single_param("single_gaseccentricity", here, "e", e_unit, 1e-3)
     # reprocess_ecc_fit("single_gaseccentricity", here, "e", e_unit, 1e-3)
     # test_delta_convergence(conf, np.linspace(0, 180, 101))
     # reprocess_single_param(
