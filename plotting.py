@@ -511,37 +511,98 @@ def convergence_plot_dual(
     else:
         val_unit_2 = ", " + val_unit_2
 
-    fig, (ax1, ax2) = plt.subplots(2, 1)
-    ax1: plt.Axes
+    # fig, (ax1, ax2) = plt.subplots(2, 1)
+    fig, ax2 = plt.subplots(1, 1)
+    # ax1: plt.Axes
     ax2: plt.Axes
-    converge_time_map = ax1.pcolormesh(
-        val_1_range, val_2_range, tests.T, cmap="RdBu_r", shading="nearest"
-    )
+    # converge_time_map = ax1.pcolormesh(
+    #     val_1_range, val_2_range, tests.T, cmap="RdBu_r", shading="nearest"
+    # )
     converge_temp_map = ax2.pcolormesh(
         val_1_range, val_2_range, convtemps.T, cmap="RdBu_r", shading="nearest"
     )
 
-    roche = 0.00042492578167103155
+    roche = 0.00042492578167103155  # au
     for i, semi in enumerate(val_1_range):
         for j, ecc in enumerate(val_2_range):
             if semi * (1 - ecc) < roche:
                 print("rochelimit!", i, j, ecc, semi)
 
-    fig.colorbar(converge_time_map, ax=ax1, label="Time to converge, years")
+    # fig.colorbar(converge_time_map, ax=ax1, label="Time to converge, years")
     fig.colorbar(converge_temp_map, ax=ax2, label="Convergent Temperature, K")
-    ax1.set_ylabel(f"{val_name_2} {val_unit_2}")
-    ax1.set_xlabel(f"{val_name_1} {val_unit_1}")
+    # ax1.set_ylabel(f"{val_name_2} {val_unit_2}")
+    # ax1.set_xlabel(f"{val_name_1} {val_unit_1}")
     ax2.set_ylabel(f"{val_name_2} {val_unit_2}")
     ax2.set_xlabel(f"{val_name_1} {val_unit_1}")
 
-    ax1.set_xticks(val_1_range)
-    ax1.set_yticks(val_2_range)
+    # ax1.set_xticks(val_1_range)
+    # ax1.set_yticks(val_2_range)
     ax2.set_xticks(val_1_range)
     ax2.set_yticks(val_2_range)
-    ax1.set_xscale(x_axis_scale)
-    ax1.set_yscale(y_axis_scale)
+    # ax1.set_xscale(x_axis_scale)
+    # ax1.set_yscale(y_axis_scale)
     ax2.set_xscale(x_axis_scale)
     ax2.set_yscale(y_axis_scale)
+
+    plt.show()
+
+
+def convergence_plot_dual_compare(
+    tests_1,
+    convtemps_1,
+    tests_2,
+    convtemps_2,
+    val_name_1,
+    val_1_range_1,
+    val_1_range_2,
+    val_name_2,
+    val_2_range_1,
+    val_2_range_2,
+    val_unit_1=None,
+    val_unit_2=None,
+    x_axis_scale: Literal["linear", "log"] = "linear",
+    y_axis_scale: Literal["linear", "log"] = "linear",
+):
+    if val_unit_1 is None:
+        val_unit_1 = ""
+    else:
+        val_unit_1 = ", " + val_unit_1
+    if val_unit_2 is None:
+        val_unit_2 = ""
+    else:
+        val_unit_2 = ", " + val_unit_2
+
+    fig, (ax2, ax3) = plt.subplots(2, 1)
+    ax2: plt.Axes
+    ax3: plt.Axes
+    # converge_time_map = ax1.pcolormesh(
+    #     val_1_range, val_2_range, tests.T, cmap="RdBu_r", shading="nearest"
+    # )
+    converge_temp_map_1 = ax2.pcolormesh(
+        val_1_range_1, val_2_range_1, convtemps_1.T, cmap="RdBu_r", shading="nearest"
+    )
+    converge_temp_map_2 = ax3.pcolormesh(
+        val_1_range_2, val_2_range_2, convtemps_2.T, cmap="RdBu_r", shading="nearest"
+    )
+
+    # fig.colorbar(converge_time_map, ax=ax1, label="Time to converge, years")
+    fig.colorbar(converge_temp_map_1, ax=ax2, label="Convergent Temperature, K")
+    fig.colorbar(converge_temp_map_2, ax=ax3, label="Convergent Temperature, K")
+
+    ax2.set_ylabel(f"{val_name_2} {val_unit_2}")
+    ax2.set_xlabel(f"{val_name_1} {val_unit_1}")
+    ax3.set_ylabel(f"{val_name_2} {val_unit_2}")
+    ax3.set_xlabel(f"{val_name_1} {val_unit_1}")
+
+    ax2.set_xticks(val_1_range_1)
+    ax2.set_yticks(val_2_range_1)
+    ax3.set_xticks(val_1_range_2)
+    ax3.set_yticks(val_2_range_2)
+
+    ax2.set_xscale(x_axis_scale)
+    ax2.set_yscale(y_axis_scale)
+    ax3.set_xscale(x_axis_scale)
+    ax3.set_yscale(y_axis_scale)
 
     plt.show()
 

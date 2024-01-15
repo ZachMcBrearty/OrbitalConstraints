@@ -270,19 +270,122 @@ def habitability_paramspace(
     # ax1.legend(loc="lower right")
     plt.show()
 
+def habitability_paramspace_compare(
+    foldernames: tuple[str, str],
+    folderpaths: tuple[str, str],
+    val_1_name: str,
+    val_2_name: str,
+    val_1_unit: Optional[str] = None,
+    val_2_unit: Optional[str] = None,
+    year=90,
+    H=Habitable,
+):
+    val_1_range_1 = []
+    val_2_range_1 = []
+    total_habitability = []
+    data = read_dual_folder(foldernames[0], folderpaths[0])
+    for i, datum in enumerate(data):
+        val_1, val_2, (times, temps, degs) = datum
+        lats = np.deg2rad(degs)
+        dt = abs(times[1] - times[0])  # 1
+        dlat = abs(lats[1] - lats[0])
+        temps_red = temps.T[int(year / dt) : int((year + 1) / dt)]
+        times_red = times[int(year / dt) : int((year + 1) / dt)]
+        tot_hab = f_hab(temps_red, lats, dlat, times_red, dt, H=H)
+        if (q := float(val_1)) not in val_1_range_1:
+            val_1_range_1.append(q)
+        if (q := float(val_2)) not in val_2_range_1:
+            val_2_range_1.append(q)
+        total_habitability.append(tot_hab)
+    xl = len(val_1_range_1)
+    yl = len(val_2_range_1)
+    total_habitability_1 = np.array(total_habitability).reshape(xl, yl)
+
+    val_1_range_2 = []
+    val_2_range_2 = []
+    total_habitability = []
+    data = read_dual_folder(foldernames[1], folderpaths[1])
+    for i, datum in enumerate(data):
+        val_1, val_2, (times, temps, degs) = datum
+        lats = np.deg2rad(degs)
+        dt = abs(times[1] - times[0])  # 1
+        dlat = abs(lats[1] - lats[0])
+        temps_red = temps.T[int(year / dt) : int((year + 1) / dt)]
+        times_red = times[int(year / dt) : int((year + 1) / dt)]
+        tot_hab = f_hab(temps_red, lats, dlat, times_red, dt, H=H)
+        if (q := float(val_1)) not in val_1_range_2:
+            val_1_range_2.append(q)
+        if (q := float(val_2)) not in val_2_range_2:
+            val_2_range_2.append(q)
+        total_habitability.append(tot_hab)
+    xl = len(val_1_range_2)
+    yl = len(val_2_range_2)
+    total_habitability_2 = np.array(total_habitability).reshape(xl, yl)
+
+    if val_1_unit is None:
+        val_1_unit = ""
+    else:
+        val_1_unit = ", " + val_1_unit
+    if val_2_unit is None:
+        val_2_unit = ""
+    else:
+        val_2_unit = ", " + val_2_unit
+
+    fig, (ax1, ax2) = plt.subplots(2, 1)
+    ax1: plt.Axes
+    ax2: plt.Axes
+    tot_hab_map = ax1.pcolormesh(
+        val_1_range_1, val_2_range_1, total_habitability_1.T, cmap="RdBu_r", shading="nearest"
+    )
+    tot_hab_map = ax2.pcolormesh(
+        val_1_range_2, val_2_range_2, total_habitability_2.T, cmap="RdBu_r", shading="nearest"
+    )
+    fig.colorbar(tot_hab_map, ax=ax1, label="Total Habitability")
+    fig.colorbar(tot_hab_map, ax=ax2, label="Total Habitability")
+
+    ax1.set_ylabel(f"{val_2_name} {val_2_unit}")
+    ax1.set_xlabel(f"{val_1_name} {val_1_unit}")
+    ax2.set_ylabel(f"{val_2_name} {val_2_unit}")
+    ax2.set_xlabel(f"{val_1_name} {val_1_unit}")
+
+    plt.show()
 
 if __name__ == "__main__":
     import os
 
-    habitability_paramspace(
-        "dual_moonsemimajoraxis_mooneccentricity",
-        os.path.curdir,
+    here = os.path.curdir
+
+    habitability_paramspace_compare(
+        (
+            "dual_gassemimajoraxis_gaseccentricity",
+            "dual_gassemimajoraxis_gaseccentricity_TH_0.003_0.005",
+        ),
+        (here, here),
         "a$_{moon}$",
         "e$_{moon}$",
         a_unit,
         e_unit,
-        H=Habitable,
+        H=HumanCompatible,
     )
+
+    # habitability_paramspace(
+    #     "dual_gassemimajoraxis_gaseccentricity_TH_0.003_0.007",
+    #     os.path.curdir,
+    #     "a$_{moon}$",
+    #     "e$_{moon}$",
+    #     a_unit,
+    #     e_unit,
+    #     H=Habitable,
+    # )
+    # habitability_paramspace(
+    #     "dual_moonsemimajoraxis_mooneccentricity",
+    #     os.path.curdir,
+    #     "a$_{moon}$",
+    #     "e$_{moon}$",
+    #     a_unit,
+    #     e_unit,
+    #     H=Habitable,
+    # )
     # time_habitability_paramspace("single_a", os.path.curdir, "a", a_unit)
     # time_habitability_paramspace("single_gassemimajoraxis", os.path.curdir, "a", a_unit)
     # time_habitability_paramspace(

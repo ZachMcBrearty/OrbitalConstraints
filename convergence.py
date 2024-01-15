@@ -689,6 +689,75 @@ def reprocess_paramspace(
     )
 
 
+def reprocess_dual_compare(
+    foldernames: tuple[str, str],
+    folderpaths: tuple[str, str],
+    val_1_name: str,
+    val_2_name: str,
+    val_1_unit: Optional[str] = None,
+    val_2_unit: Optional[str] = None,
+    rtol: float = 0.0001,
+    x_axis_scale: Literal["linear", "log"] = "linear",
+    y_axis_scale: Literal["linear", "log"] = "linear",
+):
+    val_1_range_1 = []
+    val_2_range_1 = []
+    tests_1 = []
+    convtemps_1 = []
+    data_1 = read_dual_folder(foldernames[0], folderpaths[0])
+    for i, datum in enumerate(data_1):
+        val_1, val_2, (times, temps, degs) = datum
+        dt = (times[1] - times[0]) * 365
+        t, temp = convergence_test(temps, rtol, year_avg=1, dt=dt)
+        if (q := float(val_1)) not in val_1_range_1:
+            val_1_range_1.append(q)
+        if (q := float(val_2)) not in val_2_range_1:
+            val_2_range_1.append(q)
+        tests_1.append(t)
+        convtemps_1.append(temp)
+    xl = len(val_1_range_1)
+    yl = len(val_2_range_1)
+    tests_1 = np.array(tests_1).reshape(xl, yl)
+    convtemps_1 = np.array(convtemps_1).reshape(xl, yl)
+
+    val_1_range_2 = []
+    val_2_range_2 = []
+    tests_2 = []
+    convtemps_2 = []
+    data_2 = read_dual_folder(foldernames[1], folderpaths[1])
+    for i, datum in enumerate(data_2):
+        val_1, val_2, (times, temps, degs) = datum
+        dt = (times[1] - times[0]) * 365
+        t, temp = convergence_test(temps, rtol, year_avg=1, dt=dt)
+        if (q := float(val_1)) not in val_1_range_2:
+            val_1_range_2.append(q)
+        if (q := float(val_2)) not in val_2_range_2:
+            val_2_range_2.append(q)
+        tests_2.append(t)
+        convtemps_2.append(temp)
+    xl = len(val_1_range_2)
+    yl = len(val_2_range_2)
+    tests_2 = np.array(tests_2).reshape(xl, yl)
+    convtemps_2 = np.array(convtemps_2).reshape(xl, yl)
+    # convergence_plot_dual_with_fits(
+    convergence_plot_dual_compare(
+        tests_1,
+        convtemps_1,
+        tests_2,
+        convtemps_2,
+        val_1_name,
+        np.array(val_1_range_1),
+        np.array(val_1_range_2),
+        val_2_name,
+        np.array(val_2_range_1),
+        np.array(val_2_range_2),
+        val_1_unit,
+        val_2_unit,
+        x_axis_scale,
+        y_axis_scale,
+    )
+
+
 def reset_conf(conf):
     conf.set("FILEMANAGEMENT", "save", "False")
     conf.set("FILEMANAGEMENT", "plot", "False")
@@ -734,20 +803,32 @@ if __name__ == "__main__":
     # reprocess_single_param("single_mooneccentricity", here, "e$_{moon}$", e_unit)
     # test_a_convergence(conf, np.linspace(0.5, 2.5, 51), 5)
     # test_e_convergence(conf, np.linspace(0, 0.9, 51), 5)
-    dual_a_e_convergence_parallel(
-        conf, np.linspace(0.5, 3, 11), np.linspace(0, 0.9, 11), 5
-    )
+    # dual_a_e_convergence_parallel(
+    #     conf, np.linspace(0.5, 3.5, 21), np.linspace(0, 0.9, 21), 5
+    # )
     # reprocess_semimajor_fit
     # reprocess_single_param("single_gassemimajoraxis", here, "a$_{gas}$", a_unit, 1e-3)
     # reprocess_single_param("single_gaseccentricity", here, "e$_{gas}$", e_unit, 1e-3)
-    reprocess_paramspace(
-        "dual_gassemimajoraxis_gaseccentricity",
-        here,
+    # reprocess_paramspace(
+    #     "dual_gassemimajoraxis_gaseccentricity",
+    #     here,
+    #     "a$_{gas}$",
+    #     "e$_{gas}$",
+    #     a_unit,
+    #     e_unit,
+    #     rtol=1e-2,
+    # )
+    reprocess_dual_compare(
+        (
+            "dual_gassemimajoraxis_gaseccentricity",
+            "dual_gassemimajoraxis_gaseccentricity_TH_0.003_0.005",
+        ),
+        (here, here),
         "a$_{gas}$",
         "e$_{gas}$",
         a_unit,
         e_unit,
-        rtol=1e-3,
+        5e-3,
     )
     # reprocess_ecc_fit("single_gaseccentricity", here, "e", e_unit, 1e-3)
     # test_delta_convergence(conf, np.linspace(0, 180, 101))
