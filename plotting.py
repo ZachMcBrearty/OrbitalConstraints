@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from scipy.optimize import curve_fit
 
-from Constants import YEARTOSECOND
+from Constants import *
 
 
 def complexplotdata(degs, Temp, dt, Ir_emission, Source, Albedo, Capacity):
@@ -217,7 +217,7 @@ def convergence_plot_single(
     ax2.set_xscale(x_axis_scale)
     ax2.set_yscale(y_axis_scale)
     # ax1.set_ylabel("Time to converge, years")
-    ax2.set_ylabel("Global convergent temperature, K")
+    ax2.set_ylabel(global_conv_temp_name + ", " + temp_unit)
     ax2.legend()
     plt.show()
 
@@ -292,7 +292,7 @@ def semimajor_fit_plot(
     ax3.set_xscale(x_axis_scale)
     ax2.set_yscale(y_axis_scale)
     # ax1.set_ylabel("Time to converge, years")
-    ax2.set_ylabel("Global convergent temperature, K")
+    ax2.set_ylabel(global_conv_temp_name + ", " + temp_unit)
     ax3.set_ylabel("Residual, K")
     ax2.legend()
     plt.show()
@@ -358,7 +358,7 @@ def moon_semimajor_fit_plot(
     ax3.set_xscale(x_axis_scale)
     ax2.set_yscale(y_axis_scale)
     # ax1.set_ylabel("Time to converge, years")
-    ax2.set_ylabel("Global convergent temperature, K")
+    ax2.set_ylabel(global_conv_temp_name + ", " + temp_unit)
     ax3.set_ylabel("Residual, K")
     ax2.legend()
     plt.show()
@@ -393,7 +393,7 @@ def convergence_plot_single_compare(
     # ax1.set_xticks(np.linspace(min(val_range), max(val_range), 11))
     # ax2.set_xticks(np.linspace(min(val_range), max(val_range), 11))
     ax1.set_ylabel("Time to converge, years")
-    ax2.set_ylabel("Global convergent temperature, K")
+    ax2.set_ylabel(global_conv_temp_name + ", " + temp_unit)
     ax1.legend()
     ax2.legend()
     plt.show()
@@ -437,7 +437,7 @@ def ecc_fit_plot(
     # ax1.set_xticks(val_range)
     # ax2.set_xticks(val_range)
     ax2.set_ylabel("Residual")
-    ax1.set_ylabel("Global convergent temperature, K")
+    ax1.set_ylabel(global_conv_temp_name + ", " + temp_unit)
     ax1.legend()
     # ax2.legend()
     plt.show()
@@ -484,7 +484,7 @@ def moon_ecc_fit_plot(
     # ax1.set_xticks(val_range)
     # ax2.set_xticks(val_range)
     ax2.set_ylabel("Residual")
-    ax1.set_ylabel("Global convergent temperature, K")
+    ax1.set_ylabel(global_conv_temp_name + ", " + temp_unit)
     ax1.legend()
     # ax2.legend()
     plt.show()
@@ -529,7 +529,9 @@ def convergence_plot_dual(
                 print("rochelimit!", i, j, ecc, semi)
 
     # fig.colorbar(converge_time_map, ax=ax1, label="Time to converge, years")
-    fig.colorbar(converge_temp_map, ax=ax2, label="Convergent Temperature, K")
+    fig.colorbar(
+        converge_temp_map, ax=ax2, label=global_conv_temp_name + ", " + temp_unit
+    )
     # ax1.set_ylabel(f"{val_name_2} {val_unit_2}")
     # ax1.set_xlabel(f"{val_name_1} {val_unit_1}")
     ax2.set_ylabel(f"{val_name_2} {val_unit_2}")
@@ -586,8 +588,12 @@ def convergence_plot_dual_compare(
     )
 
     # fig.colorbar(converge_time_map, ax=ax1, label="Time to converge, years")
-    fig.colorbar(converge_temp_map_1, ax=ax2, label="Convergent Temperature, K")
-    fig.colorbar(converge_temp_map_2, ax=ax3, label="Convergent Temperature, K")
+    fig.colorbar(
+        converge_temp_map_1, ax=ax2, label=global_conv_temp_name + ", " + temp_unit
+    )
+    fig.colorbar(
+        converge_temp_map_2, ax=ax3, label=global_conv_temp_name + ", " + temp_unit
+    )
 
     ax2.set_ylabel(f"{val_name_2} {val_unit_2}")
     ax2.set_xlabel(f"{val_name_1} {val_unit_1}")
@@ -640,7 +646,9 @@ def convergence_plot_dual_with_fits(
     )
 
     # fig.colorbar(converge_time_map, ax=ax1, label="Time to converge, years")
-    fig.colorbar(converge_temp_map, ax=ax2, label="Convergent Temperature, K")
+    fig.colorbar(
+        converge_temp_map, ax=ax2, label=global_conv_temp_name + ", " + temp_unit
+    )
 
     fit_xs = []
     fit_ys = []

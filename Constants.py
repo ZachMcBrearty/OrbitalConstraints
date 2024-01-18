@@ -9,12 +9,28 @@ CONF_PARSER_TYPE: TypeAlias = ConfigParser
 
 YEARTOSECOND = 365.25 * 24 * 3600  # s / yr
 
+spacedim_name = "Number of spatial nodes, S"
 spacedim_unit = None
+
+timestep_unit = r"Timestep, $\Delta t$"
 timestep_unit = "days"
+
+temp_name = "Temperature, T"
+global_conv_temp_name = "Global convergent temperature, <T>"
 temp_unit = "K"
+
+omega_name = r"Rotation Rate, $\Omega$"
 omega_unit = "days$^{-1}$"
+
+obliquity_name = r"Obliquity, $\delta$"
 obliquity_unit = r"$^{\circ}$"
+
+agas_name = "Gas giant semimajoraxis, $a_{gas}$"
+amoon_name = "Moon semimajoraxis, $a_{moon}$"
 a_unit = "au"
+
+egas_name = "Gas giant eccentricity, $e_{gas}$"
+emoon_name = "Moon eccentricity, $e_{moon}$"
 e_unit = None
 
 gas_mass_unit = r"M$_{Jupiter}$"

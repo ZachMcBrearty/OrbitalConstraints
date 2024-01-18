@@ -791,58 +791,15 @@ if __name__ == "__main__":
     here = os.path.curdir
     # here = "D:/"
     conf = "config.ini"
-    # test_moon_a_convergence(conf, np.linspace(0.001, 0.008, 21), 5)
-    # test_moon_e_convergence(conf, np.linspace(0.000, 0.015, 21), 5)
-    # reprocess_moon_semimajor_fit("single_moonsemimajoraxis", here, "a$_{moon}$", a_unit)
-    # reprocess_moon_ecc_fit("single_mooneccentricity", here, "e$_{moon}$", e_unit)
-    # print(np.linspace(0.001, 0.008, 21)[13])
-    # print(np.linspace(0.000, 0.015, 21)[1:5])
-    # dual_moon_a_e_convergence(
-    #     conf,
-    #     np.linspace(0.001, 0.008, 21),
-    #     np.linspace(0.000, 0.015, 21),
-    #     rounding_dp=5,
-    # )
-    # reprocess_paramspace(
-    #     "dual_moonsemimajoraxis_mooneccentricity",
-    #     here,
-    #     "a$_{moon}$",
-    #     "e$_{moon}$",
-    #     a_unit,
-    #     e_unit,
-    # )
-    # reprocess_single_param("single_mooneccentricity", here, "e$_{moon}$", e_unit)
-    # test_a_convergence(conf, np.linspace(0.5, 10.5, 51), 5)
-    # test_e_convergence(conf, np.linspace(0, 0.9, 51), 5)
     dual_a_e_convergence_parallel(
         conf, np.linspace(0.5, 2, 31), np.linspace(0, 0.9, 31), 5
     )
-    # reprocess_semimajor_fit
-    # reprocess_single_param("single_gassemimajoraxis", here, "a$_{gas}$", a_unit, 1e-3)
-    # reprocess_single_param("single_gaseccentricity", here, "e$_{gas}$", e_unit, 1e-3)
     reprocess_paramspace(
         "dual_gassemimajoraxis_gaseccentricity",
         here,
-        "a$_{gas}$",
-        "e$_{gas}$",
+        agas_name,
+        egas_name,
         a_unit,
         e_unit,
         rtol=1e-2,
     )
-    # reprocess_dual_compare(
-    #     (
-    #         "dual_gassemimajoraxis_gaseccentricity_TH_0",
-    #         "dual_gassemimajoraxis_gaseccentricity_TH_0.003_0.008",
-    #     ),
-    #     (here, here),
-    #     "a$_{gas}$",
-    #     "e$_{gas}$",
-    #     a_unit,
-    #     e_unit,
-    #     5e-3,
-    # )
-    # reprocess_ecc_fit("single_gaseccentricity", here, "e", e_unit, 1e-3)
-    # test_delta_convergence(conf, np.linspace(0, 180, 101))
-    # reprocess_single_param(
-    #     "single_obliquity", here, "obliquity", obliquity_unit, rtol=1e-5, yravg=1
-    # )
