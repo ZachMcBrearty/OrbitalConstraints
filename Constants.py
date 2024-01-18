@@ -41,3 +41,20 @@ RADIUS = {  # m
     "earth": 6.371e6,
     "luna": 1.7374e6,
 }
+
+DISTANCE = {  # m
+    "mercury": 57.91e9,
+    "venus": 108.21e9,
+    "earth": 149.6e9,
+    "mars": 227.92e9,
+    "asteroidbelt": 414.012e9,  # Ceres
+    "jupiter": 778.57e9,
+    "saturn": 1433.53e9,
+    "uranus": 2872.46e9,
+    "neptune": 4495.06e9,
+    "kuiperbelt": 5906.38e9,  # Pluto
+}
+
+if __name__ == "__main__":
+    for dist in DISTANCE:
+        print(dist, DISTANCE[dist], "m", DISTANCE[dist] / AU, "AU")
