@@ -224,6 +224,8 @@ def habitability_paramspace(
         total_habitability.append(tot_hab)
     xl = len(val_1_range)
     yl = len(val_2_range)
+    val_1_range = np.array(val_1_range)
+    val_2_range = np.array(val_2_range)
     total_habitability = np.array(total_habitability).reshape(xl, yl)
 
     if val_1_unit is None:
@@ -242,26 +244,10 @@ def habitability_paramspace(
     )
     fig.colorbar(tot_hab_map, ax=ax1, label="Total Habitability")
 
-    # x = 2
-    # xs = 0.658
-    # y = 12
-    # ys = 0.568
-    # T = 373.19809023566785
-    # xs = np.linspace(0.5, 1, 100)
-    # k = 1 / ((1 - 0.568**2) * 0.658**4)
-    # fit = lambda x: (1 - 1 / (k * x**4)) ** (1 / 2)
-    # ys = fit(xs)
-    # ax1.plot(xs, ys, c="m", label=r"$a \propto (1-e^2)^{-1/4}, T \approx 373$K")
+    k = 1 / (val_1_range[10] * (1 - val_2_range[0]))
+    es = np.sqrt(1 - 1 / (val_1_range**4 * k))
+    ax1.plot(val_1_range, es)
 
-    # x = 11
-    # xs = 1.368
-    # y = 18
-    # ys = 0.853
-    # T = 274.12797490217696
-    # xs = np.linspace(0.9, 2, 100)
-    # k = 1 / ((1 - 0.853**2) * 1.368**4)
-    # fit = lambda x: (1 - 1 / (k * x**4)) ** (1 / 2)
-    # ys = fit(xs)
     # ax1.plot(xs, ys, c="m", label=r"$a \propto (1-e^2)^{-1/4}, T \approx 273$K")
 
     ax1.set_ylabel(f"{val_2_name} {val_2_unit}")
@@ -269,6 +255,7 @@ def habitability_paramspace(
 
     # ax1.legend(loc="lower right")
     plt.show()
+
 
 def habitability_paramspace_compare(
     foldernames: tuple[str, str],
@@ -335,10 +322,18 @@ def habitability_paramspace_compare(
     ax1: plt.Axes
     ax2: plt.Axes
     tot_hab_map = ax1.pcolormesh(
-        val_1_range_1, val_2_range_1, total_habitability_1.T, cmap="RdBu_r", shading="nearest"
+        val_1_range_1,
+        val_2_range_1,
+        total_habitability_1.T,
+        cmap="RdBu_r",
+        shading="nearest",
     )
     tot_hab_map = ax2.pcolormesh(
-        val_1_range_2, val_2_range_2, total_habitability_2.T, cmap="RdBu_r", shading="nearest"
+        val_1_range_2,
+        val_2_range_2,
+        total_habitability_2.T,
+        cmap="RdBu_r",
+        shading="nearest",
     )
     fig.colorbar(tot_hab_map, ax=ax1, label="Total Habitability")
     fig.colorbar(tot_hab_map, ax=ax2, label="Total Habitability")
@@ -350,23 +345,24 @@ def habitability_paramspace_compare(
 
     plt.show()
 
+
 if __name__ == "__main__":
     import os
 
     here = os.path.curdir
 
-    habitability_paramspace_compare(
-        (
-            "dual_gassemimajoraxis_gaseccentricity",
-            "dual_gassemimajoraxis_gaseccentricity_TH_0.003_0.005",
-        ),
-        (here, here),
-        "a$_{moon}$",
-        "e$_{moon}$",
-        a_unit,
-        e_unit,
-        H=HumanCompatible,
-    )
+    # habitability_paramspace_compare(
+    #     (
+    #         "dual_gassemimajoraxis_gaseccentricity_TH_0",
+    #         "dual_gassemimajoraxis_gaseccentricity_TH_0.003_0.005",
+    #     ),
+    #     (here, here),
+    #     "a$_{moon}$",
+    #     "e$_{moon}$",
+    #     a_unit,
+    #     e_unit,
+    #     H=Habitable,
+    # )
 
     # habitability_paramspace(
     #     "dual_gassemimajoraxis_gaseccentricity_TH_0.003_0.007",
@@ -387,7 +383,20 @@ if __name__ == "__main__":
     #     H=Habitable,
     # )
     # time_habitability_paramspace("single_a", os.path.curdir, "a", a_unit)
-    # time_habitability_paramspace("single_gassemimajoraxis", os.path.curdir, "a", a_unit)
+    # time_habitability_paramspace(
+    #     "single_gassemimajoraxis_TH_0.003_0.008",
+    #     os.path.curdir,
+    #     "a",
+    #     a_unit,
+    #     H=HumanCompatible,
+    # )
+    # area_habitability_paramspace(
+    #     "single_gassemimajoraxis_TH_0.003_0.008",
+    #     os.path.curdir,
+    #     "a",
+    #     a_unit,
+    #     H=HumanCompatible,
+    # )
     # time_habitability_paramspace(
     #     "single_moonsemimajoraxis", os.path.curdir, "a", a_unit, H=BioCompatible
     # )
@@ -424,15 +433,16 @@ if __name__ == "__main__":
     # )
 
     # habitability_paramspace("dual_a_e", os.path.curdir, "a", "e", a_unit, e_unit)
-    # habitability_paramspace(
-    #     "dual_gassemimajoraxis_gaseccentricity",
-    #     os.path.curdir,
-    #     "a$_{gas}$",
-    #     "e$_{gas}$",
-    #     a_unit,
-    #     e_unit,
-    #     year=90,
-    # )
+    habitability_paramspace(
+        "dual_gassemimajoraxis_gaseccentricity",
+        os.path.curdir,
+        "a$_{gas}$",
+        "e$_{gas}$",
+        a_unit,
+        e_unit,
+        year=90,
+        H=HumanCompatible,
+    )
     # habitability_paramspace(
     #     "dual_moonsemimajoraxis_mooneccentricity",
     #     os.path.curdir,
