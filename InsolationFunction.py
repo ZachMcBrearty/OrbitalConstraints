@@ -75,7 +75,12 @@ def S(
     r_moon_to_gas: distance from gas giant to the moon, AU
 
     returns: S, solar insolation, J s^-1 m^-2"""
-    q_0 = 1360 * (1 + (1 - A_gas) / (4 * (AU * r_moon_to_gas) ** 2))  # Wm^-2
+    q_0 = 1360 * (
+        1
+        + (1 - A_gas)
+        * (rad_gas * RADIUS["jupiter"]) ** 2
+        / (4 * (AU * r_moon_to_gas) ** 2)
+    )  # Wm^-2
     delta_ = delta(a, t, delta_0)
     cosdelta = np.cos(delta_)
     sindelta = np.sin(delta_)
