@@ -200,6 +200,7 @@ def _do_dual_test(
     val_2,
     rounding_dp=3,
     verbose=True,
+    overwrite=False,
 ) -> None:
     conf = load_config(conf_name)
     if not conf.has_option(val_1_sec, val_1_name):
@@ -210,14 +211,22 @@ def _do_dual_test(
         raise ValueError(
             f"Supplied config file has no section {val_2_sec} or option {val_2_name}"
         )
-    if verbose:
+
+    filename = f"./dual_{val_1_name}_{val_2_name}/dual_{val_1_name}_{round(val_1,rounding_dp)}_{val_2_name}_{round(val_2, rounding_dp)}.npz"
+    if not overwrite and os.path.exists(filename):
+        if verbose:
+            print(
+                f"Skipping {val_1_name}={round(val_1, rounding_dp)}, {val_2_name}={round(val_2, rounding_dp)}"
+            )
+        return
+    elif verbose:
         print(
             f"Running {val_1_name}={round(val_1, rounding_dp)}, {val_2_name}={round(val_2, rounding_dp)}"
         )
     conf.set(val_1_sec, val_1_name, str(val_1))
     conf.set(val_2_sec, val_2_name, str(val_2))
     degs, temps, times = climate_model_in_lat(conf)
-    filename = f"./dual_{val_1_name}_{val_2_name}/dual_{val_1_name}_{round(val_1,rounding_dp)}_{val_2_name}_{round(val_2, rounding_dp)}.npz"
+
     write_to_file(times, temps, degs, filename)
 
 
@@ -233,6 +242,7 @@ def parallel_gen_paramspace(
         val_1_range: list | NDArray,
         val_2_range: list | NDArray,
         rounding_dp=3,
+        overwrite=False,
     ) -> None:
         if not os.path.exists(f"./dual_{val_1_name}_{val_2_name}/"):
             os.mkdir(f"./dual_{val_1_name}_{val_2_name}/")
@@ -252,6 +262,7 @@ def parallel_gen_paramspace(
                         val_2,
                         rounding_dp,
                         verbose,
+                        overwrite,
                     )
                 )
         t0 = time()
@@ -801,35 +812,35 @@ if __name__ == "__main__":
     #     e_unit,
     # )
     # reprocess_single_param("single_mooneccentricity", here, "e$_{moon}$", e_unit)
-    # test_a_convergence(conf, np.linspace(0.5, 2.5, 51), 5)
+    # test_a_convergence(conf, np.linspace(0.5, 10.5, 51), 5)
     # test_e_convergence(conf, np.linspace(0, 0.9, 51), 5)
-    # dual_a_e_convergence_parallel(
-    #     conf, np.linspace(0.5, 3.5, 21), np.linspace(0, 0.9, 21), 5
-    # )
+    dual_a_e_convergence_parallel(
+        conf, np.linspace(0.5, 2, 31), np.linspace(0, 0.9, 31), 5
+    )
     # reprocess_semimajor_fit
     # reprocess_single_param("single_gassemimajoraxis", here, "a$_{gas}$", a_unit, 1e-3)
     # reprocess_single_param("single_gaseccentricity", here, "e$_{gas}$", e_unit, 1e-3)
-    # reprocess_paramspace(
-    #     "dual_gassemimajoraxis_gaseccentricity",
-    #     here,
-    #     "a$_{gas}$",
-    #     "e$_{gas}$",
-    #     a_unit,
-    #     e_unit,
-    #     rtol=1e-2,
-    # )
-    reprocess_dual_compare(
-        (
-            "dual_gassemimajoraxis_gaseccentricity",
-            "dual_gassemimajoraxis_gaseccentricity_TH_0.003_0.005",
-        ),
-        (here, here),
+    reprocess_paramspace(
+        "dual_gassemimajoraxis_gaseccentricity",
+        here,
         "a$_{gas}$",
         "e$_{gas}$",
         a_unit,
         e_unit,
-        5e-3,
+        rtol=1e-2,
     )
+    # reprocess_dual_compare(
+    #     (
+    #         "dual_gassemimajoraxis_gaseccentricity_TH_0",
+    #         "dual_gassemimajoraxis_gaseccentricity_TH_0.003_0.008",
+    #     ),
+    #     (here, here),
+    #     "a$_{gas}$",
+    #     "e$_{gas}$",
+    #     a_unit,
+    #     e_unit,
+    #     5e-3,
+    # )
     # reprocess_ecc_fit("single_gaseccentricity", here, "e", e_unit, 1e-3)
     # test_delta_convergence(conf, np.linspace(0, 180, 101))
     # reprocess_single_param(
