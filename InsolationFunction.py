@@ -14,8 +14,6 @@ import numpy.typing as npt
 
 from Constants import *
 
-floatarr = npt.NDArray[np.float64]
-
 
 def delta(a: float | floatarr, t: float | floatarr, delta_0: float) -> float | floatarr:
     """Combining equations A2, A3, and partially A4 to get δ

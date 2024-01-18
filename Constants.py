@@ -72,5 +72,5 @@ DISTANCE = {  # m
 }
 
 if __name__ == "__main__":
-    for dist in DISTANCE:
-        print(dist, DISTANCE[dist], "m", DISTANCE[dist] / AU, "AU")
+    for dist_ in DISTANCE:
+        print(dist_, DISTANCE[dist_], "m", DISTANCE[dist_] / AU, "AU")
