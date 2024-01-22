@@ -16,7 +16,7 @@ timestep_unit = r"Timestep, $\Delta t$"
 timestep_unit = "days"
 
 temp_name = "Temperature, T"
-global_conv_temp_name = "Global convergent temperature, <T>"
+global_conv_temp_name = r"Equilibrium temperature, $\langle$T$\rangle$"
 temp_unit = "K"
 
 omega_name = r"Rotation Rate, $\Omega$"
