@@ -267,6 +267,7 @@ def generalised_single_fit_plot(
         convtemps[model_range[0] : model_range[1]]
         - model_function(val_range[model_range[0] : model_range[1]], *fit_parameters),
         c="b",
+        marker=markers.MarkerStyle("x"),
     )
     # share-x is used so only the bottom graph needs to have the x-label
     ax2.set_xlabel(f"{val_name}{val_unit}")
@@ -325,7 +326,9 @@ def generalised_N_fit_plot(
             val_range[model_range[0] : model_range[1]],
             convtemps[model_range[0] : model_range[1]],
         )
-        print(f"Model {i}: {model_function_label}: {fit_parameters} +/- {np.sqrt(np.diag(pcov))}")
+        print(
+            f"Model {i}: {model_function_label}: {fit_parameters} +/- {np.sqrt(np.diag(pcov))}"
+        )
         fit_xs = np.linspace(val_range[model_range[0]], val_range[model_range[1]], 101)
         fit_ys = model_function(fit_xs, *fit_parameters)
         # plot the model on the main graph
@@ -339,6 +342,7 @@ def generalised_N_fit_plot(
                 val_range[model_range[0] : model_range[1]], *fit_parameters
             ),
             c="b",
+            marker=markers.MarkerStyle("x"),
         )
     # share-x is used so only the bottom graph needs to have the x-label
     ax2.set_xlabel(f"{val_name}{val_unit}")
