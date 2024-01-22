@@ -1,6 +1,7 @@
 from typing import Optional, Literal
 
 import matplotlib.pyplot as plt
+from matplotlib import markers
 import numpy as np
 from scipy.optimize import curve_fit
 
@@ -45,22 +46,22 @@ def complexplotdata(degs, Temp, dt, Ir_emission, Source, Albedo, Capacity):
 def yearavgplot(degs, temp, dt, start_yr=0, end_yr=None, year_skip=1):
     if end_yr is None:
         end_yr = len(temp[0, :]) // 365
-    fig, (ax, ax2) = plt.subplots(2, 1)
+    fig, (ax, ax2) = plt.subplots(2, 1, height_ratios=[2, 1])
     for n in range(start_yr, end_yr, year_skip):
         yr_avg = np.average(temp[:, n * 365 : (n + 1) * 365], axis=1)
-        a = ax.plot(degs, yr_avg, label=f"t={n} yrs")
-    a[0].set_marker("x")  # type:ignore
+        a = ax.plot(degs, yr_avg, label=f"EBCM")
+    # a[0].set_marker("x")  # type:ignore
     ax.plot(
         degs,
         302.3 - 45.3 * np.sin(np.deg2rad(degs)) ** 2,
-        marker=".",
+        # marker=".",
         ls="--",
-        label="fit",
+        label="NC97",
     )
-    ax2.plot(degs, np.abs(yr_avg - (302.3 - 45.3 * np.sin(np.deg2rad(degs)) ** 2)))  # type: ignore
+    ax2.scatter(degs, (yr_avg - (302.3 - 45.3 * np.sin(np.deg2rad(degs)) ** 2)))  # type: ignore
     ax.axhline(273, ls="--", label=r"0$^\circ$C")
     ax.set_ylabel("Average Temperature, K")
-    ax2.set_ylabel("Variation from fit, K")
+    ax2.set_ylabel("EBCM - NC97, K")
     ax2.set_xlabel(r"$\lambda$")
     ax.set_xticks(range(-90, 91, 15))
     ax2.set_xticks(range(-90, 91, 15))
@@ -222,6 +223,141 @@ def convergence_plot_single(
     plt.show()
 
 
+def generalised_single_fit_plot(
+    tests: NDArray,
+    convtemps: NDArray,
+    val_name: str,
+    val_range: NDArray,
+    model_function,
+    model_range: tuple[int, int] = (0, -1),
+    model_function_label: str = "Fitting model",
+    val_unit: Optional[str] = None,
+    x_axis_scale: Literal["linear", "log"] = "linear",
+    y_axis_scale: Literal["linear", "log"] = "linear",
+):
+    """model_function: f(xdata, *params)"""
+    if val_unit is None:
+        val_unit = ""
+    else:
+        val_unit = ", " + val_unit
+
+    fig, (ax1, ax2) = plt.subplots(2, 1, height_ratios=(2, 1), sharex="all")
+    ax1: plt.Axes
+    ax2: plt.Axes
+    if min(convtemps) < 273:
+        ax1.axhline(273, 0, 1, ls="-.", label="273 K")
+    if max(convtemps) > 373:
+        ax1.axhline(373, 0, 1, ls="-.", label="373 K")
+    # plot the model data on the main graph
+    ax1.scatter(val_range, convtemps, c="b", marker=markers.MarkerStyle("x"))
+    # find model parameters
+    fit_parameters, pcov = curve_fit(
+        model_function,
+        val_range[model_range[0] : model_range[1]],
+        convtemps[model_range[0] : model_range[1]],
+    )
+    fit_xs = np.linspace(val_range[model_range[0]], val_range[model_range[1]], 101)
+    fit_ys = model_function(fit_xs, *fit_parameters)
+    # plot the model on the main graph
+    ax1.plot(fit_xs, fit_ys, c="r", label=model_function_label)
+
+    # plot residuals on secondary graph
+    ax2.scatter(
+        val_range[model_range[0] : model_range[1]],
+        convtemps[model_range[0] : model_range[1]]
+        - model_function(val_range[model_range[0] : model_range[1]], *fit_parameters),
+        c="b",
+    )
+    # share-x is used so only the bottom graph needs to have the x-label
+    ax2.set_xlabel(f"{val_name}{val_unit}")
+
+    ax1.set_ylabel(global_conv_temp_name + ", " + temp_unit)
+    ax2.set_ylabel("Residual, K")
+
+    # use user selected x-axis scale for both
+    ax1.set_xscale(x_axis_scale)
+    ax2.set_xscale(x_axis_scale)
+    # use user selected y-axis only for the main plot as residual is always linear
+    ax1.set_yscale(y_axis_scale)
+
+    ax1.legend()
+
+    plt.tight_layout()
+    plt.show()
+
+
+def generalised_N_fit_plot(
+    tests: NDArray,
+    convtemps: NDArray,
+    val_name: str,
+    val_range: NDArray,
+    model_functions: list,
+    model_ranges: list[tuple[int, int]],
+    model_function_labels: list[str],
+    val_unit: Optional[str] = None,
+    x_axis_scale: Literal["linear", "log"] = "linear",
+    y_axis_scale: Literal["linear", "log"] = "linear",
+):
+    """model_function: f(xdata, *params)"""
+    assert len(model_functions) == len(model_function_labels) == len(model_ranges)
+    if val_unit is None:
+        val_unit = ""
+    else:
+        val_unit = ", " + val_unit
+
+    fig, (ax1, ax2) = plt.subplots(2, 1, height_ratios=(2, 1), sharex="all")
+    ax1: plt.Axes
+    ax2: plt.Axes
+    if min(convtemps) < 273:
+        ax1.axhline(273, 0, 1, ls="-.", label="273 K")
+    if max(convtemps) > 373:
+        ax1.axhline(373, 0, 1, ls="-.", label="373 K")
+    # plot the model data on the main graph
+    ax1.scatter(val_range, convtemps, c="b", marker=markers.MarkerStyle("x"))
+    # find model parameters
+    for i in range(len(model_functions)):
+        model_function = model_functions[i]
+        model_range = model_ranges[i]
+        model_function_label = model_function_labels[i]
+
+        fit_parameters, pcov = curve_fit(
+            model_function,
+            val_range[model_range[0] : model_range[1]],
+            convtemps[model_range[0] : model_range[1]],
+        )
+        print(f"Model {i}: {model_function_label}: {fit_parameters} +/- {np.sqrt(np.diag(pcov))}")
+        fit_xs = np.linspace(val_range[model_range[0]], val_range[model_range[1]], 101)
+        fit_ys = model_function(fit_xs, *fit_parameters)
+        # plot the model on the main graph
+        ax1.plot(fit_xs, fit_ys, c="r", label=model_function_label)
+
+        # plot residuals on secondary graph
+        ax2.scatter(
+            val_range[model_range[0] : model_range[1]],
+            convtemps[model_range[0] : model_range[1]]
+            - model_function(
+                val_range[model_range[0] : model_range[1]], *fit_parameters
+            ),
+            c="b",
+        )
+    # share-x is used so only the bottom graph needs to have the x-label
+    ax2.set_xlabel(f"{val_name}{val_unit}")
+
+    ax1.set_ylabel(global_conv_temp_name + ", " + temp_unit)
+    ax2.set_ylabel("Residual, K")
+
+    # use user selected x-axis scale for both
+    ax1.set_xscale(x_axis_scale)
+    ax2.set_xscale(x_axis_scale)
+    # use user selected y-axis only for the main plot as residual is always linear
+    ax1.set_yscale(y_axis_scale)
+
+    ax1.legend()
+
+    plt.tight_layout()
+    plt.show()
+
+
 def semimajor_fit_plot(
     tests: np.ndarray,
     convtemps: np.ndarray,
@@ -230,6 +366,7 @@ def semimajor_fit_plot(
     val_unit: Optional[str] = None,
     x_axis_scale: Literal["linear", "log"] = "linear",
     y_axis_scale: Literal["linear", "log"] = "linear",
+    middle=51,
 ):
     if val_unit is None:
         val_unit = ""
@@ -239,7 +376,7 @@ def semimajor_fit_plot(
     # fit_range = np.linspace(min(val_range), max(val_range), 100, endpoint=True)
     # fit_vals = convtemps[0] * (1 - fit_range**2) ** (-1 / 4)
     # fig, (ax1, ax2) = plt.subplots(2, 1)
-    fig, (ax2, ax3) = plt.subplots(2, 1)
+    fig, (ax2, ax3) = plt.subplots(2, 1, height_ratios=(2, 1), sharex="all")
     # ax1: plt.Axes
     ax2: plt.Axes
     ax3: plt.Axes
@@ -251,7 +388,7 @@ def semimajor_fit_plot(
     convtemps[convtemps < 0] = np.nan
     # ax1.scatter(val_range, tests)
     ax2.scatter(val_range, convtemps, c="b", marker="x")  # type: ignore
-    q = 51
+    q = middle
     fit_xs = val_range[:q]
     fit_ys = convtemps[:q]
     xs = np.linspace(fit_xs[0], fit_xs[-1], 100)
@@ -282,12 +419,8 @@ def semimajor_fit_plot(
     ax2.plot(xs, ys, c="g", label="T = $p_2$ a$^{-q_2}$")
     ax3.scatter(fit_xs, fit_ys - fitter(fit_xs, a, b), label="T = $p_2$ a$^{-q_2}$")
 
-    ax2.set_xlabel(f"{val_name} {val_unit}")
-    ax3.set_xlabel(f"{val_name} {val_unit}")
-    # ax1.set_xticks(np.linspace(min(val_range), max(val_range), 11))
-    # ax2.set_xticks(np.linspace(min(val_range), max(val_range), 11))
-    # ax1.set_xscale(x_axis_scale)
-    # ax1.set_yscale(y_axis_scale)
+    # ax2.set_xlabel(f"{val_name} {val_unit}")
+    ax3.set_xlabel(f"{val_name}{val_unit}")
     ax2.set_xscale(x_axis_scale)
     ax3.set_xscale(x_axis_scale)
     ax2.set_yscale(y_axis_scale)
@@ -295,6 +428,7 @@ def semimajor_fit_plot(
     ax2.set_ylabel(global_conv_temp_name + ", " + temp_unit)
     ax3.set_ylabel("Residual, K")
     ax2.legend()
+    plt.tight_layout()
     plt.show()
 
 
@@ -420,15 +554,17 @@ def ecc_fit_plot(
     print(a, np.sqrt(np.diag(pcov)))
     ys = fitter(xs, a)
 
-    fig, (ax1, ax2) = plt.subplots(2, 1)
+    fig, (ax1, ax2) = plt.subplots(2, 1, height_ratios=(2, 1), sharex="all")
     ax1: plt.Axes
     ax2: plt.Axes
     if min(convtemps) < 273:
         ax1.axhline(273, 0, 1, ls="-.", label="273 K")
     if max(convtemps) > 373:
         ax1.axhline(373, 0, 1, ls="-.", label="373 K")
-    ax1.scatter(val_range, convtemps, label="Model data")
-    ax1.plot(xs, ys, label="$T = p *(1-e^2)^{-1/8}$ fit")
+    ax1.scatter(
+        val_range, convtemps, marker="x", linewidths=1, label="Model data"
+    )  # type:ignore
+    ax1.plot(xs, ys, label="$T = p (1-e^2)^{-1/8}$ fit")
     ax2.scatter(
         val_range,
         (convtemps - fitter(val_range, a)),
@@ -440,6 +576,7 @@ def ecc_fit_plot(
     ax1.set_ylabel(global_conv_temp_name + ", " + temp_unit)
     ax1.legend()
     # ax2.legend()
+    plt.tight_layout()
     plt.show()
 
 
@@ -812,12 +949,14 @@ if __name__ == "__main__":
     # # q2 = read_file("single_omega/single_omega_2.42.npz")
     # # threecolourplot(q0, q1, q2, None, None, 1)
 
-    times, temps, degs = read_file("omega.npz")
+    times, temps, degs = read_file(
+        "dual_gassemimajoraxis_gaseccentricity/dual_gassemimajoraxis_1.0_gaseccentricity_0.0.npz"
+    )
     dt = times[1] - times[0]
     # colourplot(degs, temps, times, 90, None, 1)
     # plotdata(degs, temps, dt, int(365 * 90.5), int(365 * 91.5), 12)
     # print(convergence_test(temps, rtol=0.0001))
-    # yearavgplot(degs, temps, dt, 90, 120, 1)
+    yearavgplot(degs, temps, dt, 90, 100, 10)
 
     # colourplot(degs, temps, times, None, None, 1, None, None)
 
