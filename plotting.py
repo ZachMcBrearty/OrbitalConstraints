@@ -143,7 +143,7 @@ def threecolourplot(
     else:
         yr_end = (yr_end + 1) * 365
 
-    fig, (ax1, ax2, ax3) = plt.subplots(3, 1)
+    fig, (ax1, ax2, ax3) = plt.subplots(3, 1, sharex=True)
     cmap = "RdBu_r"
     ts = plt1[0][yr_start : yr_end : year_avg * 365]
 
@@ -164,11 +164,11 @@ def threecolourplot(
     ax1.set_ylabel("latitude, degrees")
     ax2.set_ylabel("latitude, degrees")
     ax3.set_ylabel("latitude, degrees")
-    ax1.set_yticks(np.linspace(-90, 90, 9, endpoint=True))
-    ax2.set_yticks(np.linspace(-90, 90, 9, endpoint=True))
-    ax3.set_yticks(np.linspace(-90, 90, 9, endpoint=True))
+    ax1.set_yticks(np.linspace(-90, 90, 7, endpoint=True))
+    ax2.set_yticks(np.linspace(-90, 90, 7, endpoint=True))
+    ax3.set_yticks(np.linspace(-90, 90, 7, endpoint=True))
     plt.tight_layout()
-    fig.colorbar(pcm1, ax=(ax1, ax2, ax3))
+    fig.colorbar(pcm1, ax=(ax1, ax2, ax3), label="Temperature, T, K")
 
     plt.show()
 
@@ -255,6 +255,9 @@ def generalised_single_fit_plot(
         model_function,
         val_range[model_range[0] : model_range[1]],
         convtemps[model_range[0] : model_range[1]],
+    )
+    print(
+        f"Model: {model_function_label}: {fit_parameters} +/- {np.sqrt(np.diag(pcov))}"
     )
     fit_xs = np.linspace(val_range[model_range[0]], val_range[model_range[1]], 101)
     fit_ys = model_function(fit_xs, *fit_parameters)
@@ -948,19 +951,19 @@ if __name__ == "__main__":
     from convergence import convergence_test
 
     conf = load_config()
-    # # q0 = read_file("single_omega/single_omega_2.41.npz")
-    # # q1 = read_file("single_omega/single_omega_2.415.npz")
-    # # q2 = read_file("single_omega/single_omega_2.42.npz")
-    # # threecolourplot(q0, q1, q2, None, None, 1)
+    q0 = read_file("single_omega/single_omega_2.28.npz")
+    q1 = read_file("single_omega/single_omega_2.32.npz")
+    q2 = read_file("single_omega/single_omega_2.36.npz")
+    threecolourplot(q0, q1, q2, None, None, 1)
 
-    times, temps, degs = read_file(
-        "dual_gassemimajoraxis_gaseccentricity/dual_gassemimajoraxis_1.0_gaseccentricity_0.0.npz"
-    )
-    dt = times[1] - times[0]
-    # colourplot(degs, temps, times, 90, None, 1)
-    # plotdata(degs, temps, dt, int(365 * 90.5), int(365 * 91.5), 12)
-    # print(convergence_test(temps, rtol=0.0001))
-    yearavgplot(degs, temps, dt, 90, 100, 10)
+    # times, temps, degs = read_file(
+    #     "dual_gassemimajoraxis_gaseccentricity/dual_gassemimajoraxis_1.0_gaseccentricity_0.0.npz"
+    # )
+    # dt = times[1] - times[0]
+    # # colourplot(degs, temps, times, 90, None, 1)
+    # # plotdata(degs, temps, dt, int(365 * 90.5), int(365 * 91.5), 12)
+    # # print(convergence_test(temps, rtol=0.0001))
+    # yearavgplot(degs, temps, dt, 90, 100, 10)
 
     # colourplot(degs, temps, times, None, None, 1, None, None)
 
