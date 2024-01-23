@@ -504,7 +504,7 @@ def reprocess_ecc_fit(
     val_range, tests, convtemps = process_data_single(
         foldername, folderpath, yearavg, rtol
     )
-    generalised_single_fit_plot(
+    single_variable_single_fit_plot(
         tests,
         convtemps,
         val_name,
@@ -532,7 +532,7 @@ def reprocess_semimajor_fit(
     val_range, tests, convtemps = process_data_single(
         foldername, folderpath, yearavg, rtol
     )
-    generalised_N_fit_plot(
+    single_variable_N_fits_plot(
         tests,
         convtemps,
         val_name,
@@ -559,7 +559,7 @@ def reprocess_moon_ecc_fit(
     val_range, tests, convtemps = process_data_single(
         foldername, folderpath, yearavg, rtol
     )
-    generalised_single_fit_plot(
+    single_variable_single_fit_plot(
         tests,
         convtemps,
         val_name,
@@ -586,7 +586,7 @@ def reprocess_moon_semimajor_fit(
     val_range, tests, convtemps = process_data_single(
         foldername, folderpath, yearavg, rtol
     )
-    generalised_single_fit_plot(
+    single_variable_single_fit_plot(
         tests,
         convtemps,
         val_name,

@@ -186,44 +186,30 @@ def convergence_plot_single(
         val_unit = ""
     else:
         val_unit = ", " + val_unit
-    # val_range = np.arange(val_min, val_max, val_step)
-    # fit_range = np.linspace(min(val_range), max(val_range), 100, endpoint=True)
-    # fit_vals = convtemps[0] * (1 - fit_range**2) ** (-1 / 4)
-    # fig, (ax1, ax2) = plt.subplots(2, 1)
+
     fig, ax2 = plt.subplots(1, 1)
-    # ax1: plt.Axes
     ax2: plt.Axes
+
     if min(convtemps) < 273:
         ax2.axhline(273, 0, 1, ls="-.", label="273 K")
     if max(convtemps) > 373:
         ax2.axhline(373, 0, 1, ls="-.", label="373 K")
     tests[convtemps < 0] = np.nan
     convtemps[convtemps < 0] = np.nan
-    # ax1.scatter(val_range, tests)
+
     ax2.scatter(val_range, convtemps)
-    # fit_xs = val_range[:]
-    # fit_ys = convtemps[:]
-    # xs = np.linspace(fit_xs[0], fit_xs[-1], 100)
-    # fitter = lambda x, a, b: a * x ** (3 / 4) + b
-    # (a, b), pcov = curve_fit(fitter, fit_xs, fit_ys)
-    # print(a, b, np.sqrt(np.diag(pcov)))
-    # ys = fitter(xs, a, b)
-    # ax2.plot(xs, ys, label="T $\propto$ R$^{3/4}$")
 
     ax2.set_xlabel(f"{val_name} {val_unit}")
-    # ax1.set_xticks(np.linspace(min(val_range), max(val_range), 11))
-    # ax2.set_xticks(np.linspace(min(val_range), max(val_range), 11))
-    # ax1.set_xscale(x_axis_scale)
-    # ax1.set_yscale(y_axis_scale)
+
     ax2.set_xscale(x_axis_scale)
     ax2.set_yscale(y_axis_scale)
-    # ax1.set_ylabel("Time to converge, years")
+
     ax2.set_ylabel(global_conv_temp_name + ", " + temp_unit)
     ax2.legend()
     plt.show()
 
 
-def generalised_single_fit_plot(
+def single_variable_single_fit_plot(
     tests: NDArray,
     convtemps: NDArray,
     val_name: str,
@@ -290,7 +276,7 @@ def generalised_single_fit_plot(
     plt.show()
 
 
-def generalised_N_fit_plot(
+def single_variable_N_fits_plot(
     tests: NDArray,
     convtemps: NDArray,
     val_name: str,
@@ -365,146 +351,6 @@ def generalised_N_fit_plot(
     plt.show()
 
 
-def semimajor_fit_plot(
-    tests: np.ndarray,
-    convtemps: np.ndarray,
-    val_name: str,
-    val_range,
-    val_unit: Optional[str] = None,
-    x_axis_scale: Literal["linear", "log"] = "linear",
-    y_axis_scale: Literal["linear", "log"] = "linear",
-    middle=51,
-):
-    if val_unit is None:
-        val_unit = ""
-    else:
-        val_unit = ", " + val_unit
-    # val_range = np.arange(val_min, val_max, val_step)
-    # fit_range = np.linspace(min(val_range), max(val_range), 100, endpoint=True)
-    # fit_vals = convtemps[0] * (1 - fit_range**2) ** (-1 / 4)
-    # fig, (ax1, ax2) = plt.subplots(2, 1)
-    fig, (ax2, ax3) = plt.subplots(2, 1, height_ratios=(2, 1), sharex="all")
-    # ax1: plt.Axes
-    ax2: plt.Axes
-    ax3: plt.Axes
-    if min(convtemps) < 273:
-        ax2.axhline(273, 0, 1, ls="-.", label="273 K")
-    if max(convtemps) > 373:
-        ax2.axhline(373, 0, 1, ls="-.", label="373 K")
-    tests[convtemps < 0] = np.nan
-    convtemps[convtemps < 0] = np.nan
-    # ax1.scatter(val_range, tests)
-    ax2.scatter(val_range, convtemps, c="b", marker="x")  # type: ignore
-    q = middle
-    fit_xs = val_range[:q]
-    fit_ys = convtemps[:q]
-    xs = np.linspace(fit_xs[0], fit_xs[-1], 100)
-
-    fitter = lambda x, a, b: a * x ** (-b)
-    (a, b), pcov = curve_fit(fitter, fit_xs, fit_ys)
-    print(a, b, np.sqrt(np.diag(pcov)))
-    ys = fitter(xs, a, b)
-    # fitter = lambda x, a: a * x ** (-1 / 2)
-    # a, pcov = curve_fit(fitter, fit_xs, fit_ys)
-    # print(a, np.sqrt(np.diag(pcov)))
-    # ys = fitter(xs, a)
-
-    ax2.plot(xs, ys, c="r", label="T = $p_1$ a$^{-q_1}$")
-    ax3.scatter(fit_xs, fit_ys - fitter(fit_xs, a, b), label="T = $p_1$ a$^{-q_1}$")
-
-    fit_xs = val_range[q:]
-    fit_ys = convtemps[q:]
-    xs = np.linspace(fit_xs[0], fit_xs[-1], 100)
-    # fitter = lambda x, a: a * x ** (-1 / 4)
-    # a, pcov = curve_fit(fitter, fit_xs, fit_ys)
-    # print(a, np.sqrt(np.diag(pcov)))
-    # ys = fitter(xs, a)
-    fitter = lambda x, a, b: a * x ** (-b)
-    (a, b), pcov = curve_fit(fitter, fit_xs, fit_ys)
-    print(a, b, np.sqrt(np.diag(pcov)))
-    ys = fitter(xs, a, b)
-    ax2.plot(xs, ys, c="g", label="T = $p_2$ a$^{-q_2}$")
-    ax3.scatter(fit_xs, fit_ys - fitter(fit_xs, a, b), label="T = $p_2$ a$^{-q_2}$")
-
-    # ax2.set_xlabel(f"{val_name} {val_unit}")
-    ax3.set_xlabel(f"{val_name}{val_unit}")
-    ax2.set_xscale(x_axis_scale)
-    ax3.set_xscale(x_axis_scale)
-    ax2.set_yscale(y_axis_scale)
-    # ax1.set_ylabel("Time to converge, years")
-    ax2.set_ylabel(global_conv_temp_name + ", " + temp_unit)
-    ax3.set_ylabel("Residual, K")
-    ax2.legend()
-    plt.tight_layout()
-    plt.show()
-
-
-def moon_semimajor_fit_plot(
-    tests: np.ndarray,
-    convtemps: np.ndarray,
-    val_name: str,
-    val_range,
-    val_unit: Optional[str] = None,
-    x_axis_scale: Literal["linear", "log"] = "linear",
-    y_axis_scale: Literal["linear", "log"] = "linear",
-):
-    if val_unit is None:
-        val_unit = ""
-    else:
-        val_unit = ", " + val_unit
-    # val_range = np.arange(val_min, val_max, val_step)
-    # fit_range = np.linspace(min(val_range), max(val_range), 100, endpoint=True)
-    # fit_vals = convtemps[0] * (1 - fit_range**2) ** (-1 / 4)
-    # fig, (ax1, ax2) = plt.subplots(2, 1)
-    fig, (ax2, ax3) = plt.subplots(2, 1, height_ratios=[2, 1])
-    # ax1: plt.Axes
-    ax2: plt.Axes
-    ax3: plt.Axes
-    if min(convtemps) < 273:
-        ax2.axhline(273, 0, 1, ls="-.", label="273 K")
-    if max(convtemps) > 373:
-        ax2.axhline(373, 0, 1, ls="-.", label="373 K")
-    fit_xs = val_range[convtemps > 0]
-    fit_ys = convtemps[convtemps > 0]
-    tests[convtemps < 0] = np.nan
-    convtemps[convtemps < 0] = np.nan
-    # ax1.scatter(val_range, tests)
-    ax2.scatter(fit_xs, fit_ys, c="b", marker="x")  # type: ignore
-
-    xs = np.linspace(fit_xs[0], fit_xs[-1], 100)
-
-    # fitter = lambda x, a, b, c: (a + c * x ** (-2) + b * x ** (-15 / 2)) ** (1 / 4)
-    fitter = lambda x, a, b: (a + b * x ** (-15 / 2)) ** (1 / 4)
-    print(fit_xs, fit_ys)
-    fits, pcov = curve_fit(fitter, fit_xs, fit_ys, absolute_sigma=True)
-    print(fits, np.sqrt(np.diag(pcov)))
-    ys = fitter(xs, *fits)
-    # fitter = lambda x, a: a * x ** (-1 / 2)
-    # a, pcov = curve_fit(fitter, fit_xs, fit_ys)
-    # print(a, np.sqrt(np.diag(pcov)))
-    # ys = fitter(xs, a)
-
-    ax2.plot(xs, ys, c="r", label="T = $(p + q\ a^{-15/2})^{1/4}$")  # type: ignore
-    ax3.scatter(
-        fit_xs, fit_ys - fitter(fit_xs, *fits), label="T = $p_1$ a$^{-q_1}$ + r$_1$"
-    )
-
-    ax2.set_xlabel(f"{val_name} {val_unit}")
-    ax3.set_xlabel(f"{val_name} {val_unit}")
-    # ax1.set_xticks(np.linspace(min(val_range), max(val_range), 11))
-    # ax2.set_xticks(np.linspace(min(val_range), max(val_range), 11))
-    # ax1.set_xscale(x_axis_scale)
-    # ax1.set_yscale(y_axis_scale)
-    ax2.set_xscale(x_axis_scale)
-    ax3.set_xscale(x_axis_scale)
-    ax2.set_yscale(y_axis_scale)
-    # ax1.set_ylabel("Time to converge, years")
-    ax2.set_ylabel(global_conv_temp_name + ", " + temp_unit)
-    ax3.set_ylabel("Residual, K")
-    ax2.legend()
-    plt.show()
-
-
 def convergence_plot_single_compare(
     tests_1,
     convtemps_1,
@@ -520,117 +366,22 @@ def convergence_plot_single_compare(
         val_unit = ""
     else:
         val_unit = ", " + val_unit
-    # val_range = np.arange(val_min, val_max, val_step)
-    # fit_range = np.linspace(min(val_range), max(val_range), 100, endpoint=True)
-    # fit_vals = convtemps[0] * (1 - fit_range**2) ** (-1 / 4)
     fig, (ax1, ax2) = plt.subplots(2, 1)
     ax1.scatter(val_range_1, tests_1, label=f"{val_name_1}")
     ax2.scatter(val_range_1, convtemps_1, label=f"{val_name_1}")
 
     ax1.scatter(val_range_2, tests_2, label=f"{val_name_2}")
     ax2.scatter(val_range_2, convtemps_2, label=f"{val_name_2}")
-    # ax2.plot(fit_range, fit_vals, label="(1-e^2)^{-1/4} fit")
-    ax2.set_xlabel(f"{val_name_1} and {val_name_2} {val_unit}")
-    # ax1.set_xticks(np.linspace(min(val_range), max(val_range), 11))
-    # ax2.set_xticks(np.linspace(min(val_range), max(val_range), 11))
+
+    if val_name_1 == val_name_2:
+        ax2.set_xlabel(f"{val_name_1} {val_unit}")
+    else:
+        ax2.set_xlabel(f"{val_name_1} and {val_name_2} {val_unit}")
+
     ax1.set_ylabel("Time to converge, years")
     ax2.set_ylabel(global_conv_temp_name + ", " + temp_unit)
     ax1.legend()
     ax2.legend()
-    plt.show()
-
-
-def ecc_fit_plot(
-    tests,
-    convtemps,
-    val_name: str,
-    val_range,
-    val_unit: Optional[str] = None,
-):
-    val_range = np.array(val_range)
-    if val_unit is None:
-        val_unit = ""
-    else:
-        val_unit = ", " + val_unit
-
-    fit_xs = val_range
-    fit_ys = convtemps
-    xs = np.linspace(fit_xs[0], fit_xs[-1], 100)
-    fitter = lambda x, a: a * (1 - x**2) ** (-1 / 8)
-    a, pcov = curve_fit(fitter, fit_xs, fit_ys)
-    print(a, np.sqrt(np.diag(pcov)))
-    ys = fitter(xs, a)
-
-    fig, (ax1, ax2) = plt.subplots(2, 1, height_ratios=(2, 1), sharex="all")
-    ax1: plt.Axes
-    ax2: plt.Axes
-    if min(convtemps) < 273:
-        ax1.axhline(273, 0, 1, ls="-.", label="273 K")
-    if max(convtemps) > 373:
-        ax1.axhline(373, 0, 1, ls="-.", label="373 K")
-    ax1.scatter(
-        val_range, convtemps, marker="x", linewidths=1, label="Model data"
-    )  # type:ignore
-    ax1.plot(xs, ys, label="$T = p (1-e^2)^{-1/8}$ fit")
-    ax2.scatter(
-        val_range,
-        (convtemps - fitter(val_range, a)),
-    )
-    ax2.set_xlabel(f"{val_name} {val_unit}")
-    # ax1.set_xticks(val_range)
-    # ax2.set_xticks(val_range)
-    ax2.set_ylabel("Residual")
-    ax1.set_ylabel(global_conv_temp_name + ", " + temp_unit)
-    ax1.legend()
-    # ax2.legend()
-    plt.tight_layout()
-    plt.show()
-
-
-def moon_ecc_fit_plot(
-    tests,
-    convtemps,
-    val_name: str,
-    val_range,
-    val_unit: Optional[str] = None,
-):
-    val_range = np.array(val_range)
-    if val_unit is None:
-        val_unit = ""
-    else:
-        val_unit = ", " + val_unit
-
-    fit_xs = val_range[convtemps > 0]
-    fit_ys = convtemps[convtemps > 0]
-    xs = np.linspace(fit_xs[0], fit_xs[-1], 100)
-    # fitter = lambda x, a, b, c: (a * x**2 + b + c * (1 - x**2) ** (-1 / 2)) ** (
-    #     1 / 4
-    # )
-    fitter = lambda x, a, b: (b * x**2 + a) ** (1 / 4)
-    fits, pcov = curve_fit(fitter, fit_xs, fit_ys)
-    print(fits, np.sqrt(np.diag(pcov)))
-    ys = fitter(xs, *fits)
-
-    fig, (ax1, ax2) = plt.subplots(2, 1, height_ratios=[2, 1])
-    ax1: plt.Axes
-    ax2: plt.Axes
-    if min(convtemps) < 273:
-        ax1.axhline(273, 0, 1, ls="-.", label="273 K")
-    if max(convtemps) > 373:
-        ax1.axhline(373, 0, 1, ls="-.", label="373 K")
-    ax1.scatter(fit_xs, fit_ys, label="Model data")
-    ax1.plot(xs, ys, label="$T = (p + q\ e^2)^{1/4}$ fit")  # type: ignore
-    ax2.scatter(
-        fit_xs,
-        (fit_ys - fitter(fit_xs, *fits)),
-    )
-    ax2.set_xlabel(f"{val_name} {val_unit}")
-    # ax1.set_xticks(val_range)
-    # ax2.set_xticks(val_range)
-    ax2.set_ylabel("Residual")
-    ax1.set_ylabel(global_conv_temp_name + ", " + temp_unit)
-    ax1.legend()
-    # ax2.legend()
     plt.show()
 
 
@@ -655,13 +406,8 @@ def convergence_plot_dual(
     else:
         val_unit_2 = ", " + val_unit_2
 
-    # fig, (ax1, ax2) = plt.subplots(2, 1)
     fig, ax2 = plt.subplots(1, 1)
-    # ax1: plt.Axes
     ax2: plt.Axes
-    # converge_time_map = ax1.pcolormesh(
-    #     val_1_range, val_2_range, tests.T, cmap="RdBu_r", shading="nearest"
-    # )
     converge_temp_map = ax2.pcolormesh(
         val_1_range, val_2_range, convtemps.T, cmap="RdBu_r", shading="nearest"
     )
@@ -672,21 +418,15 @@ def convergence_plot_dual(
             if semi * (1 - ecc) < roche:
                 print("rochelimit!", i, j, ecc, semi)
 
-    # fig.colorbar(converge_time_map, ax=ax1, label="Time to converge, years")
     fig.colorbar(
         converge_temp_map, ax=ax2, label=global_conv_temp_name + ", " + temp_unit
     )
-    # ax1.set_ylabel(f"{val_name_2} {val_unit_2}")
-    # ax1.set_xlabel(f"{val_name_1} {val_unit_1}")
-    ax2.set_ylabel(f"{val_name_2} {val_unit_2}")
     ax2.set_xlabel(f"{val_name_1} {val_unit_1}")
+    ax2.set_ylabel(f"{val_name_2} {val_unit_2}")
 
-    # ax1.set_xticks(val_1_range)
-    # ax1.set_yticks(val_2_range)
     ax2.set_xticks(val_1_range)
     ax2.set_yticks(val_2_range)
-    # ax1.set_xscale(x_axis_scale)
-    # ax1.set_yscale(y_axis_scale)
+
     ax2.set_xscale(x_axis_scale)
     ax2.set_yscale(y_axis_scale)
 
@@ -721,9 +461,6 @@ def convergence_plot_dual_compare(
     fig, (ax2, ax3) = plt.subplots(2, 1)
     ax2: plt.Axes
     ax3: plt.Axes
-    # converge_time_map = ax1.pcolormesh(
-    #     val_1_range, val_2_range, tests.T, cmap="RdBu_r", shading="nearest"
-    # )
     converge_temp_map_1 = ax2.pcolormesh(
         val_1_range_1, val_2_range_1, convtemps_1.T, cmap="RdBu_r", shading="nearest"
     )
@@ -731,7 +468,6 @@ def convergence_plot_dual_compare(
         val_1_range_2, val_2_range_2, convtemps_2.T, cmap="RdBu_r", shading="nearest"
     )
 
-    # fig.colorbar(converge_time_map, ax=ax1, label="Time to converge, years")
     fig.colorbar(
         converge_temp_map_1, ax=ax2, label=global_conv_temp_name + ", " + temp_unit
     )
@@ -755,6 +491,14 @@ def convergence_plot_dual_compare(
     ax3.set_yscale(y_axis_scale)
 
     plt.show()
+
+
+def double_variable_single_fit_plot():
+    pass
+
+
+def double_variable_N_fits_plot():
+    pass
 
 
 def convergence_plot_dual_with_fits(
@@ -946,7 +690,6 @@ def orbital_animation():
 
 
 if __name__ == "__main__":
-    # orbital_animation()
     from filemanagement import load_config, read_file
     from convergence import convergence_test
 
