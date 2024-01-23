@@ -8,7 +8,7 @@ from numpy.typing import NDArray
 import matplotlib.pyplot as plt
 
 from Constants import *
-from ClimateModel import climate_model_in_lat
+from ClimateModel import run_climate_model
 from filemanagement import (
     load_config,
     write_to_file,
@@ -65,7 +65,7 @@ def _do_single_test(
     if verbose:
         print(f"Running {val_name}={round(val, rounding_dp)}")
     conf.set(val_sec, val_name, str(val))
-    degs, temps, times = climate_model_in_lat(conf)
+    degs, temps, times = run_climate_model(conf)
     filename = f"./single_{val_name}/single_{val_name}_{round(val,rounding_dp)}.npz"
     write_to_file(times, temps, degs, filename)
 
@@ -134,7 +134,7 @@ def gen_convergence_test(
             if verbose:
                 print(f"Running {val_name}={val}")
             conf.set(val_section, val_name, str(val))
-            degs, temps, times = climate_model_in_lat(conf)
+            degs, temps, times = run_climate_model(conf)
             t, temp = convergence_test(
                 temps, rtol, year_avg=1, dt=conf.getfloat("PDE", "timestep")
             )
@@ -175,9 +175,7 @@ test_temp_convergence = gen_convergence_test(
     "PDE", "starttemp", True, False, True, temp_unit
 )
 
-test_omega_convergence = gen_convergence_test(
-    "PLANET", "omega", True, False, True, omega_unit
-)
+test_omega_convergence = parallel_convergence_test("PLANET", "omega", True)
 test_delta_convergence = parallel_convergence_test("PLANET", "obliquity", True)
 
 test_a_convergence = parallel_convergence_test("ORBIT", "gassemimajoraxis", True)
@@ -225,7 +223,7 @@ def _do_dual_test(
         )
     conf.set(val_1_sec, val_1_name, str(val_1))
     conf.set(val_2_sec, val_2_name, str(val_2))
-    degs, temps, times = climate_model_in_lat(conf)
+    degs, temps, times = run_climate_model(conf)
 
     write_to_file(times, temps, degs, filename)
 
@@ -327,7 +325,7 @@ def gen_paramspace(
                     )
                 conf.set(val_sec_1, val_name_1, str(val_1))
                 conf.set(val_sec_2, val_name_2, str(val_2))
-                degs, temps, times = climate_model_in_lat(conf)
+                degs, temps, times = run_climate_model(conf)
                 t, temp = convergence_test(
                     temps, rtol, year_avg=1, dt=conf.getfloat("PDE", "timestep")
                 )
@@ -504,12 +502,16 @@ def reprocess_ecc_fit(
             val_1_range.append(q)
         tests.append(t)
         convtemps.append(temp)
-    ecc_fit_plot(
-        tests,
-        convtemps,
+    generalised_single_fit_plot(
+        np.array(tests),
+        np.array(convtemps),
         val_1_name,
-        val_1_range,
+        np.array(val_1_range),
+        lambda x, a: a * (1 - x**2) ** (-1 / 8),
+        (0, -1),
+        r"$p (1-e^2)^{-1/8}$",
         val_1_unit,
+        x_axis_scale,
     )
 
 
@@ -521,6 +523,7 @@ def reprocess_semimajor_fit(
     rtol: float = 0.0001,
     x_axis_scale: Literal["linear", "log"] = "linear",
     y_axis_scale: Literal["linear", "log"] = "linear",
+    middle=51,
 ):
     val_1_range = []
     tests = []
@@ -534,11 +537,14 @@ def reprocess_semimajor_fit(
             val_1_range.append(q)
         tests.append(t)
         convtemps.append(temp)
-    semimajor_fit_plot(
-        np.array(tests, dtype=float),
-        np.array(convtemps, dtype=float),
+    generalised_N_fit_plot(
+        np.array(tests),
+        np.array(convtemps),
         val_1_name,
         np.array(val_1_range),
+        [lambda x, a, b: a * x ** (-b), lambda x, a, b: a * x ** (-b)],
+        [(0, middle - 1), (middle, -1)],
+        [r"$p_1 a^{q_1}$", "$p_2 a^{q_2}$"],
         val_1_unit,
         x_axis_scale,
         y_axis_scale,
@@ -791,15 +797,26 @@ if __name__ == "__main__":
     here = os.path.curdir
     # here = "D:/"
     conf = "config.ini"
-    dual_a_e_convergence_parallel(
-        conf, np.linspace(0.5, 2, 31), np.linspace(0, 0.9, 31), 5
-    )
-    reprocess_paramspace(
-        "dual_gassemimajoraxis_gaseccentricity",
-        here,
-        agas_name,
-        egas_name,
-        a_unit,
-        e_unit,
-        rtol=1e-2,
-    )
+    # dual_a_e_convergence_parallel(
+    #     conf, np.linspace(0.5, 2, 31), np.linspace(0, 0.9, 31), 5
+    # )
+    # reprocess_paramspace(
+    #     "dual_gassemimajoraxis_gaseccentricity",
+    #     here,
+    #     agas_name,
+    #     egas_name,
+    #     a_unit,
+    #     e_unit,
+    #     rtol=1e-2,
+    # )
+    # reprocess_ecc_fit("single_gaseccentricity", "D:/", egas_name, e_unit, 1e-3)
+    # test_a_convergence(conf, np.linspace(0.99, 1.02, 21), 5)
+    # reprocess_semimajor_fit("single_gassemimajoraxis", "D:/", agas_name, a_unit, 1e-3)
+    # reprocess_ecc_fit("single_gaseccentricity", "D:/", egas_name, e_unit, 1e-3)
+    # reprocess_single_param(
+    #     "single_obliquity", "D:/", obliquity_name, obliquity_unit, 1e-5
+    # )
+    # test_omega_convergence(conf, np.linspace(1, 3, 41), 5)
+    test_a_convergence(conf, np.linspace(0.5, 2, 11), 5)
+    reprocess_single_param("single_gassemimajoraxis", here, agas_name, a_unit, 1e-3)
+    # reprocess_single_param("single_omega", here, omega_name, omega_unit, 1e-6)

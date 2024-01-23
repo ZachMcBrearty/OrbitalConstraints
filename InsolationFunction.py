@@ -51,7 +51,32 @@ def H(theta: float | floatarr, delta_: float | floatarr) -> float | floatarr:
     return np.arccos(q)
 
 
-def S(
+def S_planet(
+    a: float,
+    theta: float | floatarr,
+    t: float | floatarr,
+    delta_0: float,
+    e: float,
+    offset: float = 0,
+) -> float | floatarr:
+    q_0 = 1360  # Wm^-2
+    delta_ = delta(a, t, delta_0)
+    cosdelta = np.cos(delta_)
+    sindelta = np.sin(delta_)
+    costheta = np.cos(theta)
+    sintheta = np.sin(theta)
+    H_ = H(theta, delta_)
+    r = dist(a, e, t, offset, 5)
+    # S = q_0 / π * a^-2 * (H sinθ sinδ + cosθ cosδ sinH)
+    return (
+        q_0
+        / np.pi
+        * r**-2
+        * (H_ * sintheta * sindelta + costheta * cosdelta * np.sin(H_))
+    )
+
+
+def S_moon(
     a: float,
     theta: float | floatarr,
     t: float | floatarr,
@@ -73,7 +98,7 @@ def S(
     r_moon_to_gas: distance from gas giant to the moon, AU
 
     returns: S, solar insolation, J s^-1 m^-2"""
-    q_0 = 1360 * (
+    q_0 = 1360 * (  #### needs more careful treatment ######
         1
         + (1 - A_gas)
         * (rad_gas * RADIUS["jupiter"]) ** 2
