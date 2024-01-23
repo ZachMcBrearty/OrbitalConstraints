@@ -448,35 +448,44 @@ dual_moon_a_e_convergence = parallel_gen_paramspace(
 )
 
 
-def reprocess_single_param(
-    foldername: str,
-    folderpath: str,
-    val_1_name: str,
-    val_1_unit: Optional[str] = None,
-    rtol: float = 0.0001,
-    yravg=1,
-    x_axis_scale: Literal["linear", "log"] = "linear",
-    y_axis_scale: Literal["linear", "log"] = "linear",
-):
-    val_1_range = []
+def process_data_single(
+    foldername: str, folderpath: str, yearavg: int = 1, rtol: float = 1e-3
+) -> tuple[NDArray, NDArray, NDArray]:
+    """returns: val_range, tests, convtemps"""
+    val_range = []
     tests = []
     convtemps = []
     data = read_single_folder(foldername, folderpath)
     for i, datum in enumerate(data):
         val_1, (times, temps, degs) = datum
         dt = (times[1] - times[0]) * 365
-        t, temp = convergence_test(temps, rtol, year_avg=yravg, dt=dt)
-        if (q := float(val_1)) not in val_1_range:
-            val_1_range.append(q)
+        t, temp = convergence_test(temps, rtol, year_avg=yearavg, dt=dt)
+        if (q := float(val_1)) not in val_range:
+            val_range.append(q)
         tests.append(t)
         convtemps.append(temp)
+    return np.array(val_range), np.array(tests), np.array(convtemps)
+
+
+def reprocess_single_param(
+    foldername: str,
+    folderpath: str,
+    val_name: str,
+    val_unit: Optional[str] = None,
+    rtol: float = 0.0001,
+    yearavg=1,
+    x_axis_scale: Literal["linear", "log"] = "linear",
+    y_axis_scale: Literal["linear", "log"] = "linear",
+):
+    val_range, tests, convtemps = process_data_single(
+        foldername, folderpath, yearavg, rtol
+    )
     convergence_plot_single(
-        # convergence_plot_single_split_semi_fit(
-        np.array(tests, dtype=float),
-        np.array(convtemps, dtype=float),
-        val_1_name,
-        np.array(val_1_range),
-        val_1_unit,
+        tests,
+        convtemps,
+        val_name,
+        val_range,
+        val_unit,
         x_axis_scale=x_axis_scale,
         y_axis_scale=y_axis_scale,
     )
@@ -485,67 +494,53 @@ def reprocess_single_param(
 def reprocess_ecc_fit(
     foldername: str,
     folderpath: str,
-    val_1_name: str,
-    val_1_unit: Optional[str] = None,
+    val_name: str = egas_name,
+    val_unit: Optional[str] = e_unit,
     rtol: float = 0.0001,
+    yearavg=1,
     x_axis_scale: Literal["linear", "log"] = "linear",
+    y_axis_scale: Literal["linear", "log"] = "linear",
 ):
-    val_1_range = []
-    tests = []
-    convtemps = []
-    data = read_single_folder(foldername, folderpath)
-    for i, datum in enumerate(data):
-        val_1, (times, temps, degs) = datum
-        dt = (times[1] - times[0]) * 365
-        t, temp = convergence_test(temps, rtol, year_avg=1, dt=dt)
-        if (q := float(val_1)) not in val_1_range:
-            val_1_range.append(q)
-        tests.append(t)
-        convtemps.append(temp)
+    val_range, tests, convtemps = process_data_single(
+        foldername, folderpath, yearavg, rtol
+    )
     generalised_single_fit_plot(
-        np.array(tests),
-        np.array(convtemps),
-        val_1_name,
-        np.array(val_1_range),
+        tests,
+        convtemps,
+        val_name,
+        val_range,
         lambda x, a: a * (1 - x**2) ** (-1 / 8),
         (0, -1),
         r"$p (1-e^2)^{-1/8}$",
-        val_1_unit,
+        val_unit,
         x_axis_scale,
+        y_axis_scale,
     )
 
 
 def reprocess_semimajor_fit(
     foldername: str,
     folderpath: str,
-    val_1_name: str,
-    val_1_unit: Optional[str] = None,
+    val_name: str = agas_name,
+    val_unit: Optional[str] = a_unit,
     rtol: float = 0.0001,
+    yearavg=1,
     x_axis_scale: Literal["linear", "log"] = "linear",
     y_axis_scale: Literal["linear", "log"] = "linear",
-    middle=51,
+    split=51,
 ):
-    val_1_range = []
-    tests = []
-    convtemps = []
-    data = read_single_folder(foldername, folderpath)
-    for i, datum in enumerate(data):
-        val_1, (times, temps, degs) = datum
-        dt = (times[1] - times[0]) * 365
-        t, temp = convergence_test(temps, rtol, year_avg=1, dt=dt)
-        if (q := float(val_1)) not in val_1_range:
-            val_1_range.append(q)
-        tests.append(t)
-        convtemps.append(temp)
+    val_range, tests, convtemps = process_data_single(
+        foldername, folderpath, yearavg, rtol
+    )
     generalised_N_fit_plot(
-        np.array(tests),
-        np.array(convtemps),
-        val_1_name,
-        np.array(val_1_range),
+        tests,
+        convtemps,
+        val_name,
+        val_range,
         [lambda x, a, b: a * x ** (-b), lambda x, a, b: a * x ** (-b)],
-        [(0, middle - 1), (middle, -1)],
-        [r"$p_1 a^{q_1}$", "$p_2 a^{q_2}$"],
-        val_1_unit,
+        [(0, split), (split, -1)],
+        [r"$p_1 a^{q_1}$", r"$p_2 a^{q_2}$"],
+        val_unit,
         x_axis_scale,
         y_axis_scale,
     )
@@ -554,59 +549,52 @@ def reprocess_semimajor_fit(
 def reprocess_moon_ecc_fit(
     foldername: str,
     folderpath: str,
-    val_1_name: str,
-    val_1_unit: Optional[str] = None,
+    val_name: str = emoon_name,
+    val_unit: Optional[str] = e_unit,
     rtol: float = 0.0001,
+    yearavg=1,
     x_axis_scale: Literal["linear", "log"] = "linear",
+    y_axis_scale: Literal["linear", "log"] = "linear",
 ):
-    val_1_range = []
-    tests = []
-    convtemps = []
-    data = read_single_folder(foldername, folderpath)
-    for i, datum in enumerate(data):
-        val_1, (times, temps, degs) = datum
-        dt = (times[1] - times[0]) * 365
-        t, temp = convergence_test(temps, rtol, year_avg=1, dt=dt)
-        if (q := float(val_1)) not in val_1_range:
-            val_1_range.append(q)
-        tests.append(t)
-        convtemps.append(temp)
-    moon_ecc_fit_plot(
-        np.array(tests, dtype=float),
-        np.array(convtemps, dtype=float),
-        val_1_name,
-        val_1_range,
-        val_1_unit,
+    val_range, tests, convtemps = process_data_single(
+        foldername, folderpath, yearavg, rtol
+    )
+    generalised_single_fit_plot(
+        tests,
+        convtemps,
+        val_name,
+        val_range,
+        lambda x, a, b: (b * x**2 + a) ** (1 / 4),
+        (0, -1),
+        r"$(p + q x^2)^{-1/4}$",
+        val_unit,
+        x_axis_scale,
+        y_axis_scale,
     )
 
 
 def reprocess_moon_semimajor_fit(
     foldername: str,
     folderpath: str,
-    val_1_name: str,
-    val_1_unit: Optional[str] = None,
+    val_name: str = amoon_name,
+    val_unit: Optional[str] = a_unit,
     rtol: float = 0.0001,
+    yearavg=1,
     x_axis_scale: Literal["linear", "log"] = "linear",
     y_axis_scale: Literal["linear", "log"] = "linear",
 ):
-    val_1_range = []
-    tests = []
-    convtemps = []
-    data = read_single_folder(foldername, folderpath)
-    for i, datum in enumerate(data):
-        val_1, (times, temps, degs) = datum
-        dt = (times[1] - times[0]) * 365
-        t, temp = convergence_test(temps, rtol, year_avg=1, dt=dt)
-        if (q := float(val_1)) not in val_1_range:
-            val_1_range.append(q)
-        tests.append(t)
-        convtemps.append(temp)
-    moon_semimajor_fit_plot(
-        np.array(tests, dtype=float),
-        np.array(convtemps, dtype=float),
-        val_1_name,
-        np.array(val_1_range),
-        val_1_unit,
+    val_range, tests, convtemps = process_data_single(
+        foldername, folderpath, yearavg, rtol
+    )
+    generalised_single_fit_plot(
+        tests,
+        convtemps,
+        val_name,
+        val_range,
+        lambda x, a, b: (a + b * x ** (-15 / 2)) ** (1 / 4),
+        (0, -1),
+        r"(p + q x^{-15/2})^{1/4}",
+        val_unit,
         x_axis_scale,
         y_axis_scale,
     )
@@ -621,32 +609,14 @@ def reprocess_single_param_compare(
     val_name_2: str,
     val_unit: Optional[str] = None,
     rtol: float = 0.0001,
+    yearavg=1,
 ):
-    val_range_1 = []
-    tests_1 = []
-    convtemps_1 = []
-    data_1 = read_single_folder(foldername_1, folderpath_1)
-    for i, datum in enumerate(data_1):
-        val_1, (times, temps, degs) = datum
-        dt = (times[1] - times[0]) * 365
-        t, temp = convergence_test(temps, rtol, year_avg=1, dt=dt)
-        if (q := float(val_1)) not in val_range_1:
-            val_range_1.append(q)
-        tests_1.append(t)
-        convtemps_1.append(temp)
-
-    val_range_2 = []
-    tests_2 = []
-    convtemps_2 = []
-    data_2 = read_single_folder(foldername_2, folderpath_2)
-    for i, datum in enumerate(data_2):
-        val_2, (times, temps, degs) = datum
-        dt = (times[1] - times[0]) * 365
-        t, temp = convergence_test(temps, rtol, year_avg=1, dt=dt)
-        if (q := float(val_2)) not in val_range_2:
-            val_range_2.append(q)
-        tests_2.append(t)
-        convtemps_2.append(temp)
+    val_range_1, tests_1, convtemps_1 = process_data_single(
+        foldername_1, folderpath_1, yearavg, rtol
+    )
+    val_range_2, tests_2, convtemps_2 = process_data_single(
+        foldername_2, folderpath_2, yearavg, rtol
+    )
 
     convergence_plot_single_compare(
         tests_1,
@@ -661,46 +631,56 @@ def reprocess_single_param_compare(
     )
 
 
-def reprocess_paramspace(
-    foldername: str,
-    folderpath: str,
-    val_1_name: str,
-    val_2_name: str,
-    val_1_unit: Optional[str] = None,
-    val_2_unit: Optional[str] = None,
-    rtol: float = 0.0001,
-    x_axis_scale: Literal["linear", "log"] = "linear",
-    y_axis_scale: Literal["linear", "log"] = "linear",
-):
-    val_1_range = []
-    val_2_range = []
+def process_data_double(
+    foldername: str, folderpath: str, yearavg: int = 1, rtol: float = 1e-3
+) -> tuple[NDArray, NDArray, NDArray, NDArray]:
+    """returns: val_range_1, val_range_2, tests, convtemps"""
+    val_range_1 = []
+    val_range_2 = []
     tests = []
     convtemps = []
     data = read_dual_folder(foldername, folderpath)
     for i, datum in enumerate(data):
         val_1, val_2, (times, temps, degs) = datum
         dt = (times[1] - times[0]) * 365
-        t, temp = convergence_test(temps, rtol, year_avg=1, dt=dt)
-        if (q := float(val_1)) not in val_1_range:
-            val_1_range.append(q)
-        if (q := float(val_2)) not in val_2_range:
-            val_2_range.append(q)
+        t, temp = convergence_test(temps, rtol, yearavg=1, dt=dt)
+        if (q := float(val_1)) not in val_range_1:
+            val_range_1.append(q)
+        if (q := float(val_2)) not in val_range_2:
+            val_range_2.append(q)
         tests.append(t)
         convtemps.append(temp)
-    xl = len(val_1_range)
-    yl = len(val_2_range)
+    xl = len(val_range_1)
+    yl = len(val_range_2)
     tests = np.array(tests).reshape(xl, yl)
     convtemps = np.array(convtemps).reshape(xl, yl)
-    # convergence_plot_dual_with_fits(
+    return val_range_1, val_range_2, tests, convtemps
+
+
+def reprocess_paramspace(
+    foldername: str,
+    folderpath: str,
+    val_name_1: str,
+    val_name_2: str,
+    val_unit_1: Optional[str] = None,
+    val_unit_2: Optional[str] = None,
+    rtol: float = 0.0001,
+    yearavg: int = 1,
+    x_axis_scale: Literal["linear", "log"] = "linear",
+    y_axis_scale: Literal["linear", "log"] = "linear",
+):
+    val_range_1, val_range_2, tests, convtemps = process_data_double(
+        foldername, folderpath, yearavg, rtol
+    )
     convergence_plot_dual(
         tests,
         convtemps,
-        val_1_name,
-        np.array(val_1_range),
-        val_2_name,
-        np.array(val_2_range),
-        val_1_unit,
-        val_2_unit,
+        val_name_1,
+        val_range_1,
+        val_name_2,
+        val_range_2,
+        val_unit_1,
+        val_unit_2,
         x_axis_scale,
         y_axis_scale,
     )
@@ -709,88 +689,37 @@ def reprocess_paramspace(
 def reprocess_dual_compare(
     foldernames: tuple[str, str],
     folderpaths: tuple[str, str],
-    val_1_name: str,
-    val_2_name: str,
-    val_1_unit: Optional[str] = None,
-    val_2_unit: Optional[str] = None,
+    val_name_a: str,
+    val_name_b: str,
+    val_unit_a: Optional[str] = None,
+    val_unit_b: Optional[str] = None,
     rtol: float = 0.0001,
+    yearavg: int = 1,
     x_axis_scale: Literal["linear", "log"] = "linear",
     y_axis_scale: Literal["linear", "log"] = "linear",
 ):
-    val_1_range_1 = []
-    val_2_range_1 = []
-    tests_1 = []
-    convtemps_1 = []
-    data_1 = read_dual_folder(foldernames[0], folderpaths[0])
-    for i, datum in enumerate(data_1):
-        val_1, val_2, (times, temps, degs) = datum
-        dt = (times[1] - times[0]) * 365
-        t, temp = convergence_test(temps, rtol, year_avg=1, dt=dt)
-        if (q := float(val_1)) not in val_1_range_1:
-            val_1_range_1.append(q)
-        if (q := float(val_2)) not in val_2_range_1:
-            val_2_range_1.append(q)
-        tests_1.append(t)
-        convtemps_1.append(temp)
-    xl = len(val_1_range_1)
-    yl = len(val_2_range_1)
-    tests_1 = np.array(tests_1).reshape(xl, yl)
-    convtemps_1 = np.array(convtemps_1).reshape(xl, yl)
-
-    val_1_range_2 = []
-    val_2_range_2 = []
-    tests_2 = []
-    convtemps_2 = []
-    data_2 = read_dual_folder(foldernames[1], folderpaths[1])
-    for i, datum in enumerate(data_2):
-        val_1, val_2, (times, temps, degs) = datum
-        dt = (times[1] - times[0]) * 365
-        t, temp = convergence_test(temps, rtol, year_avg=1, dt=dt)
-        if (q := float(val_1)) not in val_1_range_2:
-            val_1_range_2.append(q)
-        if (q := float(val_2)) not in val_2_range_2:
-            val_2_range_2.append(q)
-        tests_2.append(t)
-        convtemps_2.append(temp)
-    xl = len(val_1_range_2)
-    yl = len(val_2_range_2)
-    tests_2 = np.array(tests_2).reshape(xl, yl)
-    convtemps_2 = np.array(convtemps_2).reshape(xl, yl)
-    # convergence_plot_dual_with_fits(
+    val_range_1_a, val_range_2_a, tests_a, convtemps_a = process_data_double(
+        foldernames[0], folderpaths[0], yearavg, rtol
+    )
+    val_range_1_b, val_range_2_b, tests_b, convtemps_b = process_data_double(
+        foldernames[1], folderpaths[1], yearavg, rtol
+    )
     convergence_plot_dual_compare(
-        tests_1,
-        convtemps_1,
-        tests_2,
-        convtemps_2,
-        val_1_name,
-        np.array(val_1_range_1),
-        np.array(val_1_range_2),
-        val_2_name,
-        np.array(val_2_range_1),
-        np.array(val_2_range_2),
-        val_1_unit,
-        val_2_unit,
+        tests_a,
+        convtemps_a,
+        tests_b,
+        convtemps_b,
+        val_name_a,
+        val_range_1_a,
+        val_range_2_a,
+        val_name_b,
+        val_range_1_b,
+        val_range_2_b,
+        val_unit_a,
+        val_unit_b,
         x_axis_scale,
         y_axis_scale,
     )
-
-
-def reset_conf(conf):
-    conf.set("FILEMANAGEMENT", "save", "False")
-    conf.set("FILEMANAGEMENT", "plot", "False")
-
-    conf.set("PDE", "spacedim", "60")  #
-    conf.set("PDE", "time", "200")
-    conf.set("PDE", "timestep", "1")  #
-    conf.set("PDE", "starttemp", "350")  #
-
-    conf.set("PLANET", "omega", "1")  #
-    conf.set("PLANET", "landfractype", "uniform:0.7")
-    conf.set("PLANET", "obliquity", "23.5")  #
-
-    conf.set("ORBIT", "a", "1")  #
-    conf.set("ORBIT", "e", "0")  #
-    return conf
 
 
 if __name__ == "__main__":
