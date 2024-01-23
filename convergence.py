@@ -22,7 +22,7 @@ def convergence_test(
     temps: NDArray,
     rtol: float = 0.001,
     atol: float = 0,
-    year_avg: float = 1,
+    yearavg: float = 1,
     dt: float = 1,
 ) -> tuple[float, float]:
     """returns: how long the data set took to converge in years, -1 if never"""
@@ -32,8 +32,8 @@ def convergence_test(
     year_len = int(365 / dt)
     # -> i.e. each timestep is dt, so a year is 365 / dt datapoints long
     spacedim = temps.shape[0]
-    a = int(temps.size % (year_len * spacedim * year_avg) / spacedim)
-    tq = temps[:, a:].reshape(spacedim, -1, int(year_len * year_avg))
+    a = int(temps.size % (year_len * spacedim * yearavg) / spacedim)
+    tq = temps[:, a:].reshape(spacedim, -1, int(year_len * yearavg))
     tqa = np.average(tq, axis=2)  # average over time
     tqaa = np.average(
         tqa, axis=0, weights=np.cos(np.linspace(-np.pi / 2, np.pi / 2, temps.shape[0]))
@@ -46,7 +46,7 @@ def convergence_test(
     if i == imax or (tqaa[i] < 0):
         return -1.0, -1.0
     else:
-        return i * year_avg, tqaa[i]
+        return i * yearavg, tqaa[i]
 
 
 def _do_single_test(
@@ -136,7 +136,7 @@ def gen_convergence_test(
             conf.set(val_section, val_name, str(val))
             degs, temps, times = run_climate_model(conf)
             t, temp = convergence_test(
-                temps, rtol, year_avg=1, dt=conf.getfloat("PDE", "timestep")
+                temps, rtol, yearavg=1, dt=conf.getfloat("PDE", "timestep")
             )
             tests.append(t)
             convtemps.append(temp)
@@ -327,7 +327,7 @@ def gen_paramspace(
                 conf.set(val_sec_2, val_name_2, str(val_2))
                 degs, temps, times = run_climate_model(conf)
                 t, temp = convergence_test(
-                    temps, rtol, year_avg=1, dt=conf.getfloat("PDE", "timestep")
+                    temps, rtol, yearavg=1, dt=conf.getfloat("PDE", "timestep")
                 )
                 tests[i][j] = t
                 convtemps[i][j] = temp
@@ -459,7 +459,7 @@ def process_data_single(
     for i, datum in enumerate(data):
         val_1, (times, temps, degs) = datum
         dt = (times[1] - times[0]) * 365
-        t, temp = convergence_test(temps, rtol, year_avg=yearavg, dt=dt)
+        t, temp = convergence_test(temps, rtol, yearavg=yearavg, dt=dt)
         if (q := float(val_1)) not in val_range:
             val_range.append(q)
         tests.append(t)
@@ -654,7 +654,7 @@ def process_data_double(
     yl = len(val_range_2)
     tests = np.array(tests).reshape(xl, yl)
     convtemps = np.array(convtemps).reshape(xl, yl)
-    return val_range_1, val_range_2, tests, convtemps
+    return np.array(val_range_1), np.array(val_range_2), tests, convtemps
 
 
 def reprocess_paramspace(
