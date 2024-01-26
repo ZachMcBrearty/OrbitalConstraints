@@ -20,15 +20,17 @@ global_conv_temp_name = r"Equilibrium temperature, $\langle$T$\rangle$"
 temp_unit = "K"
 
 omega_name = r"Rotation Rate, $\Omega$"
-omega_unit = "days$^{-1}$"
+omega_unit = "Earth days$^{-1}$"
 
 obliquity_name = r"Obliquity, $\delta$"
 obliquity_unit = r"$^{\circ}$"
 
+aplt_name = "Planet semimajoraxis, $a$"
 agas_name = "Gas giant semimajoraxis, $a_{gas}$"
 amoon_name = "Moon semimajoraxis, $a_{moon}$"
 a_unit = "au"
 
+eplt_name = "Planet eccentricity, $e$"
 egas_name = "Gas giant eccentricity, $e_{gas}$"
 emoon_name = "Moon eccentricity, $e_{moon}$"
 e_unit = None
@@ -59,16 +61,16 @@ RADIUS = {  # m
 }
 
 DISTANCE = {  # m
-    "mercury": 57.91e9,
-    "venus": 108.21e9,
-    "earth": 149.6e9,
-    "mars": 227.92e9,
-    "asteroidbelt": 414.012e9,  # Ceres
-    "jupiter": 778.57e9,
-    "saturn": 1433.53e9,
-    "uranus": 2872.46e9,
-    "neptune": 4495.06e9,
-    "kuiperbelt": 5906.38e9,  # Pluto
+    "mercury": 57.91e9,  # 0.4au
+    "venus": 108.21e9,  # 0.72 au
+    "earth": 149.6e9,  # 1.0 au
+    "mars": 227.92e9,  # 1.5 au
+    "asteroidbelt": 414.012e9,  # Ceres, 2.7 au
+    "jupiter": 778.57e9,  # 5.2 au
+    "saturn": 1433.53e9,  # 9.5 au
+    "uranus": 2872.46e9,  # 19 au
+    "neptune": 4495.06e9,  # 30 au
+    "kuiperbelt": 5906.38e9,  # Pluto, 39 au
 }
 
 if __name__ == "__main__":
