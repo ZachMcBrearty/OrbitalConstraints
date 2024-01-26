@@ -28,6 +28,10 @@ def Habitable(temps: NDArray) -> NDArray:
     ret = np.ones_like(temps)
     ret[temps >= 373] = 0
     ret[temps <= 273] = 0
+    zeroes = np.zeros_like(temps[:, 0])
+    for lat in range(temps.shape[1]):
+        if np.any(temps[:, lat] >= 373 + 10) or np.any(temps[:, lat] <= 263 - 10):
+            ret[:, lat] = zeroes
     return ret
 
 
@@ -41,7 +45,7 @@ def HumanCompatible(temps: NDArray) -> NDArray:
     zeroes = np.zeros_like(temps[:, 0])
     for lat in range(temps.shape[1]):
         if np.any(temps[:, lat] >= 313) or np.any(temps[:, lat] <= 263):
-            temps[:, lat] = zeroes
+            ret[:, lat] = zeroes
     return ret
 
 
@@ -135,8 +139,11 @@ def time_habitability_paramspace(
         val_range, degs, np.array(habitability_time).T, cmap="RdBu_r", shading="nearest"
     )
     fig.colorbar(time_hab_map, ax=ax, label="Time averaged habitability")
+    ax.set_xticks(np.linspace(val_range[0], val_range[-1], 11))
+    ax.set_yticks(np.arange(-90, 91, 30))
     ax.set_ylabel(r"Latitude, $^{\circ}$")
     ax.set_xlabel(f"{val_name} {val_unit}")
+    plt.tight_layout()
     plt.show()
 
 
@@ -190,8 +197,73 @@ def area_habitability_paramspace(
         shading="nearest",
     )
     fig.colorbar(lat_hab_map, ax=ax, label="Area averaged habitability")
+    ax.set_xticks(np.linspace(val_range[0], val_range[-1], 11))
     ax.set_ylabel("Time, years")
     ax.set_xlabel(f"{val_name} {val_unit}")
+    plt.tight_layout()
+    plt.show()
+
+
+def time_and_area_shared_paramspace(
+    foldername: str,
+    folderpath: str,
+    val_name: str,
+    val_unit: Optional[str] = None,
+    min_year=90,
+    max_year=100,
+    H=Habitable,
+):
+    val_range = []
+    habitability_lat = []
+    habitability_time = []
+    data = read_single_folder(foldername, folderpath)
+    degs = None
+    times_red = None
+    for i, datum in enumerate(data):
+        val, (times, temps, degs) = datum
+        lats = np.deg2rad(degs)
+        dlat = abs(lats[1] - lats[0])
+        dt = abs(times[1] - times[0])  # years
+        # 365 * dt years = dt days
+        # 365 days per year / (365 * dt) days = datapoints per year
+        # datapoints per year = 1 / dt
+        slice_min = int(min_year / dt)
+        slice_max = int((max_year) / dt) + 1
+        temps_red = temps.T[slice_min:slice_max]
+        times_red = times[slice_min:slice_max]
+        lat_hab = f_area(temps_red, lats, dlat, H=H)
+        time_hab = f_time(temps_red, times_red, dt, H=H)
+        if (float_val := float(val)) not in val_range:
+            val_range.append(float_val)
+        habitability_lat.append(lat_hab)
+        habitability_time.append(time_hab)
+    assert degs is not None
+    assert times_red is not None
+
+    fig, (ax1, ax2) = plt.subplots(2, 1, sharex=True)
+    ax1: plt.Axes
+    ax2: plt.Axes
+    time_hab_map = ax1.pcolormesh(
+        val_range, degs, np.array(habitability_time).T, cmap="RdBu_r", shading="nearest"
+    )
+    fig.colorbar(time_hab_map, ax=ax1, label="Time averaged habitability")
+    ax1.set_xticks(np.linspace(val_range[0], val_range[-1], 11))
+    ax1.set_yticks(np.arange(-90, 91, 30))
+    ax1.set_ylabel(r"Latitude, $^{\circ}$")
+    # ax1.set_xlabel(f"{val_name} {val_unit}")
+
+    lat_hab_map = ax2.pcolormesh(
+        val_range,
+        times_red,
+        np.array(habitability_lat).T,
+        cmap="RdBu_r",
+        shading="nearest",
+    )
+    fig.colorbar(lat_hab_map, ax=ax2, label="Area averaged habitability")
+    ax2.set_xticks(np.linspace(val_range[0], val_range[-1], 11))
+    ax2.set_ylabel("Time, years")
+    ax2.set_xlabel(f"{val_name} {val_unit}")
+    plt.tight_layout()
     plt.show()
 
 
@@ -351,6 +423,74 @@ if __name__ == "__main__":
 
     here = os.path.curdir
 
+    # time_and_area_shared_paramspace(
+    #     "single_obliquity", here, obliquity_name, obliquity_unit, 150, 160, H=Habitable
+    # )
+    # time_and_area_shared_paramspace(
+    #     "single_obliquity",
+    #     here,
+    #     obliquity_name,
+    #     obliquity_unit,
+    #     150,
+    #     160,
+    #     H=HumanCompatible,
+    # )
+
+    # area_habitability_paramspace(
+    #     "single_gassemimajoraxis",
+    #     here,
+    #     aplt_name,
+    #     a_unit,
+    #     180,
+    #     190,
+    #     H=HumanCompatible,
+    # )
+    # time_habitability_paramspace(
+    #     "single_gassemimajoraxis",
+    #     here,
+    #     aplt_name,
+    #     a_unit,
+    #     180,
+    #     190,
+    #     H=HumanCompatible,
+    # )
+    # area_habitability_paramspace(
+    #     "single_gaseccentricity",
+    #     here,
+    #     eplt_name,
+    #     e_unit,
+    #     180,
+    #     190,
+    #     H=HumanCompatible,
+    # )
+    # time_habitability_paramspace(
+    #     "single_gaseccentricity",
+    #     here,
+    #     eplt_name,
+    #     e_unit,
+    #     180,
+    #     190,
+    #     H=HumanCompatible,
+    # )
+    time_habitability_paramspace(
+        "single_obliquity",
+        here,
+        obliquity_name,
+        obliquity_unit,
+        150,
+        160,
+        H=HumanCompatible,
+    )
+    area_habitability_paramspace(
+        "single_obliquity",
+        here,
+        obliquity_name,
+        obliquity_unit,
+        150,
+        160,
+        H=HumanCompatible,
+    )
+
     # habitability_paramspace_compare(
     #     (
     #         "dual_gassemimajoraxis_gaseccentricity_TH_0",
@@ -363,13 +503,13 @@ if __name__ == "__main__":
     #     e_unit,
     #     H=Habitable,
     # )
-    habitability_paramspace(
-        "dual_gassemimajoraxis_gaseccentricity",
-        os.path.curdir,
-        "a$_{gas}$",
-        "e$_{gas}$",
-        a_unit,
-        e_unit,
-        year=90,
-        H=HumanCompatible,
-    )
+    # habitability_paramspace(
+    #     "dual_gassemimajoraxis_gaseccentricity",
+    #     os.path.curdir,
+    #     "a$_{gas}$",
+    #     "e$_{gas}$",
+    #     a_unit,
+    #     e_unit,
+    #     year=90,
+    #     H=HumanCompatible,
+    # )

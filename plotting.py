@@ -143,7 +143,7 @@ def threecolourplot(
     else:
         yr_end = (yr_end + 1) * 365
 
-    fig, (ax1, ax2, ax3) = plt.subplots(3, 1, sharex=True)
+    fig, (ax1, ax2, ax3) = plt.subplots(3, 1, sharex=True, sharey=True)
     cmap = "RdBu_r"
     ts = plt1[0][yr_start : yr_end : year_avg * 365]
 
@@ -161,15 +161,16 @@ def threecolourplot(
     pcm3 = ax3.pcolormesh(ts, plt3[2], tq3, cmap=cmap, shading="nearest")  # nearest
 
     ax3.set_xlabel("time, yr")
-    ax1.set_ylabel("latitude, degrees")
+    # ax1.set_ylabel("latitude, degrees")
     ax2.set_ylabel("latitude, degrees")
-    ax3.set_ylabel("latitude, degrees")
+    # ax3.set_ylabel("latitude, degrees")
     ax1.set_yticks(np.linspace(-90, 90, 7, endpoint=True))
     ax2.set_yticks(np.linspace(-90, 90, 7, endpoint=True))
     ax3.set_yticks(np.linspace(-90, 90, 7, endpoint=True))
-    plt.tight_layout()
+
     fig.colorbar(pcm1, ax=(ax1, ax2, ax3), label="Temperature, T, K")
 
+    # plt.tight_layout()
     plt.show()
 
 
@@ -194,8 +195,11 @@ def convergence_plot_single(
         ax2.axhline(273, 0, 1, ls="-.", label="273 K")
     if max(convtemps) > 373:
         ax2.axhline(373, 0, 1, ls="-.", label="373 K")
-    tests[convtemps < 0] = np.nan
-    convtemps[convtemps < 0] = np.nan
+    # tests[convtemps < 0] = np.nan
+    # convtemps[convtemps < 0] = np.nan
+
+    # ax2.axvline(22, 0, 1, label="Earth min, max")
+    # ax2.axvline(25, 0, 1)
 
     ax2.scatter(val_range, convtemps)
 
@@ -203,6 +207,8 @@ def convergence_plot_single(
 
     ax2.set_xscale(x_axis_scale)
     ax2.set_yscale(y_axis_scale)
+
+    ax2.set_xticks(np.linspace(val_range[0], val_range[-1], 11))
 
     ax2.set_ylabel(global_conv_temp_name + ", " + temp_unit)
     ax2.legend()
@@ -220,16 +226,21 @@ def single_variable_single_fit_plot(
     val_unit: Optional[str] = None,
     x_axis_scale: Literal["linear", "log"] = "linear",
     y_axis_scale: Literal["linear", "log"] = "linear",
+    residuals: bool = False,
 ):
     """model_function: f(xdata, *params)"""
     if val_unit is None:
         val_unit = ""
     else:
         val_unit = ", " + val_unit
-
-    fig, (ax1, ax2) = plt.subplots(2, 1, height_ratios=(2, 1), sharex="all")
+    if residuals:
+        fig, (ax1, ax2) = plt.subplots(2, 1, height_ratios=(2, 1), sharex="all")
+    else:
+        fig, ax1 = plt.subplots(1, 1)
+        ax2 = ax1
     ax1: plt.Axes
     ax2: plt.Axes
+
     if min(convtemps) < 273:
         ax1.axhline(273, 0, 1, ls="-.", label="273 K")
     if max(convtemps) > 373:
@@ -251,24 +262,33 @@ def single_variable_single_fit_plot(
     ax1.plot(fit_xs, fit_ys, c="r", label=model_function_label)
 
     # plot residuals on secondary graph
-    ax2.scatter(
-        val_range[model_range[0] : model_range[1]],
-        convtemps[model_range[0] : model_range[1]]
-        - model_function(val_range[model_range[0] : model_range[1]], *fit_parameters),
-        c="b",
-        marker=markers.MarkerStyle("x"),
-    )
+    if residuals:
+        ax2.scatter(
+            val_range[model_range[0] : model_range[1]],
+            convtemps[model_range[0] : model_range[1]]
+            - model_function(
+                val_range[model_range[0] : model_range[1]], *fit_parameters
+            ),
+            c="b",
+            marker=markers.MarkerStyle("x"),
+        )
+
+    ax1.axvline(0.0167, 0, 1, label="Earth current")
+    ax1.axvline(0.0679, 0, 1, label="Earth max")
     # share-x is used so only the bottom graph needs to have the x-label
-    ax2.set_xlabel(f"{val_name}{val_unit}")
-
+    if residuals:
+        ax2.set_xlabel(f"{val_name}{val_unit}")
+        ax2.set_ylabel("Residual, K")
+        ax2.set_xscale(x_axis_scale)
+        ax2.set_xticks(np.linspace(val_range[0], val_range[-1], 11))
+    else:
+        ax1.set_xlabel(f"{val_name}{val_unit}")
     ax1.set_ylabel(global_conv_temp_name + ", " + temp_unit)
-    ax2.set_ylabel("Residual, K")
-
     # use user selected x-axis scale for both
     ax1.set_xscale(x_axis_scale)
-    ax2.set_xscale(x_axis_scale)
     # use user selected y-axis only for the main plot as residual is always linear
     ax1.set_yscale(y_axis_scale)
+    ax1.set_xticks(np.linspace(val_range[0], val_range[-1], 11))
 
     ax1.legend()
 
@@ -287,6 +307,7 @@ def single_variable_N_fits_plot(
     val_unit: Optional[str] = None,
     x_axis_scale: Literal["linear", "log"] = "linear",
     y_axis_scale: Literal["linear", "log"] = "linear",
+    residuals: bool = False,
 ):
     """model_function: f(xdata, *params)"""
     assert len(model_functions) == len(model_function_labels) == len(model_ranges)
@@ -294,8 +315,11 @@ def single_variable_N_fits_plot(
         val_unit = ""
     else:
         val_unit = ", " + val_unit
-
-    fig, (ax1, ax2) = plt.subplots(2, 1, height_ratios=(2, 1), sharex="all")
+    if residuals:
+        fig, (ax1, ax2) = plt.subplots(2, 1, height_ratios=(2, 1), sharex="all")
+    else:
+        fig, ax1 = plt.subplots(1, 1)
+        ax2 = ax1
     ax1: plt.Axes
     ax2: plt.Axes
     if min(convtemps) < 273:
@@ -318,32 +342,45 @@ def single_variable_N_fits_plot(
         print(
             f"Model {i}: {model_function_label}: {fit_parameters} +/- {np.sqrt(np.diag(pcov))}"
         )
-        fit_xs = np.linspace(val_range[model_range[0]], val_range[model_range[1]], 101)
+        if model_range[1] == -1:
+            fit_xs = np.linspace(
+                val_range[model_range[0]], val_range[model_range[1]], 101
+            )
+        else:
+            fit_xs = np.linspace(
+                val_range[model_range[0]], val_range[model_range[1] - 1], 101
+            )
         fit_ys = model_function(fit_xs, *fit_parameters)
         # plot the model on the main graph
         ax1.plot(fit_xs, fit_ys, c="r", label=model_function_label)
 
         # plot residuals on secondary graph
-        ax2.scatter(
-            val_range[model_range[0] : model_range[1]],
-            convtemps[model_range[0] : model_range[1]]
-            - model_function(
-                val_range[model_range[0] : model_range[1]], *fit_parameters
-            ),
-            c="b",
-            marker=markers.MarkerStyle("x"),
-        )
+        if residuals:
+            ax2.scatter(
+                val_range[model_range[0] : model_range[1]],
+                convtemps[model_range[0] : model_range[1]]
+                - model_function(
+                    val_range[model_range[0] : model_range[1]], *fit_parameters
+                ),
+                c="b",
+                marker=markers.MarkerStyle("x"),
+            )
+    ax1.axvline(DISTANCE["venus"] / AU, 0, 1, label="Venus")
+    ax1.axvline(DISTANCE["mars"] / AU, 0, 1, label="Mars")
     # share-x is used so only the bottom graph needs to have the x-label
-    ax2.set_xlabel(f"{val_name}{val_unit}")
-
+    if residuals:
+        ax2.set_xlabel(f"{val_name}{val_unit}")
+        ax2.set_ylabel("Residual, K")
+        ax2.set_xscale(x_axis_scale)
+        ax2.set_xticks(np.linspace(val_range[0], val_range[-1], 11))
+    else:
+        ax1.set_xlabel(f"{val_name}{val_unit}")
     ax1.set_ylabel(global_conv_temp_name + ", " + temp_unit)
-    ax2.set_ylabel("Residual, K")
-
     # use user selected x-axis scale for both
     ax1.set_xscale(x_axis_scale)
-    ax2.set_xscale(x_axis_scale)
     # use user selected y-axis only for the main plot as residual is always linear
     ax1.set_yscale(y_axis_scale)
+    ax1.set_xticks(np.linspace(val_range[0], val_range[-1], 11))
 
     ax1.legend()
 
@@ -694,10 +731,15 @@ if __name__ == "__main__":
     from convergence import convergence_test
 
     conf = load_config()
-    q0 = read_file("single_omega/single_omega_2.28.npz")
-    q1 = read_file("single_omega/single_omega_2.32.npz")
-    q2 = read_file("single_omega/single_omega_2.36.npz")
+    q0 = read_file("single_omega/single_omega_0.9375.npz")
+    q1 = read_file("single_omega/single_omega_1.0.npz")
+    q2 = read_file("single_omega/single_omega_1.0625.npz")
     threecolourplot(q0, q1, q2, None, None, 1)
+
+    # q0 = read_file("single_omega/single_omega_2.25.npz")
+    # q1 = read_file("single_omega/single_omega_2.3125.npz")
+    # q2 = read_file("single_omega/single_omega_2.375.npz")
+    # threecolourplot(q0, q1, q2, None, None, 1)
 
     # times, temps, degs = read_file(
     #     "dual_gassemimajoraxis_gaseccentricity/dual_gassemimajoraxis_1.0_gaseccentricity_0.0.npz"
