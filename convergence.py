@@ -738,14 +738,21 @@ if __name__ == "__main__":
     #     e_unit,
     #     rtol=1e-2,
     # )
-    # reprocess_ecc_fit("single_gaseccentricity", "D:/", egas_name, e_unit, 1e-3)
-    # test_a_convergence(conf, np.linspace(0.99, 1.02, 21), 5)
-    # reprocess_semimajor_fit("single_gassemimajoraxis", "D:/", agas_name, a_unit, 1e-3)
-    # reprocess_ecc_fit("single_gaseccentricity", "D:/", egas_name, e_unit, 1e-3)
-    # reprocess_single_param(
-    #     "single_obliquity", "D:/", obliquity_name, obliquity_unit, 1e-5
+
+    # test_omega_convergence(conf, np.linspace(0.5, 3, 41), 5)
+    # test_omega_convergence(conf, [0.25], 5)
+    reprocess_single_param("single_omega", here, omega_name, omega_unit, rtol=1e-5)
+
+    # test_a_convergence(conf, np.linspace(0.5, 1.5, 41), 5)
+    # reprocess_semimajor_fit(
+    #     "single_gassemimajoraxis", here, val_name=aplt_name, rtol=1e-4, split=21
     # )
-    # test_omega_convergence(conf, np.linspace(1, 3, 41), 5)
-    test_a_convergence(conf, np.linspace(0.5, 2, 11), 5)
-    reprocess_single_param("single_gassemimajoraxis", here, agas_name, a_unit, 1e-3)
-    # reprocess_single_param("single_omega", here, omega_name, omega_unit, 1e-6)
+
+    # test_e_convergence(conf, np.linspace(0, 0.9, 51), 5)
+    # reprocess_ecc_fit("single_gaseccentricity", here, val_name=eplt_name, rtol=1e-5)
+
+    # test_delta_convergence(conf, np.linspace(0, 90, 101), 5)
+    # test_delta_convergence(conf, np.linspace(0, 180, 21), 5)
+    # reprocess_single_param(
+    #     "single_obliquity", here, obliquity_name, obliquity_unit, 1e-5
+    # )
