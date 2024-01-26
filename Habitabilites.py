@@ -139,6 +139,8 @@ def time_habitability_paramspace(
         val_range, degs, np.array(habitability_time).T, cmap="RdBu_r", shading="nearest"
     )
     fig.colorbar(time_hab_map, ax=ax, label="Time averaged habitability")
+    # ax.axvline(22, 0, 1, ls="dashed", label="Earth min/max")
+    # ax.axvline(25, 0, 1, ls="dashed")
     ax.set_xticks(np.linspace(val_range[0], val_range[-1], 11))
     ax.set_yticks(np.arange(-90, 91, 30))
     ax.set_ylabel(r"Latitude, $^{\circ}$")
@@ -198,6 +200,8 @@ def area_habitability_paramspace(
     )
     fig.colorbar(lat_hab_map, ax=ax, label="Area averaged habitability")
     ax.set_xticks(np.linspace(val_range[0], val_range[-1], 11))
+    # ax.axvline(22, 0, 1, ls="dashed", label="Earth min/max")
+    # ax.axvline(25, 0, 1, ls="dashed")
     ax.set_ylabel("Time, years")
     ax.set_xlabel(f"{val_name} {val_unit}")
     plt.tight_layout()
