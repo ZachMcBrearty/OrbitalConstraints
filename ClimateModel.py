@@ -36,7 +36,7 @@ from Constants import *
 from InsolationFunction import S_planet, S_moon
 from HeatCapacity import get_C_func, f_o, f_i
 from IRandAlbedo import A_1, A_2, A_3, I_1, I_2, I_3
-from plotting import colourplot, complexplotdata
+from plotting import colourplot, complexplotdata, yearavgplot
 from filemanagement import write_to_file, load_config
 from tidalheating import get_viscoheating, fixed_Q_tidal_heating
 from orbital_model import orbital_model_explicit as orbital_model
@@ -413,22 +413,8 @@ def run_climate_model(conf: CONF_PARSER_TYPE):
 
 
 if __name__ == "__main__":
-    # import cProfile
-    # from pstats import SortKey, Stats
-
     config = load_config("config.ini", "OrbitalConstraints")
-    # with cProfile.Profile() as p:
-    #     q = orbital_model_explicit(config, 24)
-    #     # next(q)
-    #     for x in range(100000):
-    #         next(q)
-    # Stats(p).strip_dirs().sort_stats(SortKey.CUMULATIVE).print_stats(100)
-
     degs, temps, times = run_climate_model(config)
-
-    # times, temps, degs = read_file(config.get("FILEMANAGEMENT", "save_name") + ".npz")
-    # dt = times[1] - times[0]
-
-    # plotdata(degs, temps, dt, 0, 365 * 1, 10)
-    # yearavgplot(degs, temps, dt, 0, None, 20)
-    colourplot(degs, temps, times, None, None, 5)
+    dt = (times[1] - times[0]) * 365
+    yearavgplot(degs, temps, dt, 150, 155, 10)
+    # colourplot(degs, temps, times, None, None, 5)
