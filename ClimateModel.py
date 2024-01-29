@@ -127,32 +127,30 @@ def climate_model_moon(
     tidal_heating_value = visco_func(T_surf)
     heatings = tidal_heating_value * heating_dist
     for n in range(timedim):
-        for m in range(spacedim):
-            if m == 0:
-                secondT[0] = forwardbackward_pole(Temp[:, n], dlam)
-                firstT[0] = 0
-                firstD[0] = forwarddifference(Diffusion[:, n], 0, dlam)
-            elif m == 1:
-                # forward difference for zero edge
-                # secondT[1] = centralbackward_edge(Temp[:, n], dlam)
-                secondT[1] = centralcentral_firstedge(Temp[:, n], dlam)
-                firstT[1] = centraldifference(Temp[:, n], 1, dlam)
-                firstD[1] = centraldifference(Diffusion[:, n], 1, dlam)
-            elif m == spacedim - 2:
-                # backwards difference for end edge
-                # secondT[-2] = centralforward_edge(Temp[:, n], dlam)
-                secondT[-2] = centralcentral_secondedge(Temp[:, n], dlam)
-                firstT[-2] = centraldifference(Temp[:, n], -2, dlam)
-                firstD[-2] = centraldifference(Diffusion[:, n], -2, dlam)
-            elif m == spacedim - 1:
-                secondT[-1] = backwardforward_pole(Temp[:, n], dlam)
-                firstT[-1] = 0
-                firstD[-1] = backwarddifference(Diffusion[:, n], -1, dlam)
-            else:
-                # central difference for most cases
-                secondT[m] = central2ndorder(Temp[:, n], m, dlam)
-                firstT[m] = centraldifference(Temp[:, n], m, dlam)
-                firstD[m] = centraldifference(Diffusion[:, n], m, dlam)
+        secondT[0] = forwardbackward_pole(Temp[:, n], dlam)
+        firstT[0] = 0
+        firstD[0] = forwarddifference(Diffusion[:, n], 0, dlam)
+
+        # forward difference for zero edge
+        # secondT[1] = centralbackward_edge(Temp[:, n], dlam)
+        secondT[1] = centralcentral_firstedge(Temp[:, n], dlam)
+        firstT[1] = centraldifference(Temp[:, n], 1, dlam)
+        firstD[1] = centraldifference(Diffusion[:, n], 1, dlam)
+
+        # backwards difference for end edge
+        # secondT[-2] = centralforward_edge(Temp[:, n], dlam)
+        secondT[-2] = centralcentral_secondedge(Temp[:, n], dlam)
+        firstT[-2] = centraldifference(Temp[:, n], -2, dlam)
+        firstD[-2] = centraldifference(Diffusion[:, n], -2, dlam)
+
+        secondT[-1] = backwardforward_pole(Temp[:, n], dlam)
+        firstT[-1] = 0
+        firstD[-1] = backwarddifference(Diffusion[:, n], -1, dlam)
+        for m in range(2, spacedim - 2):
+            # central difference for most cases
+            secondT[m] = central2ndorder(Temp[:, n], m, dlam)
+            firstT[m] = centraldifference(Temp[:, n], m, dlam)
+            firstD[m] = centraldifference(Diffusion[:, n], m, dlam)
 
         diff_elem = (
             firstD - Diffusion[:, n] * np.tan(lats[:])
@@ -261,32 +259,30 @@ def climate_model_planet(
     C = get_C_func(spacedim)
 
     for n in range(timedim):
-        for m in range(spacedim):
-            if m == 0:
-                secondT[0] = forwardbackward_pole(Temp[:, n], dlam)
-                firstT[0] = 0
-                firstD[0] = forwarddifference(Diffusion[:, n], 0, dlam)
-            elif m == 1:
-                # forward difference for zero edge
-                # secondT[1] = centralbackward_edge(Temp[:, n], dlam)
-                secondT[1] = centralcentral_firstedge(Temp[:, n], dlam)
-                firstT[1] = centraldifference(Temp[:, n], 1, dlam)
-                firstD[1] = centraldifference(Diffusion[:, n], 1, dlam)
-            elif m == spacedim - 2:
-                # backwards difference for end edge
-                # secondT[-2] = centralforward_edge(Temp[:, n], dlam)
-                secondT[-2] = centralcentral_secondedge(Temp[:, n], dlam)
-                firstT[-2] = centraldifference(Temp[:, n], -2, dlam)
-                firstD[-2] = centraldifference(Diffusion[:, n], -2, dlam)
-            elif m == spacedim - 1:
-                secondT[-1] = backwardforward_pole(Temp[:, n], dlam)
-                firstT[-1] = 0
-                firstD[-1] = backwarddifference(Diffusion[:, n], -1, dlam)
-            else:
-                # central difference for most cases
-                secondT[m] = central2ndorder(Temp[:, n], m, dlam)
-                firstT[m] = centraldifference(Temp[:, n], m, dlam)
-                firstD[m] = centraldifference(Diffusion[:, n], m, dlam)
+        secondT[0] = forwardbackward_pole(Temp[:, n], dlam)
+        firstT[0] = 0
+        firstD[0] = forwarddifference(Diffusion[:, n], 0, dlam)
+
+        # forward difference for zero edge
+        # secondT[1] = centralbackward_edge(Temp[:, n], dlam)
+        secondT[1] = centralcentral_firstedge(Temp[:, n], dlam)
+        firstT[1] = centraldifference(Temp[:, n], 1, dlam)
+        firstD[1] = centraldifference(Diffusion[:, n], 1, dlam)
+
+        # backwards difference for end edge
+        # secondT[-2] = centralforward_edge(Temp[:, n], dlam)
+        secondT[-2] = centralcentral_secondedge(Temp[:, n], dlam)
+        firstT[-2] = centraldifference(Temp[:, n], -2, dlam)
+        firstD[-2] = centraldifference(Diffusion[:, n], -2, dlam)
+
+        secondT[-1] = backwardforward_pole(Temp[:, n], dlam)
+        firstT[-1] = 0
+        firstD[-1] = backwarddifference(Diffusion[:, n], -1, dlam)
+        for m in range(2, spacedim - 2):
+            # central difference for most cases
+            secondT[m] = central2ndorder(Temp[:, n], m, dlam)
+            firstT[m] = centraldifference(Temp[:, n], m, dlam)
+            firstD[m] = centraldifference(Diffusion[:, n], m, dlam)
 
         diff_elem = (
             firstD - Diffusion[:, n] * np.tan(lats[:])
