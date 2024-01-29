@@ -33,96 +33,16 @@ import numpy as np
 import numpy.typing as npt
 
 from Constants import *
+from derivatives import *
 from InsolationFunction import S_planet, S_moon
 from HeatCapacity import get_C_func, f_o, f_i
 from IRandAlbedo import A_1, A_2, A_3, I_1, I_2, I_3
 from plotting import colourplot, complexplotdata, yearavgplot
 from filemanagement import write_to_file, load_config
-from tidalheating import get_viscoheating, fixed_Q_tidal_heating
+from tidalheating import get_visco_func
 from orbital_model import orbital_model_explicit as orbital_model
 
 skip = 60
-
-
-## derivatives ##
-def forwarddifference(x: list[float] | floatarr, i: int, dx: float) -> float:
-    return (x[i + 1] - x[i]) / dx
-
-
-def centraldifference(x: list[float] | floatarr, i: int, dx: float) -> float:
-    # (x[i+1/2] - x[i-1/2]) / dx
-    # let x[i+(-)1/2] = (x[i+(-)1] + x[i]) / 2
-    # => (x[i+1] - x[i-1]) / (2*dx)
-    return (x[i + 1] - x[i - 1]) / (2 * dx)
-
-
-def backwarddifference(x: list[float] | floatarr, i: int, dx: float) -> float:
-    return (x[i] - x[i - 1]) / dx
-
-
-def forwardbackward_pole(T: floatarr, dx: float) -> float:
-    """Used for pole at the start of the array, i.e. i = 0
-    Assumes dT/dx = 0 at the pole"""
-    # Forward: d^2T/dx^2 = (dT/dx|i=1 - dT/dx|i=0) / dx
-    # dT/dx|i=0 == 0
-    # Backward: d^2T/dx^2 = (T(i=1) - T(i=0)) / dx^2
-    return (T[1] - T[0]) / dx**2
-
-
-def backwardforward_pole(x: floatarr, dx: float) -> float:
-    """Used for pole at the end of the array, i.e. i = len(x)-1
-    Assumes dx/dt = 0 at the pole"""
-    # Backward: d^2T/dx^2 = (dT/dx|i=i_max - dT/dx|i=i_max-1) / dx
-    # dT/dx|i=i_max == 0
-    # Forward: d^2T/dx^2 = -(T(i=i_max) - T(i=i_max-1)) / dx^2
-    # => d^2T/dx^2 = (T(i=i_max-1) - T(i=i_max)) / dx^2
-    # in python the final entry is -1 and last to final is -2
-    return (x[-2] - x[-1]) / dx**2
-
-
-def centralbackward_edge(x: floatarr, dx: float) -> float:
-    """Used for one along from the start of the array, i.e. i = 1"""
-    # Central: d^2T/dx^2 = (dT/dx|i=2 - dT/dx|i=0) / 2dx
-    # dT/dx|i=0 == 0
-    # Backward: d^2T/dx^2 = (T(i=2) - T(i=1)) / 2dx^2
-    return (x[2] - x[1]) / (2 * dx**2)
-
-
-def centralcentral_firstedge(x: floatarr, dx: float) -> float:
-    """Used for one along from the start of the array, i.e. i = 1"""
-    # Central: d^2T/dx^2 = (dT/dx|i=2 - dT/dx|i=0) / 2dx
-    # dT/dx|i=0 == 0
-    # Central: d^2T/dx^2 = (T(i=3) - T(i=1)) / 4dx^2
-    return (x[3] - x[1]) / (4 * dx**2)
-
-
-def centralcentral_secondedge(x: floatarr, dx: float) -> float:
-    """Used for one along from the end of the array, i.e. i = len(x)-2"""
-    # Central: d^2T/dx^2 = (dT/dx|i=i_max - dT/dx|i=i_max-2) / 2dx
-    # dT/dx|i=i_max == 0
-    # Central: d^2T/dx^2 = -(T(i=i_max-1) - T(i=i_max-3)) / 4dx^2
-    return (x[-4] - x[-2]) / (4 * dx**2)
-
-
-def centralforward_edge(x: floatarr, dx: float) -> float:
-    """Used for one along from the end of the array, i.e. i = len(x)-2"""
-    # Central: d^2T/dx^2 = (dT/dx|i=i_max - dT/dx|i=i_max-2) / 2dx
-    # dT/dx|i=i_max == 0
-    # Forward: d^2T/dx^2 = -(T(i=i_max-1) - T(i=i_max-2)) / 2dx^2
-    # => d^2T/dx^2 = (T(i=i_max-2) - T(i=i_max-1)) / 2dx^2
-    return (x[-3] - x[-2]) / (2 * dx**2)
-
-
-def forward2ndorder(x: list[float] | floatarr, i: int, dx: float) -> float:
-    return (x[i + 2] - 2 * x[i + 1] + x[i]) / dx**2
-
-
-def central2ndorder(x: list[float] | floatarr, i: int, dx: float) -> float:
-    return (x[i + 2] - 2 * x[i] + x[i - 2]) / (2 * dx) ** 2
-
-
-def backward2ndorder(x: list[float] | floatarr, i: int, dx: float) -> float:
-    return (x[i] - 2 * x[i - 1] + x[i - 2]) / dx**2
 
 
 ##  ##
@@ -189,9 +109,13 @@ def climate_model_moon(
 
     ### TODO: reimplement exclipsing from orbital model ###
     # orbits = orbital_model(config, 24)
+    gas_mass = config.getfloat("ORBIT", "gasgiantmass") * MASS["jupiter"]
     gas_rad = config.getfloat("ORBIT", "gasgiantradius") * RADIUS["jupiter"]
+
     moon_rad = config.getfloat("ORBIT", "moonradius") * RADIUS["luna"]
     moon_a = config.getfloat("ORBIT", "moonsemimajoraxis") * AU
+    moon_ecc = config.getfloat("ORBIT", "mooneccentricity")
+    moon_dens = config.getfloat("ORBIT", "moondensity")
 
     heating_dist = coslats * dlam / (4 * np.pi * moon_rad**2)
     gas_albedo = config.getfloat("TIDALHEATING", "gasalbedo")
@@ -199,7 +123,8 @@ def climate_model_moon(
     C = get_C_func(spacedim)
 
     T_surf = np.sum(Temp[:, 0] * coslats * dlam, dtype=float) / 2
-    tidal_heating_value = get_viscoheating(config, T_surf)
+    visco_func = get_visco_func(gas_mass, moon_rad, moon_a, moon_ecc, moon_dens, B=25)
+    tidal_heating_value = visco_func(T_surf)
     heatings = tidal_heating_value * heating_dist
     for n in range(timedim):
         for m in range(spacedim):
@@ -251,7 +176,7 @@ def climate_model_moon(
                 / 2
                 / skip
             )
-            tidal_heating_value = get_viscoheating(config, T_surf)
+            tidal_heating_value = visco_func(T_surf)
             heatings = tidal_heating_value * heating_dist
         Temp[:, n + 1] = Temp[:, n] + YEARTOSECOND * dt / Capacity[:, n] * (
             diff_elem - Ir_emission[:, n] + Source[:, n] * (1 - Albedo[:, n]) + heatings
