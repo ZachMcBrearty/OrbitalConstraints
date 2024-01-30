@@ -77,7 +77,7 @@ f_earth_10deg = np.array(
 
 def f_o(lat: floatarr) -> floatarr:
     p = 17 * (lat / np.pi + 1 / 2)
-    l = np.int32(np.floor(p))
+    l = np.floor(p, dtype=int)
     s = p - l
     return f_earth_10deg[l] * (1 - s) + f_earth_10deg[l + 1] * s
 
@@ -87,7 +87,7 @@ def f_o(lat: floatarr) -> floatarr:
 
 
 def f_i(Temp: floatarr) -> floatarr:
-    q = 1 - np.exp((Temp - 273) / 10)  # type: floatarr
+    q = 1.0 - np.exp((Temp - 273) / 10, dtype=float)
     q[q < 0] = 0.0
     q[q > 1] = 1.0
     return q
@@ -100,7 +100,7 @@ if __name__ == "__main__":
     # x = np.linspace(-1, 1, 200)
     lats = np.linspace(-1, 1, 200) * np.pi / 2
     # temp: floatarr = np.ones_like(lats) * 350  #
-    temp: floatarr = np.exp(-10 * (lats) ** 2) * 50 + 250
+    temp: floatarr = np.exp(-10 * (lats) ** 2, dtype=float) * 50.0 + 250.0
     # F_o = f_o(lats)
     F_o = np.ones_like(lats) * 0.7
 
