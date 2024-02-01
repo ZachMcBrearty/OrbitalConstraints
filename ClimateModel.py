@@ -82,11 +82,10 @@ def climate_model_moon(
     omega = config.getfloat("PLANET", "omega") / 1  # 7.27 * 10**-5 rad s^-1
     D = D_0 * p * c_p * m**-2 * omega**-2
 
-    Diffusion = np.ones_like(Temp) * D  # diffusion coefficient (Lat)
+    Diffusion = D  # diffusion coefficient (Lat)
 
     secondT = np.zeros(spacedim)
     firstT = np.zeros(spacedim)
-    firstD = np.zeros(spacedim)
 
     a = config.getfloat("ORBIT", "gassemimajoraxis")  # semimajoraxis
     e = config.getfloat("ORBIT", "gaseccentricity")  # eccentricity
@@ -107,8 +106,6 @@ def climate_model_moon(
     else:
         raise ValueError(f"Unknown land-ocean fraction type, got: {frac}")
 
-    ### TODO: reimplement exclipsing from orbital model ###
-    # orbits = orbital_model(config, 24)
     gas_mass = config.getfloat("ORBIT", "gasgiantmass") * MASS["jupiter"]
     gas_rad = config.getfloat("ORBIT", "gasgiantradius") * RADIUS["jupiter"]
 
@@ -126,43 +123,45 @@ def climate_model_moon(
     visco_func = get_visco_func(gas_mass, moon_rad, moon_a, moon_ecc, moon_dens, B=25)
     tidal_heating_value = visco_func(T_surf)
     heatings = tidal_heating_value * heating_dist
+
+    # fraction of light let through, i.e. 1-ε where ε is the eclipsing fraction
+    eclip = 1 - (-0.05515 + 1.69e-4 / moon_a + 4.97e-2 / a)
+    if eclip > 1:
+        eclip = 1
+    if eclip < 0:
+        eclip = 0
     for n in range(timedim):
         secondT[0] = forwardbackward_pole(Temp[:, n], dlam)
         firstT[0] = 0
-        firstD[0] = forwarddifference(Diffusion[:, n], 0, dlam)
 
         # forward difference for zero edge
         # secondT[1] = centralbackward_edge(Temp[:, n], dlam)
         secondT[1] = centralcentral_firstedge(Temp[:, n], dlam)
         firstT[1] = centraldifference(Temp[:, n], 1, dlam)
-        firstD[1] = centraldifference(Diffusion[:, n], 1, dlam)
 
         # backwards difference for end edge
         # secondT[-2] = centralforward_edge(Temp[:, n], dlam)
         secondT[-2] = centralcentral_secondedge(Temp[:, n], dlam)
         firstT[-2] = centraldifference(Temp[:, n], -2, dlam)
-        firstD[-2] = centraldifference(Diffusion[:, n], -2, dlam)
 
         secondT[-1] = backwardforward_pole(Temp[:, n], dlam)
         firstT[-1] = 0
-        firstD[-1] = backwarddifference(Diffusion[:, n], -1, dlam)
+
         for m in range(2, spacedim - 2):
             # central difference for most cases
             secondT[m] = central2ndorder(Temp[:, n], m, dlam)
             firstT[m] = centraldifference(Temp[:, n], m, dlam)
-            firstD[m] = centraldifference(Diffusion[:, n], m, dlam)
 
-        diff_elem = (
-            firstD - Diffusion[:, n] * np.tan(lats[:])
-        ) * firstT + secondT * Diffusion[:, n]
+        diff_elem = Diffusion * (secondT - np.tan(lats[:]) * firstT)
         # T(x_m, t_n+1) = T(x_m, t_n) + Δt / C(x_m, t_n)
         # * (diff - I + S(1-A) )
         Capacity[:, n] = C(F_o, f_i(Temp[:, n]), Temp[:, n])
         Ir_emission[:, n] = I_2(Temp[:, n])
 
-        Source[:, n] = S_moon(
-            a, lats, dt * n, axtilt, e, gas_albedo, gas_rad, moon_a
-        )  # * eclip
+        Source[:, n] = (
+            S_moon(a, lats, dt * n, axtilt, e, gas_albedo, gas_rad, moon_a, moon_ecc)
+            * eclip
+        )
         Albedo[:, n] = A_2(Temp[:, n])
 
         if n != 0 and n % skip == 0:
