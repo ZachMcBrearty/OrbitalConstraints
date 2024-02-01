@@ -206,8 +206,7 @@ def orbital_model(conf: CONF_PARSER_TYPE, dt_steps=10):
     moon = leapfrog_update_matrix @ moon
 
     update_matrix = np.array([[1, dt, dt**2], [0, 1, dt], [0, 0, 0]])
-    # eclipsed = check_eclipse(star[0], gas[0], moon[0], r_star, r_gas)
-    eclipsed = 0
+    eclipsed = check_eclipse(star[0], gas[0], moon[0], r_star, r_gas)
 
     yield star[0], gas[0], moon[0], eclipsed
     while True:
@@ -231,7 +230,7 @@ def orbital_model(conf: CONF_PARSER_TYPE, dt_steps=10):
         star = update_matrix @ star
         gas = update_matrix @ gas
         moon = update_matrix @ moon
-        # eclipsed = check_eclipse(star[0], gas[0], moon[0], r_star, r_gas)
+        eclipsed = check_eclipse(star[0], gas[0], moon[0], r_star, r_gas)
         yield star[0], gas[0], moon[0], eclipsed
 
 
@@ -305,12 +304,9 @@ def orbital_model_explicit(conf: CONF_PARSER_TYPE, dt_steps=10):
     moon_vx -= dt / 2 * moon_ax
     moon_vy -= dt / 2 * moon_ay
 
-    # update_matrix = np.array([[1, dt, 0], [0, 1, dt], [0, 0, 0]])
     eclipsed = check_eclipse_explicit(
         (star_x, star_y), (gas_x, gas_y), (moon_x, moon_y), r_star, r_gas
     )
-
-    # eclipsed = 0
 
     yield (star_x, star_y), (gas_x, gas_y), (moon_x, moon_y), eclipsed
     while True:
@@ -360,3 +356,324 @@ def orbital_model_explicit(conf: CONF_PARSER_TYPE, dt_steps=10):
             (star_x, star_y), (gas_x, gas_y), (moon_x, moon_y), r_star, r_gas
         )
         yield (star_x, star_y), (gas_x, gas_y), (moon_x, moon_y), eclipsed
+
+
+from InsolationFunction import dist_adv
+
+
+def check_eclipse_with_dist_adv(
+    gas_x,
+    gas_y,
+    moon_x,
+    moon_y,
+    star_rad: float,
+    gas_rad: float,
+) -> float:
+    # if the planet is infront of the gas giant do nothing
+    # i.e. the planet cannot block the light for the moon
+    gas_to_star_dist = r_explicit(gas_x, gas_y)
+    if r_explicit(moon_x, moon_y) < gas_to_star_dist:
+        return 1.0
+    # find unit vector from star to gas giant
+    star_to_gas_dir_x = gas_x / gas_to_star_dist
+    star_to_gas_dir_y = gas_y / gas_to_star_dist
+    # rotate 90deg left and right to get edges of the star and planet
+    perp_up_x = -star_to_gas_dir_y
+    perp_up_y = star_to_gas_dir_x
+    perp_down_x = star_to_gas_dir_y
+    perp_down_y = -star_to_gas_dir_x
+
+    star_up_x = perp_up_x * star_rad
+    star_up_y = perp_up_y * star_rad
+    star_down_x = perp_down_x * star_rad
+    star_down_y = perp_down_y * star_rad
+
+    gas_up_x = gas_x + perp_up_x * gas_rad
+    gas_up_y = gas_y + perp_up_y * gas_rad
+    gas_down_x = gas_x + perp_down_x * gas_rad
+    gas_down_y = gas_y + perp_down_y * gas_rad
+
+    # logic is reversed since the system is "upside-down"
+    if moon_x < 0:
+        # Umbra:
+        # lines from edges of star to same edges to planet
+        if (
+            moon_y > line_explicit(moon_x, star_up_x, star_up_y, gas_up_x, gas_up_y)
+        ) and (
+            moon_y
+            < line_explicit(moon_x, star_down_x, star_down_y, gas_down_x, gas_down_y)
+        ):
+            q = 0.0
+        # Penumbra:
+        # lines from edges of star to opposite edges of planet
+        elif (
+            moon_y > line_explicit(moon_x, star_down_x, star_down_y, gas_up_x, gas_up_y)
+        ) and (
+            moon_y < line_explicit(moon_x, star_up_x, star_up_y, gas_down_x, gas_down_y)
+        ):
+            q = 0.5
+        # unblocked
+        else:
+            q = 1.0
+    else:
+        if (
+            moon_y < line_explicit(moon_x, star_up_x, star_up_y, gas_up_x, gas_up_y)
+        ) and (
+            moon_y
+            > line_explicit(moon_x, star_down_x, star_down_y, gas_down_x, gas_down_y)
+        ):
+            q = 0.0
+        elif (
+            moon_y < line_explicit(moon_x, star_down_x, star_down_y, gas_up_x, gas_up_y)
+        ) and (
+            moon_y > line_explicit(moon_x, star_up_x, star_up_y, gas_down_x, gas_down_y)
+        ):
+            q = 0.5
+        else:
+            q = 1.0
+    return q
+
+
+def orbital_model_using_dist_adv(
+    r_star, r_gas, gas_a, gas_ecc, moon_a, moon_ecc, dt, gas_M
+):
+    """r_star/gas: radius of the star/gas giant
+    gas/moon_a: semimajor axis of the gas giant/moon orbits
+    gas/moon_ecc: eccentricity of the gas giant/moon orbits
+    dt: timestep, years
+    """
+    t = 0.0
+    gas_r, gas_E = dist_adv(gas_a, gas_ecc, t)
+    gas_x = gas_r * np.cos(gas_E)
+    gas_y = gas_r * np.sin(gas_E)
+    moon_r, moon_E = dist_adv(moon_a, moon_ecc, t, Mass=gas_M)
+    moon_x = moon_r * np.cos(moon_E)
+    moon_y = moon_r * np.sin(moon_E)
+    eclipsed = check_eclipse_with_dist_adv(
+        gas_x, gas_y, gas_x + moon_x, gas_y + moon_y, r_star, r_gas
+    )
+    yield eclipsed
+    while True:
+        t += dt
+        gas_r, gas_E = dist_adv(gas_a, gas_ecc, t, iter=10)
+        gas_x = gas_r * np.cos(gas_E)
+        gas_y = gas_r * np.sin(gas_E)
+        moon_r, moon_E = dist_adv(moon_a, moon_ecc, t, iter=10)
+        moon_x = moon_r * np.cos(moon_E)
+        moon_y = moon_r * np.sin(moon_E)
+        eclipsed = check_eclipse_with_dist_adv(
+            gas_x, gas_y, gas_x + moon_x, gas_y + moon_y, r_star, r_gas
+        )
+        yield eclipsed
+
+
+if __name__ == "__main__":
+    import matplotlib.pyplot as plt
+    from scipy.optimize import curve_fit
+
+    from Constants import *
+
+    from tidalheating import roche_limit
+
+    # gas_as = np.linspace(0.1, 10, 100)
+    # n = 100000
+    # eclips = []
+    # for orbit_distance in gas_as:
+    #     orb_model = orbital_model_using_dist_adv(
+    #         r_star=RADIUS["solar"] / AU,
+    #         r_gas=RADIUS["jupiter"] / AU,
+    #         gas_a=orbit_distance,
+    #         gas_ecc=0.0,
+    #         moon_a=0.003,
+    #         moon_ecc=0.0,
+    #         dt=1 / 365 / 24,
+    #         gas_M=MASS["jupiter"] / MASS["solar"],
+    #     )
+    #     avg_eclip = 0
+    #     i = 0
+    #     while i < n:
+    #         avg_eclip += 1 - next(orb_model)
+    #         i += 1
+    #     avg_eclip /= n
+    #     eclips.append(avg_eclip)
+    # plt.axvline(
+    #     DISTANCE["mercury"] / AU,
+    #     0,
+    #     1,
+    #     linestyle="dashdot",
+    #     label="Solar system planets",
+    # )
+    # plt.axvline(DISTANCE["venus"] / AU, 0, 1, linestyle="dashdot")
+    # plt.axvline(DISTANCE["earth"] / AU, 0, 1, linestyle="dashdot")
+    # plt.axvline(DISTANCE["mars"] / AU, 0, 1, linestyle="dashdot")
+    # plt.axvline(DISTANCE["jupiter"] / AU, 0, 1, linestyle="dashdot")
+    # plt.axvline(DISTANCE["saturn"] / AU, 0, 1, linestyle="dashdot")
+
+    # func = lambda x, b, c: c + b / x
+    # fit, cov = curve_fit(func, gas_as, eclips)
+    # print(fit, "+/-", np.sqrt(np.diag(cov)))
+    # rang = np.linspace(gas_as[0], gas_as[-1], 1000)
+    # plt.plot(rang, func(rang, *fit), label=r"$\epsilon = a + bx^{-1}$")
+    # plt.scatter(gas_as, eclips, marker="x", label="data")
+    # plt.xlabel(agas_name + ", " + a_unit)
+    # plt.ylabel("Fraction of light eclipsed")
+    # plt.legend()
+    # plt.show()
+
+    # gas_es = np.linspace(0, 0.9, 100)
+    # n = 100000
+    # eclips = []
+    # for e in gas_es:
+    #     orb_model = orbital_model_using_dist_adv(
+    #         RADIUS["solar"] / AU,
+    #         RADIUS["jupiter"] / AU,
+    #         1.0,
+    #         e,
+    #         0.003,
+    #         0.0,
+    #         1 / 365 / 24,
+    #         MASS["jupiter"] / MASS["solar"],
+    #     )
+    #     avg_eclip = 0
+    #     i = 0
+    #     while i < n:
+    #         avg_eclip += 1 - next(orb_model)
+    #         i += 1
+    #     avg_eclip /= n
+    #     eclips.append(avg_eclip)
+
+    # plt.plot(gas_es, eclips)
+    # plt.xlabel(egas_name)
+    # plt.ylabel("Fraction of light eclipsed")
+    # plt.show()
+
+    # moon_as = np.linspace(0.0005, 0.0105, 100)
+    # n = 20000
+    # eclips = []
+    # for orbit_distance in moon_as:
+    #     orb_model = orbital_model_using_dist_adv(
+    #         r_star=RADIUS["solar"] / AU,
+    #         r_gas=RADIUS["jupiter"] / AU,
+    #         gas_a=1,
+    #         gas_ecc=0.0,
+    #         moon_a=orbit_distance,
+    #         moon_ecc=0.0,
+    #         dt=1 / 365 / 24,
+    #         gas_M=MASS["jupiter"] / MASS["solar"],
+    #     )
+    #     avg_eclip = 0
+    #     i = 0
+    #     while i < n:
+    #         avg_eclip += 1 - next(orb_model)
+    #         i += 1
+    #     avg_eclip /= n
+    #     eclips.append(avg_eclip)
+
+    # func = lambda x, a, b: a + b / x
+    # fit, cov = curve_fit(func, moon_as, eclips)
+    # print(fit, "+/-", np.sqrt(np.diag(cov)))
+    # rang = np.linspace(moon_as[0], moon_as[-1], 1000)
+    # plt.plot(rang * 1e3, func(rang, *fit), label=r"$\epsilon = a + bx^{-1}$")
+
+    # plt.scatter(moon_as * 1e3, eclips, marker="x", label="data")
+
+    # roche = roche_limit(RADIUS["luna"], 5000, MASS["jupiter"])
+    # plt.axvspan(
+    #     0, roche * 1e3, 0, 1, color="r", alpha=0.5, hatch="/", label="Roche Limit"
+    # )
+    # plt.axvline(
+    #     DISTANCE["io"] / AU * 1e3,
+    #     0,
+    #     1,
+    #     label="Io, Europa, Ganymede",
+    #     linestyle="dashdot",
+    # )
+    # plt.axvline(DISTANCE["europa"] / AU * 1e3, 0, 1, linestyle="dashdot")
+    # plt.axvline(DISTANCE["ganymede"] / AU * 1e3, 0, 1, linestyle="dashdot")
+    # # plt.axvline(DISTANCE["callisto"] / AU * 1e3, 0, 1)
+
+    # plt.xticks(np.linspace(0.0005, 0.0105, 9) * 1e3)
+    # plt.xlabel(amoon_name + ", " + r"$10^{-3}$ " + a_unit)
+    # plt.ylabel("Fraction of light eclipsed")
+    # plt.legend()
+    # plt.show()
+
+    # moon_es = np.linspace(0, 0.9, 100)
+    # n = 100000
+    # eclips = []
+    # for e in moon_es:
+    #     orb_model = orbital_model_using_dist_adv(
+    #         RADIUS["solar"] / AU,
+    #         RADIUS["jupiter"] / AU,
+    #         1.0,
+    #         0.0,
+    #         0.003,
+    #         e,
+    #         1 / 365 / 240,
+    #         MASS["jupiter"] / MASS["solar"],
+    #     )
+    #     avg_eclip = 0
+    #     i = 0
+    #     while i < n:
+    #         avg_eclip += 1 - next(orb_model)
+    #         i += 1
+    #     avg_eclip /= n
+    #     eclips.append(avg_eclip)
+
+    # plt.plot(moon_es, eclips)
+    # plt.xlabel(emoon_name)
+    # plt.ylabel("Fraction of light eclipsed")
+    # plt.show()
+
+    # gas_a = 1.0
+    # gas_ecc = 0.1
+    # moon_a = 0.003
+    # moon_ecc = 0.1
+    # gas_M = MASS["jupiter"] / MASS["solar"]
+    # f = 0
+    # for t in np.linspace(0, 10 / 365, 1000):
+    #     gas_r, gas_E = dist_adv(gas_a, gas_ecc, t)
+    #     gas_x = gas_r * np.cos(gas_E)
+    #     gas_y = gas_r * np.sin(gas_E)
+    #     moon_r, moon_E = dist_adv(moon_a, moon_ecc, t, Mass=gas_M)
+    #     # plt.scatter(t, moon_E, c="b")
+    #     moon_x = moon_r * np.cos(moon_E)
+    #     moon_y = moon_r * np.sin(moon_E)
+    #     plt.scatter(gas_x, gas_y, c="r")
+    #     if (
+    #         q := check_eclipse_with_dist_adv(
+    #             gas_x,
+    #             gas_y,
+    #             gas_x + moon_x,
+    #             gas_y + moon_y,
+    #             RADIUS["solar"] / AU,
+    #             RADIUS["jupiter"] / AU,
+    #         )
+    #     ) < 0.9:
+    #         colour = "g"
+    #     else:
+    #         colour = "b"
+    #     f += q
+    #     plt.scatter(gas_x + moon_x, gas_y + moon_y, c=colour)
+    #     # plt.scatter(moon_x, moon_y, c="b")
+    # print(f / 1000)
+    # plt.show()
+
+    n = 100000
+    orb_model = orbital_model_using_dist_adv(
+        r_star=RADIUS["solar"] / AU,
+        r_gas=RADIUS["jupiter"] / AU,
+        gas_a=1,
+        gas_ecc=0.0,
+        moon_a=0.003,
+        moon_ecc=0.0,
+        dt=1 / 365 / 24,
+        gas_M=MASS["jupiter"] / MASS["solar"],
+    )
+    avg_eclip = 0
+    i = 0
+    while i < n:
+        avg_eclip += 1 - next(orb_model)
+        i += 1
+    avg_eclip /= n
+    print(avg_eclip)
