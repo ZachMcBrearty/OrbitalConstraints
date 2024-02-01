@@ -21,7 +21,7 @@ from Constants import *
 from filemanagement import read_dual_folder, read_single_folder, read_file
 
 
-def Habitable(temps: NDArray) -> NDArray:
+def Habitable(temps: NDArray, maxtol=10) -> NDArray:
     """aka BioCompatible
     temps: numpy array of temperatures.
     returns: 1 if 273 < temp < 373 ; 0 otherwise, for each temp in temps"""
@@ -30,7 +30,9 @@ def Habitable(temps: NDArray) -> NDArray:
     ret[temps <= 273] = 0
     zeroes = np.zeros_like(temps[:, 0])
     for lat in range(temps.shape[1]):
-        if np.any(temps[:, lat] >= 373 + 10) or np.any(temps[:, lat] <= 263 - 10):
+        if np.any(temps[:, lat] >= 373 + maxtol) or np.any(
+            temps[:, lat] <= 273 - maxtol
+        ):
             ret[:, lat] = zeroes
     return ret
 
