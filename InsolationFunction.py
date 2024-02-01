@@ -77,69 +77,71 @@ def S_planet(
 
 
 def S_moon(
-    a: float,
+    a_gas: float,
     theta: float | floatarr,
     t: float | floatarr,
     delta_0: float,
-    e: float,
+    e_gas: float,
     A_gas: float,
     rad_gas: float,
-    r_moon_to_gas: float,
+    a_moon: float,
+    e_moon: float,
     offset: float = 0,
 ) -> float | floatarr:
-    """implements equation A8 from appendix A of WK97
-    a: semi-major axis, AU
+    """implements equation A8 from appendix A of WK97 along with modifications for gas giant
+    a_gas: semi-major axis of the gas giant, AU
     theta: planetary latitude, radians
     t: float: years
     delta_0: obliquity, radians
-    e: eccentricity
+    e_gas: eccentricity of the gas giant,
     A_gas: albedo of the gas giant
     rad_gas: radius of gas giant, R_J
-    r_moon_to_gas: distance from gas giant to the moon, AU
+    a_moon: semimajor axis of moon around gas giant, AU
+    e_moon: eccentricity of moon around gas giant
+    offset:
 
     returns: S, solar insolation, J s^-1 m^-2"""
-    q_0 = 1360 * (  #### needs more careful treatment ######
-        1
-        + (1 - A_gas)
-        * (rad_gas * RADIUS["jupiter"]) ** 2
-        / (4 * (AU * r_moon_to_gas) ** 2)
-    )  # Wm^-2
-    delta_ = delta(a, t, delta_0)
+    q_0 = 1360  # W m^-2
+    delta_ = delta(a_gas, t, delta_0)
     cosdelta = np.cos(delta_)
     sindelta = np.sin(delta_)
     costheta = np.cos(theta)
     sintheta = np.sin(theta)
     H_ = H(theta, delta_)
-    r = dist(a, e, t, offset, 5)
+    r = dist(a_gas, e_gas, t, offset, 5)
     # S = q_0 / π * a^-2 * (H sinθ sinδ + cosθ cosδ sinH)
     return (
         q_0
         / np.pi
         * r**-2
         * (H_ * sintheta * sindelta + costheta * cosdelta * np.sin(H_))
+    ) * (
+        1
+        + (rad_gas**2 * (1 - A_gas) + A_gas / (4 * np.pi * r**2))
+        / (4 * a_moon**2 * (1 - e_moon**2) ** (1 / 2))
     )
 
 
 def dist_adv(
-    a: float, e: float, t: float | floatarr, offset: float = 0, iter: int = 3
-) -> float | floatarr:
+    a: float, e: float, t: float, offset: float = 0.0, iter: int = 3, Mass: float = 1.0
+) -> tuple[float, float]:
     """a: semimajor axis, AU
     e: eccentricity, 0 < e < 1
     t: time, years
     offset: temporal offset from vernal equinox, years
     iter: number of iterations of newton's method
         - 3 iterations gives an error of ~5% at e = 0.9
-
-    returns: distance to star, AU"""
-    T = a ** (3 / 2)
+    Mass: mass of object being orbited, solar mass
+    returns: (distance to star AU, Eccentric Anomaly)"""
+    T = np.sqrt(a**3 / Mass)
     # modulo as M is periodic in T
-    M = 2 * np.pi * ((t + offset) % T)
+    M = 2 * np.pi * ((t + offset) % T) / T
     # M = E - e SinE
     E = M
     for _ in range(iter):
         # E_i+1 = E_i + (M + e sin(E_i) - E_i) / (1 - e cos(E_i))
         E = E + ((M + e * np.sin(E) - E) / (1 - e * np.cos(E)))
-    return a * (1 - e * np.cos(E))
+    return a * (1 - e * np.cos(E)), E
 
 
 def dist_basic(
