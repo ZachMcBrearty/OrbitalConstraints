@@ -71,8 +71,15 @@ DISTANCE = {  # m
     "uranus": 2872.46e9,  # 19 au
     "neptune": 4495.06e9,  # 30 au
     "kuiperbelt": 5906.38e9,  # Pluto, 39 au
+    "luna": 384.400e6,  # 0.0026 au
+    "io": 421.800e6,  # 0.0028 au
+    "europa": 671.100e6,  # 0.0045 au
+    "ganymede": 1.070400e9,  # 0.0071 au
+    "callisto": 1.882700e9,  # 0.013 au
 }
 
 if __name__ == "__main__":
-    for dist_ in DISTANCE:
-        print(dist_, DISTANCE[dist_], "m", DISTANCE[dist_] / AU, "AU")
+    for _dist in DISTANCE:
+        print(_dist, DISTANCE[_dist], "m", DISTANCE[_dist] / AU, "AU")
+    # for _rad in RADIUS:
+    #     print(_rad, RADIUS[_rad], "m", RADIUS[_rad] / AU, "AU")
