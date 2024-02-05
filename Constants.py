@@ -78,6 +78,12 @@ DISTANCE = {  # m
     "callisto": 1.882700e9,  # 0.013 au
 }
 
+EARTH_CURRENT_ECCENTRICITY = 0.0167
+EARTH_MAX_ECCENTRICITY = 0.0679
+
+EARTH_MIN_OBLIQUITY = 22
+EARTH_MAX_OBLIQUITY = 25
+
 if __name__ == "__main__":
     for _dist in DISTANCE:
         print(_dist, DISTANCE[_dist], "m", DISTANCE[_dist] / AU, "AU")
