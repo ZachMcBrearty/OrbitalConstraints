@@ -104,6 +104,7 @@ def time_habitability_paramspace(
     min_year=90,
     max_year=100,
     H=Habitable,
+    vertical_lines: Optional[list[tuple[float, str, str]]] = None,
 ):
     """Latitude band habitability, averaged over a number of years
     min_year to max_year: years to average over"""
@@ -141,10 +142,10 @@ def time_habitability_paramspace(
         val_range, degs, np.array(habitability_time).T, cmap="RdBu_r", shading="nearest"
     )
     fig.colorbar(time_hab_map, ax=ax, label="Time averaged habitability")
-    # ax.axvline(22, 0, 1, ls="dashed", label="Earth min/max")
-    # ax.axvline(25, 0, 1, ls="dashed")
-    ax.set_xticks(np.linspace(val_range[0], val_range[-1], 11))
-    ax.set_yticks(np.arange(-90, 91, 30))
+    if vertical_lines is not None:
+        for line in vertical_lines:
+            ax.axvline(line[0], 0, 1, ls=line[1], label=line[2])
+        plt.legend()
     ax.set_ylabel(r"Latitude, $^{\circ}$")
     ax.set_xlabel(f"{val_name} {val_unit}")
     plt.tight_layout()
@@ -159,6 +160,7 @@ def area_habitability_paramspace(
     min_year=90,
     max_year=95,
     H=Habitable,
+    vertical_lines: Optional[list[tuple[float, str, str]]] = None,
 ):
     """yearly habitability averaged over all latitudes
     min year to max_year: years to show"""
@@ -202,8 +204,10 @@ def area_habitability_paramspace(
     )
     fig.colorbar(lat_hab_map, ax=ax, label="Area averaged habitability")
     ax.set_xticks(np.linspace(val_range[0], val_range[-1], 11))
-    # ax.axvline(22, 0, 1, ls="dashed", label="Earth min/max")
-    # ax.axvline(25, 0, 1, ls="dashed")
+    if vertical_lines is not None:
+        for line in vertical_lines:
+            ax.axvline(line[0], 0, 1, ls=line[1], label=line[2])
+        plt.legend()
     ax.set_ylabel("Time, years")
     ax.set_xlabel(f"{val_name} {val_unit}")
     plt.tight_layout()
@@ -267,8 +271,13 @@ def time_and_area_shared_paramspace(
     )
     fig.colorbar(lat_hab_map, ax=ax2, label="Area averaged habitability")
     ax2.set_xticks(np.linspace(val_range[0], val_range[-1], 11))
+    ax2.axvline(DISTANCE["venus"] / AU, 0, 1, ls="dashed", label="Venus")
+    ax2.axvline(DISTANCE["mars"] / AU, 0, 1, ls="dashdot", label="Mars")
+    # ax.axvline(22, 0, 1, ls="dashed", label="Earth min/max")
+    # ax.axvline(25, 0, 1, ls="dashed")
     ax2.set_ylabel("Time, years")
     ax2.set_xlabel(f"{val_name} {val_unit}")
+    plt.legend()
     plt.tight_layout()
     plt.show()
 
@@ -442,42 +451,58 @@ if __name__ == "__main__":
     #     H=HumanCompatible,
     # )
 
-    # area_habitability_paramspace(
-    #     "single_gassemimajoraxis",
-    #     here,
-    #     aplt_name,
-    #     a_unit,
-    #     180,
-    #     190,
-    #     H=HumanCompatible,
-    # )
-    # time_habitability_paramspace(
-    #     "single_gassemimajoraxis",
-    #     here,
-    #     aplt_name,
-    #     a_unit,
-    #     180,
-    #     190,
-    #     H=HumanCompatible,
-    # )
-    # area_habitability_paramspace(
-    #     "single_gaseccentricity",
-    #     here,
-    #     eplt_name,
-    #     e_unit,
-    #     180,
-    #     190,
-    #     H=HumanCompatible,
-    # )
-    # time_habitability_paramspace(
-    #     "single_gaseccentricity",
-    #     here,
-    #     eplt_name,
-    #     e_unit,
-    #     180,
-    #     190,
-    #     H=HumanCompatible,
-    # )
+    area_habitability_paramspace(
+        "single_gassemimajoraxis",
+        here,
+        aplt_name,
+        a_unit,
+        180,
+        190,
+        H=HumanCompatible,
+        vertical_lines=[
+            (DISTANCE["venus"] / AU, "dashed", "Venus"),
+            (1.5, "dashdot", "Mars"),
+        ],
+    )
+    time_habitability_paramspace(
+        "single_gassemimajoraxis",
+        here,
+        aplt_name,
+        a_unit,
+        180,
+        190,
+        H=HumanCompatible,
+        vertical_lines=[
+            (DISTANCE["venus"] / AU, "dashed", "Venus"),
+            (1.5, "dashdot", "Mars"),
+        ],
+    )
+    area_habitability_paramspace(
+        "single_gaseccentricity",
+        here,
+        eplt_name,
+        e_unit,
+        180,
+        190,
+        H=HumanCompatible,
+        vertical_lines=[
+            (EARTH_CURRENT_ECCENTRICITY, "dashed", "Earth Current"),
+            (EARTH_MAX_ECCENTRICITY, "dashdot", "Earth Max"),
+        ],
+    )
+    time_habitability_paramspace(
+        "single_gaseccentricity",
+        here,
+        eplt_name,
+        e_unit,
+        180,
+        190,
+        H=HumanCompatible,
+        vertical_lines=[
+            (EARTH_CURRENT_ECCENTRICITY, "dashed", "Earth Current"),
+            (EARTH_MAX_ECCENTRICITY, "dashdot", "Earth Max"),
+        ],
+    )
     time_habitability_paramspace(
         "single_obliquity",
         here,
@@ -486,6 +511,10 @@ if __name__ == "__main__":
         150,
         160,
         H=HumanCompatible,
+        vertical_lines=[
+            (EARTH_MIN_OBLIQUITY, "dashed", "Earth Min"),
+            (EARTH_MAX_OBLIQUITY, "dashdot", "Earth Max"),
+        ],
     )
     area_habitability_paramspace(
         "single_obliquity",
@@ -495,6 +524,10 @@ if __name__ == "__main__":
         150,
         160,
         H=HumanCompatible,
+        vertical_lines=[
+            (EARTH_MIN_OBLIQUITY, "dashed", "Earth Min"),
+            (EARTH_MAX_OBLIQUITY, "dashdot", "Earth Max"),
+        ],
     )
 
     # habitability_paramspace_compare(

@@ -273,8 +273,8 @@ def single_variable_single_fit_plot(
             marker=markers.MarkerStyle("x"),
         )
 
-    ax1.axvline(0.0167, 0, 1, label="Earth current")
-    ax1.axvline(0.0679, 0, 1, label="Earth max")
+    # ax1.axvline(0.0167, 0, 1, label="Earth current")
+    # ax1.axvline(0.0679, 0, 1, label="Earth max")
     # share-x is used so only the bottom graph needs to have the x-label
     if residuals:
         ax2.set_xlabel(f"{val_name}{val_unit}")
@@ -629,6 +629,40 @@ def convergence_plot_dual_with_fits(
     plt.show()
 
 
+def plot_three_on_one_graph(
+    tests,
+    convtemps,
+    val_ranges,
+    val_name,
+    val_unit,
+    series_labels,
+    x_axis_scale: Literal["linear", "log"] = "linear",
+    y_axis_scale: Literal["linear", "log"] = "linear",
+):
+    if val_unit is None:
+        val_unit = ""
+    else:
+        val_unit = ", " + val_unit
+
+    fig, ax = plt.subplots()
+    ax: plt.Axes
+    for i in range(len(convtemps)):
+        ax.scatter(val_ranges[i], convtemps[i], label=series_labels[i])
+
+    if np.min(convtemps) < 273:
+        ax.axhline(273, 0, 1, ls="-.", label="273 K")
+    if np.max(convtemps) > 373:
+        ax.axhline(373, 0, 1, ls="-.", label="373 K")
+    ax.set_xlabel(f"{val_name}{val_unit}")
+
+    ax.set_xscale(x_axis_scale)
+    ax.set_yscale(y_axis_scale)
+
+    plt.legend()
+    plt.tight_layout()
+    plt.show()
+
+
 def orbital_animation():
     import matplotlib.pyplot as plt
     from matplotlib.animation import FuncAnimation
@@ -727,14 +761,14 @@ def orbital_animation():
 
 
 if __name__ == "__main__":
-    from filemanagement import load_config, read_file
+    from filemanagement import load_config, read_file, read_single_folder
     from convergence import convergence_test
 
-    conf = load_config()
-    q0 = read_file("single_omega/single_omega_0.9375.npz")
-    q1 = read_file("single_omega/single_omega_1.0.npz")
-    q2 = read_file("single_omega/single_omega_1.0625.npz")
-    threecolourplot(q0, q1, q2, None, None, 1)
+    # conf = load_config()
+    # q0 = read_file("single_omega/single_omega_0.9375.npz")
+    # q1 = read_file("single_omega/single_omega_1.0.npz")
+    # q2 = read_file("single_omega/single_omega_1.0625.npz")
+    # threecolourplot(q0, q1, q2, None, None, 1)
 
     # q0 = read_file("single_omega/single_omega_2.25.npz")
     # q1 = read_file("single_omega/single_omega_2.3125.npz")

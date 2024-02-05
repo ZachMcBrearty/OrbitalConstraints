@@ -500,18 +500,25 @@ def reprocess_ecc_fit(
     yearavg=1,
     x_axis_scale: Literal["linear", "log"] = "linear",
     y_axis_scale: Literal["linear", "log"] = "linear",
+    plus_b=False,
 ):
     val_range, tests, convtemps = process_data_single(
         foldername, folderpath, yearavg, rtol
     )
+    if plus_b:
+        func = lambda x, a, b: (a + b / np.sqrt(1 - x**2)) ** (1 / 4)
+        func_label = r"$(p + q (1-e^2)^{-1/2})^{1/4}$"
+    else:
+        func = lambda x, a: a * (1 - x**2) ** (-1 / 8)
+        func_label = r"$p (1-e^2)^{-1/8}$"
     single_variable_single_fit_plot(
         tests,
         convtemps,
         val_name,
         val_range,
-        lambda x, a: a * (1 - x**2) ** (-1 / 8),
+        func,
         (0, -1),
-        r"$p (1-e^2)^{-1/8}$",
+        func_label,
         val_unit,
         x_axis_scale,
         y_axis_scale,
@@ -532,18 +539,32 @@ def reprocess_semimajor_fit(
     val_range, tests, convtemps = process_data_single(
         foldername, folderpath, yearavg, rtol
     )
-    single_variable_N_fits_plot(
-        tests,
-        convtemps,
-        val_name,
-        val_range,
-        [lambda x, a, b: a * x ** (-b), lambda x, a, b: a * x ** (-b)],
-        [(0, split), (split, -1)],
-        [r"$p_1 a^{q_1}$", r"$p_2 a^{q_2}$"],
-        val_unit,
-        x_axis_scale,
-        y_axis_scale,
-    )
+    if split == -1:
+        single_variable_single_fit_plot(
+            tests,
+            convtemps,
+            val_name,
+            val_range,
+            lambda x, a, b: (a + b / x**2) ** (1 / 4),
+            (0, -1),
+            r"$T = (p + q a^{-2})^{1/4}$",
+            val_unit,
+            x_axis_scale,
+            y_axis_scale,
+        )
+    else:
+        single_variable_N_fits_plot(
+            tests,
+            convtemps,
+            val_name,
+            val_range,
+            [lambda x, a, b: a * x ** (-b), lambda x, a, b: a * x ** (-b)],
+            [(0, split), (split, -1)],
+            [r"$p_1 a^{q_1}$", r"$p_2 a^{q_2}$"],
+            val_unit,
+            x_axis_scale,
+            y_axis_scale,
+        )
 
 
 def reprocess_moon_ecc_fit(
@@ -724,8 +745,30 @@ def reprocess_dual_compare(
 
 if __name__ == "__main__":
     here = os.path.curdir
-    # here = "D:/"
+    # here = "D:/v2/"
     conf = "config.ini"
+    # conf = "config_moon.ini"
+    th = "single_obliquity"
+    val_range_1, tests_1, convtemps_1 = process_data_single(f"{th}", here, rtol=1e-3)
+    val_range_2, tests_2, convtemps_2 = process_data_single(
+        f"{th}_TH_0.003_0.006", here, rtol=1e-3
+    )
+    val_range_3, tests_3, convtemps_3 = process_data_single(
+        f"{th}_TH_0.003_0.01", here, rtol=1e-3
+    )
+
+    plot_three_on_one_graph(
+        (tests_1, tests_2, tests_3),
+        (convtemps_1, convtemps_2, convtemps_3),
+        (val_range_1, val_range_2, val_range_3),
+        obliquity_name,
+        obliquity_unit,
+        (
+            "No Tidal heating",
+            r"$a_{moon} = 0.003, e_{moon}=0.006$",
+            r"$a_{moon} = 0.003, e_{moon}=0.01$",
+        ),
+    )
     # dual_a_e_convergence_parallel(
     #     conf, np.linspace(0.5, 2, 31), np.linspace(0, 0.9, 31), 5
     # )
@@ -741,18 +784,26 @@ if __name__ == "__main__":
 
     # test_omega_convergence(conf, np.linspace(0.5, 3, 41), 5)
     # test_omega_convergence(conf, [0.25], 5)
-    reprocess_single_param("single_omega", here, omega_name, omega_unit, rtol=1e-5)
+    # reprocess_single_param("single_omega", here, omega_name, omega_unit, rtol=1e-5)
 
     # test_a_convergence(conf, np.linspace(0.5, 1.5, 41), 5)
-    # reprocess_semimajor_fit(
-    #     "single_gassemimajoraxis", here, val_name=aplt_name, rtol=1e-4, split=21
-    # )
-
     # test_e_convergence(conf, np.linspace(0, 0.9, 51), 5)
-    # reprocess_ecc_fit("single_gaseccentricity", here, val_name=eplt_name, rtol=1e-5)
-
     # test_delta_convergence(conf, np.linspace(0, 90, 101), 5)
     # test_delta_convergence(conf, np.linspace(0, 180, 21), 5)
+    # reprocess_semimajor_fit(
+    #     "single_gassemimajoraxis",
+    #     here,
+    #     val_name=agas_name,
+    #     rtol=1e-4,
+    #     split=28,
+    # )
+    # reprocess_ecc_fit(
+    #     "single_gaseccentricity_TH_0.003_0.006",
+    #     here,
+    #     val_name=egas_name,
+    #     rtol=1e-5,
+    #     plus_b=True,
+    # )
     # reprocess_single_param(
     #     "single_obliquity", here, obliquity_name, obliquity_unit, 1e-5
     # )
