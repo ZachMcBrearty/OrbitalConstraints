@@ -123,8 +123,13 @@ def S_moon(
 
 
 def dist_adv(
-    a: float, e: float, t: float, offset: float = 0.0, iter: int = 3, Mass: float = 1.0
-) -> tuple[float, float]:
+    a: float,
+    e: float,
+    t: float | floatarr,
+    offset: float = 0.0,
+    iter: int = 3,
+    Mass: float = 1.0,
+) -> tuple[float | floatarr, float]:
     """a: semimajor axis, AU
     e: eccentricity, 0 < e < 1
     t: time, years
@@ -176,7 +181,7 @@ def dist(
 
     returns: distance to star, AU"""
     if e >= 0:
-        return dist_adv(a, e, t, offset, iter_num)
+        return dist_adv(a, e, t, offset, iter_num)[0]
     else:
         return dist_basic(a, e, t, offset)
 
