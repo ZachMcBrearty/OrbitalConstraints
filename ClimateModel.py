@@ -114,7 +114,7 @@ def climate_model_moon(
     moon_ecc = config.getfloat("ORBIT", "mooneccentricity")
     moon_dens = config.getfloat("ORBIT", "moondensity")
 
-    heating_dist = coslats * dlam / (4 * np.pi * moon_rad**2)
+    heating_dist = coslats * dlam / 2
     gas_albedo = config.getfloat("TIDALHEATING", "gasalbedo")
 
     C = get_C_func(spacedim)
