@@ -193,7 +193,7 @@ def get_visco_func(M_gas, moon_rad, moon_a, moon_ecc, moon_density, B: float = 2
             [conv_cooling(t, T_surf, B, moon_rad) for t in temps]
         )
         if np.all(visco_fluxes > conv_cool_fluxes):
-            print("MAXIMUM")
+
             return np.max(visco_fluxes)
         elif np.all(visco_fluxes < conv_cool_fluxes):
             # print("NO HEATING")
