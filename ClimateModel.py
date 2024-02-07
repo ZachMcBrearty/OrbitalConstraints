@@ -100,7 +100,7 @@ def climate_model_moon(
         F_o = f_o(lats)  # earth like
     elif frac.startswith("uniform"):
         # uniform
-        if (q := float(frac.split(":")[1])) > 1 or q < 0:
+        if (q := config.getfloat("PLANET", "landfrac")) > 1 or q < 0:
             raise ValueError(f"Uniform land-ocean fraction must be 0<f<1, got: {q}")
         F_o = np.ones_like(lats) * q
     else:
