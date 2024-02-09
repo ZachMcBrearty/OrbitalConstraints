@@ -187,6 +187,8 @@ test_moonrad_convergence = parallel_convergence_test("ORBIT", "moonradius", True
 test_moondensity_convergence = parallel_convergence_test("ORBIT", "moondensity", True)
 test_gasmass_convergence = parallel_convergence_test("ORBIT", "gasgiantmass", True)
 
+test_ocean_fraction_convergence = parallel_convergence_test("PLANET", "landfrac")
+
 
 def _do_dual_test(
     conf_name: str,
@@ -445,6 +447,14 @@ dual_omega_starttemp_convergence = gen_paramspace(
 
 dual_moon_a_e_convergence = parallel_gen_paramspace(
     "ORBIT", "moonsemimajoraxis", "ORBIT", "mooneccentricity", True
+)
+
+dual_e_landfrac_convergence = parallel_gen_paramspace(
+    "ORBIT", "gaseccentricity", "PLANET", "landfrac", True
+)
+
+dual_delta_landfrac_convergence = parallel_gen_paramspace(
+    "PLANET", "obliquity", "PLANET", "landfrac", True
 )
 
 
@@ -747,28 +757,28 @@ if __name__ == "__main__":
     here = os.path.curdir
     # here = "D:/v2/"
     conf = "config.ini"
-    # conf = "config_moon.ini"
-    th = "single_obliquity"
-    val_range_1, tests_1, convtemps_1 = process_data_single(f"{th}", here, rtol=1e-3)
-    val_range_2, tests_2, convtemps_2 = process_data_single(
-        f"{th}_TH_0.003_0.006", here, rtol=1e-3
-    )
-    val_range_3, tests_3, convtemps_3 = process_data_single(
-        f"{th}_TH_0.003_0.01", here, rtol=1e-3
-    )
+    conf_moon = "config_moon.ini"
+    # th = "single_obliquity"
+    # val_range_1, tests_1, convtemps_1 = process_data_single(f"{th}", here, rtol=1e-3)
+    # val_range_2, tests_2, convtemps_2 = process_data_single(
+    #     f"{th}_TH_0.003_0.006", here, rtol=1e-3
+    # )
+    # val_range_3, tests_3, convtemps_3 = process_data_single(
+    #     f"{th}_TH_0.003_0.01", here, rtol=1e-3
+    # )
 
-    plot_three_on_one_graph(
-        (tests_1, tests_2, tests_3),
-        (convtemps_1, convtemps_2, convtemps_3),
-        (val_range_1, val_range_2, val_range_3),
-        obliquity_name,
-        obliquity_unit,
-        (
-            "No Tidal heating",
-            r"$a_{moon} = 0.003, e_{moon}=0.006$",
-            r"$a_{moon} = 0.003, e_{moon}=0.01$",
-        ),
-    )
+    # plot_three_on_one_graph(
+    #     (tests_1, tests_2, tests_3),
+    #     (convtemps_1, convtemps_2, convtemps_3),
+    #     (val_range_1, val_range_2, val_range_3),
+    #     obliquity_name,
+    #     obliquity_unit,
+    #     (
+    #         "No Tidal heating",
+    #         r"$a_{moon} = 0.003, e_{moon}=0.006$",
+    #         r"$a_{moon} = 0.003, e_{moon}=0.01$",
+    #     ),
+    # )
     # dual_a_e_convergence_parallel(
     #     conf, np.linspace(0.5, 2, 31), np.linspace(0, 0.9, 31), 5
     # )
@@ -786,7 +796,7 @@ if __name__ == "__main__":
     # test_omega_convergence(conf, [0.25], 5)
     # reprocess_single_param("single_omega", here, omega_name, omega_unit, rtol=1e-5)
 
-    # test_a_convergence(conf, np.linspace(0.5, 1.5, 41), 5)
+    # test_a_convergence(conf, np.linspace(4, 6, 41), 5)
     # test_e_convergence(conf, np.linspace(0, 0.9, 51), 5)
     # test_delta_convergence(conf, np.linspace(0, 90, 101), 5)
     # test_delta_convergence(conf, np.linspace(0, 180, 21), 5)
@@ -795,10 +805,10 @@ if __name__ == "__main__":
     #     here,
     #     val_name=agas_name,
     #     rtol=1e-4,
-    #     split=28,
+    #     split=-1,
     # )
     # reprocess_ecc_fit(
-    #     "single_gaseccentricity_TH_0.003_0.006",
+    #     "single_gaseccentricity",
     #     here,
     #     val_name=egas_name,
     #     rtol=1e-5,
@@ -807,3 +817,46 @@ if __name__ == "__main__":
     # reprocess_single_param(
     #     "single_obliquity", here, obliquity_name, obliquity_unit, 1e-5
     # )
+
+    # test_ocean_fraction_convergence(
+    #     conf, [f"uniform:{q:.3f}" for q in np.linspace(0, 1, 51)], -1
+    # )
+
+    # reprocess_single_param(
+    #     "single_landfractype", here, "Uniform ocean fraction", None, 1e-5
+    # )
+
+    # dual_e_landfrac_convergence(
+    #     conf,
+    #     np.linspace(0, 0.9, 21),
+    #     np.linspace(0, 1, 51),
+    #     5,
+    # )
+    reprocess_paramspace(
+        "dual_gaseccentricity_landfrac",
+        here,
+        eplt_name,
+        "Uniform ocean fraction",
+        e_unit,
+        None,
+        1e-3,
+    )
+    # dual_delta_landfrac_convergence(
+    #     conf,
+    #     np.linspace(0, 90, 21),
+    #     np.linspace(0, 1, 51),
+    #     5,
+    # )
+
+    # reprocess_paramspace(
+    #     "dual_obliquity_landfrac",
+    #     here,
+    #     obliquity_name,
+    #     "Uniform ocean fraction",
+    #     obliquity_unit,
+    #     None,
+    #     1e-3,
+    # )
+
+    # test_moon_a_convergence(conf_moon, np.linspace(0.001, 0.01, 51), 5)
+    # test_moon_e_convergence(conf_moon, np.linspace(0, 0.1, 51), 5)

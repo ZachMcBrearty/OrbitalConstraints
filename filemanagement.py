@@ -43,10 +43,10 @@ def read_single_folder(
     single, first_name, *extra = foldername.split("_")
     assert single == "single"  # must be a "single..." folder
     files = os.listdir(folderpath + os.sep + foldername)
-    files = sorted(files, key=lambda x: float(x.strip(".npz").split("_")[2]))
+    files = sorted(files, key=lambda x: float(x.strip(".npz").split("_")[-1]))
     for file in files:
         data = read_file(folderpath + os.sep + foldername + os.sep + file)
-        single, first_name_file, first_val = file.strip(".npz").split("_")
+        single, *first_name_file, first_val = file.strip(".npz").split("_")
         yield first_val, data
 
 

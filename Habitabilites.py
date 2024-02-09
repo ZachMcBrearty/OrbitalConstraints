@@ -450,9 +450,9 @@ if __name__ == "__main__":
     #     160,
     #     H=HumanCompatible,
     # )
-
+    suff = ""
     area_habitability_paramspace(
-        "single_gassemimajoraxis",
+        "single_gassemimajoraxis" + suff,
         here,
         aplt_name,
         a_unit,
@@ -465,7 +465,7 @@ if __name__ == "__main__":
         ],
     )
     time_habitability_paramspace(
-        "single_gassemimajoraxis",
+        "single_gassemimajoraxis" + suff,
         here,
         aplt_name,
         a_unit,
@@ -478,56 +478,56 @@ if __name__ == "__main__":
         ],
     )
     area_habitability_paramspace(
-        "single_gaseccentricity",
+        "single_gaseccentricity" + suff,
         here,
         eplt_name,
         e_unit,
         180,
         190,
         H=HumanCompatible,
-        vertical_lines=[
-            (EARTH_CURRENT_ECCENTRICITY, "dashed", "Earth Current"),
-            (EARTH_MAX_ECCENTRICITY, "dashdot", "Earth Max"),
-        ],
+        # vertical_lines=[
+        #     (EARTH_CURRENT_ECCENTRICITY, "dashed", "Earth Current"),
+        #     (EARTH_MAX_ECCENTRICITY, "dashdot", "Earth Max"),
+        # ],
     )
     time_habitability_paramspace(
-        "single_gaseccentricity",
+        "single_gaseccentricity" + suff,
         here,
         eplt_name,
         e_unit,
         180,
         190,
         H=HumanCompatible,
-        vertical_lines=[
-            (EARTH_CURRENT_ECCENTRICITY, "dashed", "Earth Current"),
-            (EARTH_MAX_ECCENTRICITY, "dashdot", "Earth Max"),
-        ],
-    )
-    time_habitability_paramspace(
-        "single_obliquity",
-        here,
-        obliquity_name,
-        obliquity_unit,
-        150,
-        160,
-        H=HumanCompatible,
-        vertical_lines=[
-            (EARTH_MIN_OBLIQUITY, "dashed", "Earth Min"),
-            (EARTH_MAX_OBLIQUITY, "dashdot", "Earth Max"),
-        ],
+        # vertical_lines=[
+        #     (EARTH_CURRENT_ECCENTRICITY, "dashed", "Earth Current"),
+        #     (EARTH_MAX_ECCENTRICITY, "dashdot", "Earth Max"),
+        # ],
     )
     area_habitability_paramspace(
-        "single_obliquity",
+        "single_obliquity" + suff,
         here,
         obliquity_name,
         obliquity_unit,
         150,
         160,
         H=HumanCompatible,
-        vertical_lines=[
-            (EARTH_MIN_OBLIQUITY, "dashed", "Earth Min"),
-            (EARTH_MAX_OBLIQUITY, "dashdot", "Earth Max"),
-        ],
+        # vertical_lines=[
+        #     (EARTH_MIN_OBLIQUITY, "dashed", "Earth Min"),
+        #     (EARTH_MAX_OBLIQUITY, "dashdot", "Earth Max"),
+        # ],
+    )
+    time_habitability_paramspace(
+        "single_obliquity" + suff,
+        here,
+        obliquity_name,
+        obliquity_unit,
+        150,
+        160,
+        H=HumanCompatible,
+        # vertical_lines=[
+        #     (EARTH_MIN_OBLIQUITY, "dashed", "Earth Min"),
+        #     (EARTH_MAX_OBLIQUITY, "dashdot", "Earth Max"),
+        # ],
     )
 
     # habitability_paramspace_compare(

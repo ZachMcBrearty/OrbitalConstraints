@@ -144,6 +144,9 @@ def threecolourplot(
         yr_end = (yr_end + 1) * 365
 
     fig, (ax1, ax2, ax3) = plt.subplots(3, 1, sharex=True, sharey=True)
+    ax1: plt.Axes
+    ax2: plt.Axes
+    ax3: plt.Axes
     cmap = "RdBu_r"
     ts = plt1[0][yr_start : yr_end : year_avg * 365]
 
@@ -156,9 +159,16 @@ def threecolourplot(
     tq2 = np.average(temp2.reshape((temp2.shape[0], -1, 365 * year_avg)), axis=2)
     tq3 = np.average(temp3.reshape((temp3.shape[0], -1, 365 * year_avg)), axis=2)
 
-    pcm1 = ax1.pcolormesh(ts, plt1[2], tq1, cmap=cmap, shading="nearest")  # nearest
-    pcm2 = ax2.pcolormesh(ts, plt2[2], tq2, cmap=cmap, shading="nearest")  # nearest
-    pcm3 = ax3.pcolormesh(ts, plt3[2], tq3, cmap=cmap, shading="nearest")  # nearest
+    _min, _max = np.amin((tq1, tq2, tq3)), np.amax((tq1, tq2, tq3))
+    pcm1 = ax1.pcolormesh(
+        ts, plt1[2], tq1, cmap=cmap, shading="nearest", vmin=_min, vmax=_max
+    )  # nearest
+    pcm2 = ax2.pcolormesh(
+        ts, plt2[2], tq2, cmap=cmap, shading="nearest", vmin=_min, vmax=_max
+    )  # nearest
+    pcm3 = ax3.pcolormesh(
+        ts, plt3[2], tq3, cmap=cmap, shading="nearest", vmin=_min, vmax=_max
+    )  # nearest
 
     ax3.set_xlabel("time, yr")
     # ax1.set_ylabel("latitude, degrees")
@@ -449,11 +459,11 @@ def convergence_plot_dual(
         val_1_range, val_2_range, convtemps.T, cmap="RdBu_r", shading="nearest"
     )
 
-    roche = 0.00042492578167103155  # au
-    for i, semi in enumerate(val_1_range):
-        for j, ecc in enumerate(val_2_range):
-            if semi * (1 - ecc) < roche:
-                print("rochelimit!", i, j, ecc, semi)
+    # roche = 0.00042492578167103155  # au
+    # for i, semi in enumerate(val_1_range):
+    #     for j, ecc in enumerate(val_2_range):
+    #         if semi * (1 - ecc) < roche:
+    #             print("rochelimit!", i, j, ecc, semi)
 
     fig.colorbar(
         converge_temp_map, ax=ax2, label=global_conv_temp_name + ", " + temp_unit
@@ -769,6 +779,13 @@ if __name__ == "__main__":
     # q1 = read_file("single_omega/single_omega_1.0.npz")
     # q2 = read_file("single_omega/single_omega_1.0625.npz")
     # threecolourplot(q0, q1, q2, None, None, 1)
+
+    q0 = read_file("single_landfractype/single_landfractype_uniform_0.160.npz")
+    # 680 700 720
+    # 0.160 , 180 , 200
+    q1 = read_file("single_landfractype/single_landfractype_uniform_0.180.npz")
+    q2 = read_file("single_landfractype/single_landfractype_uniform_0.200.npz")
+    threecolourplot(q0, q1, q2, 100, None, 1)
 
     # q0 = read_file("single_omega/single_omega_2.25.npz")
     # q1 = read_file("single_omega/single_omega_2.3125.npz")
