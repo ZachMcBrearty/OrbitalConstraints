@@ -475,6 +475,26 @@ if __name__ == "__main__":
 
     from tidalheating import roche_limit
 
+    n = 100000
+    orb_model = orbital_model_using_dist_adv(
+        r_star=RADIUS["solar"] / AU,
+        r_gas=RADIUS["jupiter"] / AU,
+        gas_a=1,
+        gas_ecc=0.0,
+        moon_a=0.006,
+        moon_ecc=0.0,
+        dt=1 / 365 / 240,
+        gas_M=MASS["jupiter"] / MASS["solar"],
+    )
+    avg_eclip = 0
+    i = 0
+    while i < n:
+        avg_eclip += 1 - next(orb_model)
+        i += 1
+    avg_eclip /= n
+
+    print(avg_eclip)
+
     # gas_as = np.linspace(0.1, 10, 100)
     # n = 100000
     # eclips = []
@@ -658,22 +678,3 @@ if __name__ == "__main__":
     #     # plt.scatter(moon_x, moon_y, c="b")
     # print(f / 1000)
     # plt.show()
-
-    n = 100000
-    orb_model = orbital_model_using_dist_adv(
-        r_star=RADIUS["solar"] / AU,
-        r_gas=RADIUS["jupiter"] / AU,
-        gas_a=1,
-        gas_ecc=0.0,
-        moon_a=0.003,
-        moon_ecc=0.0,
-        dt=1 / 365 / 24,
-        gas_M=MASS["jupiter"] / MASS["solar"],
-    )
-    avg_eclip = 0
-    i = 0
-    while i < n:
-        avg_eclip += 1 - next(orb_model)
-        i += 1
-    avg_eclip /= n
-    print(avg_eclip)
