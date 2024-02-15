@@ -499,9 +499,21 @@ if __name__ == "__main__":
         temps.T[365 * 190 : 365 * 193],
         times[365 * 190 : 365 * 193],
         times[1] - times[0],
-        Habitable,
+        HumanCompatible,
     )
-    spacehab = f_area(temps.T, lats, lats[1] - lats[0], Habitable)
+    spacehab = f_area(
+        temps.T[365 * 190 : 365 * 193], lats, lats[1] - lats[0], HumanCompatible
+    )
+    print(
+        f_hab(
+            temps.T[365 * 190 : 365 * 193],
+            lats,
+            lats[1] - lats[0],
+            times[365 * 190 : 365 * 193],
+            times[1] - times[0],
+            HumanCompatible,
+        )
+    )
     fig, (ax1, ax2) = plt.subplots(1, 2)
     ax1: plt.Axes
     ax2: plt.Axes
@@ -511,8 +523,8 @@ if __name__ == "__main__":
     ax1.set_xticks(np.linspace(-90, 90, 7))
 
     ax2.scatter(
-        times[365 * 190 : 365 * 191],
-        spacehab[365 * 190 : 365 * 191],
+        times[365 * 190 : 365 * 193],
+        spacehab,
     )
     ax2.set_xlabel(r"Time, yr")
     ax2.set_ylabel(r"Area averaged habitability (LWR), $f_{area}$")
