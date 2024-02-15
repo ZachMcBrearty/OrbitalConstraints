@@ -88,7 +88,7 @@ def colourplot(
     times,
     yr_start=None,
     yr_end=None,
-    year_avg=1,
+    # year_avg=1,
     lat_start=None,
     lat_end=None,
 ):
@@ -108,20 +108,20 @@ def colourplot(
 
     fig, ax = plt.subplots(1, 1)
     cmap = "RdBu_r"
-    ts = times[yr_start : yr_end : year_avg * 365]
+    ts = times[yr_start:yr_end]
     temp = temps[lat_start:lat_end, yr_start + 1 : yr_end + 1]
 
     # time average
-    tq = np.average(temp.reshape((temp.shape[0], -1, 365 * year_avg)), axis=2)
+    # tq = np.average(temp.reshape((temp.shape[0], -1, 365 * year_avg)), axis=2)
 
     pcm = ax.pcolormesh(
-        ts, degs[lat_start:lat_end], tq, cmap=cmap, shading="nearest"
+        ts, degs[lat_start:lat_end], temp, cmap=cmap, shading="nearest"
     )  # nearest
 
     ax.set_xlabel("time, yr")
     ax.set_ylabel("latitude, degrees")
     ax.set_yticks(np.linspace(degs[lat_start], degs[lat_end - 1], 13, endpoint=True))
-    fig.colorbar(pcm, ax=ax)
+    fig.colorbar(pcm, ax=ax, label="Temperature, K")
     plt.tight_layout()
     plt.show()
 
@@ -772,20 +772,27 @@ def orbital_animation():
 
 if __name__ == "__main__":
     from filemanagement import load_config, read_file, read_single_folder
+    from Habitabilites import habitabilitycolourplot, HumanCompatible, Habitable
     from convergence import convergence_test
 
+    # times, temps, degs = read_file("Earth.npz")
+    # habitabilitycolourplot(degs, temps, times, 190, 192, None, None, Habitable, "(LWR)")
+    # times, temps, degs = read_file("Earth.npz")
+    # habitabilitycolourplot(
+    #     degs, temps, times, 190, 192, None, None, HumanCompatible, "(HC)"
+    # )
     # conf = load_config()
     # q0 = read_file("single_omega/single_omega_0.9375.npz")
     # q1 = read_file("single_omega/single_omega_1.0.npz")
     # q2 = read_file("single_omega/single_omega_1.0625.npz")
     # threecolourplot(q0, q1, q2, None, None, 1)
 
-    q0 = read_file("single_landfractype/single_landfractype_uniform_0.160.npz")
-    # 680 700 720
-    # 0.160 , 180 , 200
-    q1 = read_file("single_landfractype/single_landfractype_uniform_0.180.npz")
-    q2 = read_file("single_landfractype/single_landfractype_uniform_0.200.npz")
-    threecolourplot(q0, q1, q2, 100, None, 1)
+    # q0 = read_file("single_landfractype/single_landfractype_uniform_0.160.npz")
+    # # 680 700 720
+    # # 0.160 , 180 , 200
+    # q1 = read_file("single_landfractype/single_landfractype_uniform_0.180.npz")
+    # q2 = read_file("single_landfractype/single_landfractype_uniform_0.200.npz")
+    # threecolourplot(q0, q1, q2, 100, None, 1)
 
     # q0 = read_file("single_omega/single_omega_2.25.npz")
     # q1 = read_file("single_omega/single_omega_2.3125.npz")
