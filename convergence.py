@@ -32,7 +32,7 @@ def convergence_test(
     year_len = int(365 / dt)
     # -> i.e. each timestep is dt, so a year is 365 / dt datapoints long
     spacedim = temps.shape[0]
-    a = int(temps.size % (year_len * spacedim * yearavg) / spacedim)
+    a = int((temps.size % (year_len * spacedim * yearavg)) / spacedim)
     tq = temps[:, a:].reshape(spacedim, -1, int(year_len * yearavg))
     tqa = np.average(tq, axis=2)  # average over time
     tqaa = np.average(
@@ -674,7 +674,13 @@ def process_data_double(
     for i, datum in enumerate(data):
         val_1, val_2, (times, temps, degs) = datum
         dt = (times[1] - times[0]) * 365
-        t, temp = convergence_test(temps, rtol, yearavg=1, dt=dt)
+        if "gassemimajoraxis" == (q := foldername.split("_"))[1]:
+            yearavg = np.ceil(float(val_1) ** (3 / 2))
+        elif "gassemimajoraxis" == (q := foldername.split("_"))[2]:
+            yearavg = np.ceil(float(val_2) ** (3 / 2))
+        else:
+            yearavg = 1
+        t, temp = convergence_test(temps, rtol, yearavg=yearavg, dt=dt)
         if (q := float(val_1)) not in val_range_1:
             val_range_1.append(q)
         if (q := float(val_2)) not in val_range_2:
@@ -779,18 +785,18 @@ if __name__ == "__main__":
     #         r"$a_{moon} = 0.003, e_{moon}=0.01$",
     #     ),
     # )
-    # dual_a_e_convergence_parallel(
-    #     conf, np.linspace(0.5, 2, 31), np.linspace(0, 0.9, 31), 5
-    # )
-    # reprocess_paramspace(
-    #     "dual_gassemimajoraxis_gaseccentricity",
-    #     here,
-    #     agas_name,
-    #     egas_name,
-    #     a_unit,
-    #     e_unit,
-    #     rtol=1e-2,
-    # )
+    # a = np.linspace(0.5, 2, 31)
+    # b = np.linspace(0, 0.9, 31)
+    # dual_a_e_convergence_parallel(conf, a[a >= 1.2], b[b > 0.1], 5, False)
+    reprocess_paramspace(
+        "dual_gassemimajoraxis_gaseccentricity",
+        here,
+        agas_name,
+        egas_name,
+        a_unit,
+        e_unit,
+        rtol=1e-2,
+    )
 
     # test_omega_convergence(conf, np.linspace(0.5, 3, 41), 5)
     # test_omega_convergence(conf, [0.25], 5)
@@ -818,13 +824,9 @@ if __name__ == "__main__":
     #     "single_obliquity", here, obliquity_name, obliquity_unit, 1e-5
     # )
 
-    # test_ocean_fraction_convergence(
-    #     conf, [f"uniform:{q:.3f}" for q in np.linspace(0, 1, 51)], -1
-    # )
+    # test_ocean_fraction_convergence(conf, np.linspace(0, 1, 51), 5)
 
-    # reprocess_single_param(
-    #     "single_landfractype", here, "Uniform ocean fraction", None, 1e-5
-    # )
+    # reprocess_single_param("single_landfrac", here, landfrac_name, landfrac_unit, 1e-4)
 
     # dual_e_landfrac_convergence(
     #     conf,
@@ -832,15 +834,15 @@ if __name__ == "__main__":
     #     np.linspace(0, 1, 51),
     #     5,
     # )
-    reprocess_paramspace(
-        "dual_gaseccentricity_landfrac",
-        here,
-        eplt_name,
-        "Uniform ocean fraction",
-        e_unit,
-        None,
-        1e-3,
-    )
+    # reprocess_paramspace(
+    #     "dual_gaseccentricity_landfrac",
+    #     here,
+    #     eplt_name,
+    #     landfrac_name,
+    #     e_unit,
+    #     landfrac_unit,
+    #     1e-3,
+    # )
     # dual_delta_landfrac_convergence(
     #     conf,
     #     np.linspace(0, 90, 21),
