@@ -35,6 +35,9 @@ egas_name = "Gas giant eccentricity, $e_{gas}$"
 emoon_name = "Moon eccentricity, $e_{moon}$"
 e_unit = None
 
+landfrac_name = "Uniform ocean fraction"
+landfrac_unit = None
+
 gas_mass_unit = r"M$_{Jupiter}$"
 
 moon_density_unit = r"kg m$^{-3}$"
