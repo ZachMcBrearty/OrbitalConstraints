@@ -444,11 +444,15 @@ def orbital_model_using_dist_adv(
     """
     t = 0.0
     gas_r, gas_E = dist_adv(gas_a, gas_ecc, t)
-    gas_x = gas_r * np.cos(gas_E)
-    gas_y = gas_r * np.sin(gas_E)
+    sqrt_gas_ecc = np.sqrt((1 + gas_ecc) / (1 - gas_ecc))
+    gas_f = 2 * np.arctan(sqrt_gas_ecc * np.tan(gas_E / 2))
+    gas_x = gas_r * np.cos(gas_f)
+    gas_y = gas_r * np.sin(gas_f)
     moon_r, moon_E = dist_adv(moon_a, moon_ecc, t, Mass=gas_M)
-    moon_x = moon_r * np.cos(moon_E)
-    moon_y = moon_r * np.sin(moon_E)
+    sqrt_moon_ecc = np.sqrt((1 + moon_ecc) / (1 - moon_ecc))
+    moon_f = 2 * np.arctan(sqrt_moon_ecc * np.tan(moon_E / 2))
+    moon_x = moon_r * np.cos(moon_f)
+    moon_y = moon_r * np.sin(moon_f)
     eclipsed = check_eclipse_with_dist_adv(
         gas_x, gas_y, gas_x + moon_x, gas_y + moon_y, r_star, r_gas
     )
@@ -456,11 +460,13 @@ def orbital_model_using_dist_adv(
     while True:
         t += dt
         gas_r, gas_E = dist_adv(gas_a, gas_ecc, t, iter=10)
-        gas_x = gas_r * np.cos(gas_E)
-        gas_y = gas_r * np.sin(gas_E)
-        moon_r, moon_E = dist_adv(moon_a, moon_ecc, t, iter=10)
-        moon_x = moon_r * np.cos(moon_E)
-        moon_y = moon_r * np.sin(moon_E)
+        gas_f = 2 * np.arctan(sqrt_gas_ecc * np.tan(gas_E / 2))
+        gas_x = gas_r * np.cos(gas_f)
+        gas_y = gas_r * np.sin(gas_f)
+        moon_r, moon_E = dist_adv(moon_a, moon_ecc, t, Mass=gas_M)
+        moon_f = 2 * np.arctan(sqrt_moon_ecc * np.tan(moon_E / 2))
+        moon_x = moon_r * np.cos(moon_f)
+        moon_y = moon_r * np.sin(moon_f)
         eclipsed = check_eclipse_with_dist_adv(
             gas_x, gas_y, gas_x + moon_x, gas_y + moon_y, r_star, r_gas
         )
@@ -475,25 +481,25 @@ if __name__ == "__main__":
 
     from tidalheating import roche_limit
 
-    n = 100000
-    orb_model = orbital_model_using_dist_adv(
-        r_star=RADIUS["solar"] / AU,
-        r_gas=RADIUS["jupiter"] / AU,
-        gas_a=1,
-        gas_ecc=0.0,
-        moon_a=0.006,
-        moon_ecc=0.0,
-        dt=1 / 365 / 240,
-        gas_M=MASS["jupiter"] / MASS["solar"],
-    )
-    avg_eclip = 0
-    i = 0
-    while i < n:
-        avg_eclip += 1 - next(orb_model)
-        i += 1
-    avg_eclip /= n
+    # n = 100000
+    # orb_model = orbital_model_using_dist_adv(
+    #     r_star=RADIUS["solar"] / AU,
+    #     r_gas=RADIUS["jupiter"] / AU,
+    #     gas_a=1,
+    #     gas_ecc=0.0,
+    #     moon_a=0.006,
+    #     moon_ecc=0.0,
+    #     dt=1 / 365 / 240,
+    #     gas_M=MASS["jupiter"] / MASS["solar"],
+    # )
+    # avg_eclip = 0
+    # i = 0
+    # while i < n:
+    #     avg_eclip += 1 - next(orb_model)
+    #     i += 1
+    # avg_eclip /= n
 
-    print(avg_eclip)
+    # print(avg_eclip)
 
     # gas_as = np.linspace(0.1, 10, 100)
     # n = 100000
@@ -540,7 +546,7 @@ if __name__ == "__main__":
     # plt.legend()
     # plt.show()
 
-    # gas_es = np.linspace(0, 0.9, 100)
+    # gas_es = np.linspace(0, 0.9, 10)
     # n = 100000
     # eclips = []
     # for e in gas_es:
@@ -551,7 +557,7 @@ if __name__ == "__main__":
     #         e,
     #         0.003,
     #         0.0,
-    #         1 / 365 / 24,
+    #         1 / 365 / 240,
     #         MASS["jupiter"] / MASS["solar"],
     #     )
     #     avg_eclip = 0
@@ -618,32 +624,32 @@ if __name__ == "__main__":
     # plt.legend()
     # plt.show()
 
-    # moon_es = np.linspace(0, 0.9, 100)
-    # n = 100000
-    # eclips = []
-    # for e in moon_es:
-    #     orb_model = orbital_model_using_dist_adv(
-    #         RADIUS["solar"] / AU,
-    #         RADIUS["jupiter"] / AU,
-    #         1.0,
-    #         0.0,
-    #         0.003,
-    #         e,
-    #         1 / 365 / 240,
-    #         MASS["jupiter"] / MASS["solar"],
-    #     )
-    #     avg_eclip = 0
-    #     i = 0
-    #     while i < n:
-    #         avg_eclip += 1 - next(orb_model)
-    #         i += 1
-    #     avg_eclip /= n
-    #     eclips.append(avg_eclip)
+    moon_es = np.linspace(0, 0.1, 10)
+    n = 1_000_000
+    eclips = []
+    for e in moon_es:
+        orb_model = orbital_model_using_dist_adv(
+            RADIUS["solar"] / AU,
+            RADIUS["jupiter"] / AU,
+            1.0,
+            0.0,
+            0.003,
+            e,
+            1 / 365 / 2400,
+            MASS["jupiter"] / MASS["solar"],
+        )
+        avg_eclip = 0
+        i = 0
+        while i < n:
+            avg_eclip += 1 - next(orb_model)
+            i += 1
+        avg_eclip /= n
+        eclips.append(avg_eclip)
 
-    # plt.plot(moon_es, eclips)
-    # plt.xlabel(emoon_name)
-    # plt.ylabel("Fraction of light eclipsed")
-    # plt.show()
+    plt.plot(moon_es, eclips)
+    plt.xlabel(emoon_name)
+    plt.ylabel("Fraction of light eclipsed")
+    plt.show()
 
     # gas_a = 1.0
     # gas_ecc = 0.1
