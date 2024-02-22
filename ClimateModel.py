@@ -125,7 +125,7 @@ def climate_model_moon(
     heatings = tidal_heating_value * heating_dist
 
     # fraction of light let through, i.e. 1-ε where ε is the eclipsing fraction
-    eclip = np.arcsin(gas_rad / moon_a) / np.pi
+    eclip = 1 - np.arcsin(gas_rad / moon_a) / np.pi
     if eclip > 1:
         eclip = 1
     if eclip < 0:
@@ -337,4 +337,4 @@ if __name__ == "__main__":
     degs, temps, times = run_climate_model(config)
     dt = (times[1] - times[0]) * 365
     yearavgplot(degs, temps, dt, 150, 155, 10)
-    # colourplot(degs, temps, times, None, None, 5)
+    colourplot(degs, temps, times, None, None, 5)

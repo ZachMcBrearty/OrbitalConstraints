@@ -75,14 +75,19 @@ def parallel_convergence_test(
     val_name: str,
     verbose=True,
 ):
-    def t(conf_name, val_range, rounding_dp=3):
+    def t(
+        conf_name,
+        val_range,
+        rounding_dp=3,
+        numcores=None,
+    ):
         if not os.path.exists(f"./single_{val_name}/"):
             os.mkdir(f"./single_{val_name}/")
         t0 = 0
         if verbose:
             t0 = time()
             print(f"Starting {val_name}")
-        with mp.Pool() as p:
+        with mp.Pool(numcores) as p:  # type:ignore
             p.starmap(
                 _do_single_test,
                 [
@@ -243,6 +248,7 @@ def parallel_gen_paramspace(
         val_2_range: list | NDArray,
         rounding_dp=3,
         overwrite=False,
+        numcores=None,
     ) -> None:
         if not os.path.exists(f"./dual_{val_1_name}_{val_2_name}/"):
             os.mkdir(f"./dual_{val_1_name}_{val_2_name}/")
@@ -266,7 +272,7 @@ def parallel_gen_paramspace(
                     )
                 )
         t0 = time()
-        with mp.Pool() as p:
+        with mp.Pool(numcores) as p:  # type: ignore
             p.starmap(
                 _do_dual_test,
                 pairs,
@@ -785,26 +791,26 @@ if __name__ == "__main__":
     #         r"$a_{moon} = 0.003, e_{moon}=0.01$",
     #     ),
     # )
-    # a = np.linspace(0.5, 2, 31)
-    # b = np.linspace(0, 0.9, 31)
-    # dual_a_e_convergence_parallel(conf, a[a >= 1.2], b[b > 0.1], 5, False)
-    reprocess_paramspace(
-        "dual_gassemimajoraxis_gaseccentricity",
-        here,
-        agas_name,
-        egas_name,
-        a_unit,
-        e_unit,
-        rtol=1e-2,
-    )
+    # a = np.linspace(0.5, 2, 21)
+    # b = np.linspace(0, 0.9, 21)
+    # dual_a_e_convergence_parallel(conf, a, b, 5, False)
+    # reprocess_paramspace(
+    #     "dual_gassemimajoraxis_gaseccentricity",
+    #     here,
+    #     agas_name,
+    #     egas_name,
+    #     a_unit,
+    #     e_unit,
+    #     rtol=1e-2,
+    # )
 
     # test_omega_convergence(conf, np.linspace(0.5, 3, 41), 5)
     # test_omega_convergence(conf, [0.25], 5)
     # reprocess_single_param("single_omega", here, omega_name, omega_unit, rtol=1e-5)
 
-    # test_a_convergence(conf, np.linspace(4, 6, 41), 5)
-    # test_e_convergence(conf, np.linspace(0, 0.9, 51), 5)
-    # test_delta_convergence(conf, np.linspace(0, 90, 101), 5)
+    # test_a_convergence(conf_moon, np.linspace(0.5, 1.5, 51), 5)
+    # test_e_convergence(conf_moon, np.linspace(0, 0.9, 51), 5)
+    # test_delta_convergence(conf_moon, np.linspace(0, 90, 51), 5)
     # test_delta_convergence(conf, np.linspace(0, 180, 21), 5)
     # reprocess_semimajor_fit(
     #     "single_gassemimajoraxis",
@@ -862,3 +868,16 @@ if __name__ == "__main__":
 
     # test_moon_a_convergence(conf_moon, np.linspace(0.001, 0.01, 51), 5)
     # test_moon_e_convergence(conf_moon, np.linspace(0, 0.1, 51), 5)
+    dual_moon_a_e_convergence(
+        conf_moon, np.linspace(0.003, 0.013, 11), np.linspace(0, 0.15, 11), 5, False
+    )
+    reprocess_paramspace(
+        "dual_moonsemimajoraxis_mooneccentricity",
+        here,
+        amoon_name,
+        emoon_name,
+        a_unit,
+        e_unit,
+        1e-3,
+        1,
+    )

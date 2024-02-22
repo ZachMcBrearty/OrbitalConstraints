@@ -303,22 +303,24 @@ if __name__ == "__main__":
     temperatures = np.linspace(1000, 2500, 1000)
     heats = [
         viscoelastic_tidal_heating(
-            t, 4000, RADIUS["earth"], MASS["jupiter"], 0.01, 0.001 * AU, 15
+            t, 4000, RADIUS["earth"], MASS["jupiter"], 0.0005, 0.001 * AU, 15
         )
         / (4 * np.pi * RADIUS["earth"] ** 2)
         for t in temperatures
     ]
     cools = [conv_cooling(t, 300, B_=15, dens_m=4000) for t in temperatures]
-    plt.plot(temperatures, heats, label="heat")
-    plt.plot(temperatures, cools, label="cool")
+    plt.plot(temperatures, heats, label="Tidal heating")
+    plt.plot(temperatures, cools, label="Convective cooling")
+    plt.xlabel("Mantle Temperature, K")
+    plt.ylabel("Surface flux, W m$^{-2}$")
     plt.yscale("log")
     plt.legend()
     plt.show()
 
-    viscfunc = get_visco_func(
-        MASS["jupiter"], RADIUS["earth"], 0.001 * AU, 0.01, 4000, 15
-    )
-    print(viscfunc(300))
+    # viscfunc = get_visco_func(
+    #     MASS["jupiter"], RADIUS["earth"], 0.001 * AU, 0.01, 4000, 15
+    # )
+    # print(viscfunc(300))
 
     # from filemanagement import load_config
 
