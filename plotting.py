@@ -638,6 +638,42 @@ def convergence_plot_dual_with_fits(
     ax2.legend(loc="lower right")
     plt.show()
 
+def plot_three_shared_x_axis(
+    tests,
+    convtemps,
+    val_ranges,
+    val_name,
+    val_unit,
+    series_labels,
+    x_axis_scale: Literal["linear", "log"] = "linear",
+    y_axis_scale: Literal["linear", "log"] = "linear",
+):
+    if val_unit is None:
+        val_unit = ""
+    else:
+        val_unit = ", " + val_unit
+
+    fig, axes = plt.subplots(3, 1, sharex=True)
+    axes: list[plt.Axes]
+    for i in range(len(convtemps)):
+        axes[i].scatter(val_ranges[i], convtemps[i], label=series_labels[i])
+
+    # if np.min(convtemps) < 273:
+    #     ax1.axhline(273, 0, 1, ls="-.", label="273 K")
+    # if np.max(convtemps) > 373:
+    #     ax1.axhline(373, 0, 1, ls="-.", label="373 K")
+    axes[2].set_xlabel(f"{val_name}{val_unit}")
+    
+    axes[1].set_ylabel(global_conv_temp_name+", "+temp_unit)
+
+    for i in range(3):
+        axes[i].set_xscale(x_axis_scale)
+        axes[i].set_yscale(y_axis_scale)
+        axes[i].legend()
+
+    axes[2].set_xticks(np.linspace(min(val_ranges[2]), max(val_ranges[2]), 11))
+    plt.tight_layout()
+    plt.show()
 
 def plot_three_on_one_graph(
     tests,
@@ -664,6 +700,8 @@ def plot_three_on_one_graph(
     if np.max(convtemps) > 373:
         ax.axhline(373, 0, 1, ls="-.", label="373 K")
     ax.set_xlabel(f"{val_name}{val_unit}")
+    
+    ax.set_ylabel(global_conv_temp_name+", "+temp_unit)
 
     ax.set_xscale(x_axis_scale)
     ax.set_yscale(y_axis_scale)
