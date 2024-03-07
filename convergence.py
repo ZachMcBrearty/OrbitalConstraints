@@ -455,6 +455,22 @@ dual_moon_a_e_convergence = parallel_gen_paramspace(
     "ORBIT", "moonsemimajoraxis", "ORBIT", "mooneccentricity", True
 )
 
+dual_gas_a_moon_a_convergence = parallel_gen_paramspace(
+    "ORBIT", "gassemimajoraxis", "ORBIT", "moonsemimajoraxis", True
+)
+
+dual_gas_e_moon_a_convergence = parallel_gen_paramspace(
+    "ORBIT", "gaseccentricity", "ORBIT", "moonsemimajoraxis", True
+)
+
+dual_gas_a_moon_e_convergence = parallel_gen_paramspace(
+    "ORBIT", "gassemimajoraxis", "ORBIT", "mooneccentricity", True
+)
+
+dual_gas_e_moon_e_convergence = parallel_gen_paramspace(
+    "ORBIT", "gaseccentricity", "ORBIT", "mooneccentricity", True
+)
+
 dual_e_landfrac_convergence = parallel_gen_paramspace(
     "ORBIT", "gaseccentricity", "PLANET", "landfrac", True
 )
@@ -770,27 +786,36 @@ if __name__ == "__main__":
     # here = "D:/v2/"
     conf = "config.ini"
     conf_moon = "config_moon.ini"
-    # th = "single_obliquity"
-    # val_range_1, tests_1, convtemps_1 = process_data_single(f"{th}", here, rtol=1e-3)
-    # val_range_2, tests_2, convtemps_2 = process_data_single(
-    #     f"{th}_TH_0.003_0.006", here, rtol=1e-3
-    # )
-    # val_range_3, tests_3, convtemps_3 = process_data_single(
-    #     f"{th}_TH_0.003_0.01", here, rtol=1e-3
-    # )
 
-    # plot_three_on_one_graph(
-    #     (tests_1, tests_2, tests_3),
-    #     (convtemps_1, convtemps_2, convtemps_3),
-    #     (val_range_1, val_range_2, val_range_3),
-    #     obliquity_name,
-    #     obliquity_unit,
-    #     (
-    #         "No Tidal heating",
-    #         r"$a_{moon} = 0.003, e_{moon}=0.006$",
-    #         r"$a_{moon} = 0.003, e_{moon}=0.01$",
-    #     ),
-    # )
+    # test_a_convergence(conf, np.linspace(0.5, 1.5, 51), 5)
+    # test_e_convergence(conf, np.linspace(0, 0.9, 51), 5)
+    # test_delta_convergence(conf_moon, np.linspace(0, 90, 51, 5))
+
+    # dual_gas_a_moon_e_convergence(conf_moon, np.linspace(0.5, 1.5, 21), np.linspace(0,0.02,21), 5)
+    # reprocess_paramspace("dual_gassemimajoraxis_mooneccentricity", here, agas_name, emoon_name, a_unit, e_unit, 1e-3, 1)
+    # dual_gas_e_moon_e_convergence(conf_moon, np.linspace(0, 0.9, 21), np.linspace(0, 0.02, 21), 5)
+    # reprocess_paramspace("dual_gaseccentricity_mooneccentricity", here, egas_name, emoon_name, e_unit, e_unit, 1e-3, 1)
+    th = "single_gassemimajoraxis"
+    val_range_1, tests_1, convtemps_1 = process_data_single(f"{th}_planetary", here, rtol=5e-4)
+    val_range_2, tests_2, convtemps_2 = process_data_single(
+        f"{th}_TH_0.006", here, rtol=1e-4
+    )
+    val_range_3, tests_3, convtemps_3 = process_data_single(
+        f"{th}_TH_0.01", here, rtol=1e-4
+    )
+
+    plot_three_on_one_graph(
+        (tests_1, tests_2, tests_3),
+        (convtemps_1, convtemps_2, convtemps_3),
+        (val_range_1, val_range_2, val_range_3),
+        agas_name,
+        a_unit,
+        (
+            "Planetary",
+            r"Moon: $e_{moon}=0.006$",
+            r"Moon: $e_{moon}=0.01$",
+        ),
+    )
     # a = np.linspace(0.5, 2, 21)
     # b = np.linspace(0, 0.9, 21)
     # dual_a_e_convergence_parallel(conf, a, b, 5, False)
@@ -868,16 +893,16 @@ if __name__ == "__main__":
 
     # test_moon_a_convergence(conf_moon, np.linspace(0.001, 0.01, 51), 5)
     # test_moon_e_convergence(conf_moon, np.linspace(0, 0.1, 51), 5)
-    dual_moon_a_e_convergence(
-        conf_moon, np.linspace(0.003, 0.013, 11), np.linspace(0, 0.15, 11), 5, False
-    )
-    reprocess_paramspace(
-        "dual_moonsemimajoraxis_mooneccentricity",
-        here,
-        amoon_name,
-        emoon_name,
-        a_unit,
-        e_unit,
-        1e-3,
-        1,
-    )
+    # dual_moon_a_e_convergence(
+    #     conf_moon, np.linspace(0.003, 0.013, 31), np.linspace(0, 0.15, 31), 5, False
+    # )
+    # reprocess_paramspace(
+    #     "dual_moonsemimajoraxis_mooneccentricity",
+    #     here,
+    #     amoon_name,
+    #     emoon_name,
+    #     a_unit,
+    #     e_unit,
+    #     1e-3,
+    #     1,
+    # )
